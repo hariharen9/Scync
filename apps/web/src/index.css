@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "@scync/ui/theme.css";
+
+@theme {
+  --font-sans: "Inter", "system-ui", sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+
+  /* We'll load colors here too or from ui/theme.css */
+}
+
+/* Base resets */
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+  }
+}

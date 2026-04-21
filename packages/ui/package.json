@@ -1,0 +1,29 @@
+{
+  "name": "@scync/ui",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@scync/core": "workspace:*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.2",
+    "framer-motion": "^11.0.0",
+    "lenis": "^1.0.42",
+    "react-icons": "^5.0.1",
+    "lucide-react": "^0.368.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.2",
+    "firebase": "^10.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "vitest": "^1.0.0",
+    "@testing-library/react": "^14.0.0"
+  }
+}
