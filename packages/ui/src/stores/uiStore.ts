@@ -28,6 +28,10 @@ interface UIState {
   setFilter: (filter: Partial<VaultFilter>) => void;
   clearFilters: () => void;
   setSortBy: (by: UIState['sortBy']) => void;
+  // Mobile State
+  isMobileMenuOpen: boolean;
+  toggleMobileMenu: () => void;
+  closeMobileMenu: () => void;
 }
 
 const defaultFilter: VaultFilter = {
@@ -40,12 +44,13 @@ const defaultFilter: VaultFilter = {
 
 export const useUIStore = create<UIState>((set) => ({
   activeView: 'dashboard',
-  setActiveView: (view) => set({ activeView: view, selectedSecretId: null }),
+  setActiveView: (view) => set({ activeView: view, selectedSecretId: null, isMobileMenuOpen: false }),
 
   selectedSecretId: null,
   isAddModalOpen: false,
   isEditModalOpen: false,
   isEnvImportModalOpen: false,
+  isMobileMenuOpen: false,
   
   filter: defaultFilter,
   sortBy: 'createdAt',
@@ -59,6 +64,9 @@ export const useUIStore = create<UIState>((set) => ({
   openEnvImportModal: () => set({ isEnvImportModalOpen: true }),
   closeEnvImportModal: () => set({ isEnvImportModalOpen: false }),
   
+  toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
+  closeMobileMenu: () => set({ isMobileMenuOpen: false }),
+
   setFilter: (filterUpdate) => set((state) => ({ filter: { ...state.filter, ...filterUpdate } })),
   clearFilters: () => set({ filter: defaultFilter }),
   setSortBy: (by) => set((state) => ({ 

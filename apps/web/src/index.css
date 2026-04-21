@@ -1,16 +1,156 @@
 @import "tailwindcss";
 @import "@scync/ui/theme.css";
 
-@theme {
-  --font-sans: "Inter", "system-ui", sans-serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+/* ─── Tell Tailwind v4 to also scan the UI package ─── */
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
-  /* We'll load colors here too or from ui/theme.css */
+/* ─── Fonts ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ─── Base ─── */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #26263a transparent;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    background-color: var(--color-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
+  }
+
+  ::selection {
+    background-color: oklch(0.55 0.25 280 / 0.4);
+    color: white;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
 }
 
-/* Base resets */
-@layer base {
-  body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
-  }
+/* ─── Custom utilities ─── */
+@theme {
+  --background-gradient-bg: linear-gradient(135deg, oklch(0.55 0.25 280) 0%, oklch(0.50 0.20 300) 100%);
+}
+
+@utility glass {
+  background: var(--color-glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid var(--color-glass-border);
+}
+
+@utility glass-subtle {
+  background: oklch(0.12 0.01 270 / 0.45);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid oklch(0.22 0.01 270 / 0.25);
+}
+
+@utility accent-glow {
+  box-shadow: 0 0 20px var(--color-accent-glow),
+              0 0 60px oklch(0.55 0.22 280 / 0.08);
+}
+
+@utility accent-glow-sm {
+  box-shadow: 0 0 10px var(--color-accent-glow);
+}
+
+@utility gradient-text {
+  background: linear-gradient(135deg, #c4b5fd 0%, #7c6af7 50%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility gradient-bg {
+  background: var(--background-gradient-bg);
+}
+
+@utility mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 50%, oklch(0.25 0.15 280 / 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, oklch(0.20 0.12 300 / 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, oklch(0.18 0.10 260 / 0.10) 0%, transparent 50%),
+    var(--color-base);
+}
+
+@utility input-field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-default);
+  background-color: var(--color-surface);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: all 0.2s;
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  transition: opacity 0.2s;
+  background: var(--background-gradient-bg);
+  cursor: pointer;
+  border: none;
+}
+
+@utility btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: background 0.15s, color 0.15s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* ─── Keyframes ─── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }

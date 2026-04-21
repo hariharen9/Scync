@@ -1,84 +1,171 @@
 import React, { useEffect } from 'react';
-import { useAuthStore, useVaultStore, useProjectStore, useUIStore } from '@scync/ui';
-import { FiLogOut, FiLock, FiPlus } from 'react-icons/fi';
-import { Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal } from '@scync/ui';
+import { useAuthStore, useVaultStore, useProjectStore, useUIStore,
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal } from '@scync/ui';
+import { FiLock, FiPlus, FiUpload, FiMenu, FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const VaultPage: React.FC = () => {
   const { user } = useAuthStore();
   const { subscribeToSecrets, lock } = useVaultStore();
   const { subscribeToProjects } = useProjectStore();
-  const { activeView, selectedSecretId, openAddModal, openEnvImportModal } = useUIStore();
+  const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret } = useUIStore();
 
   useEffect(() => {
     if (!user) return;
     const unsubSecrets = subscribeToSecrets(user.uid);
     const unsubProjects = subscribeToProjects(user.uid);
-    
-    return () => {
-      unsubSecrets();
-      unsubProjects();
-    };
+    return () => { unsubSecrets(); unsubProjects(); };
   }, [user, subscribeToSecrets, subscribeToProjects]);
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950 text-zinc-100">
-      <header className="flex h-14 items-center justify-between border-b border-zinc-800 bg-[#0a0a0a] px-6">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-accent text-xs font-bold text-white">S</div>
-          <span className="font-semibold tracking-tight">Scync</span>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={openEnvImportModal}
-            className="flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium text-zinc-400 transition-colors hover:text-zinc-200"
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-base text-text-primary">
+      {/* ─── Header ─── */}
+      <header style={{
+        position: 'relative',
+        zIndex: 40,
+        height: 60,
+        minHeight: 60,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        background: 'rgba(12,12,18,0.95)',
+        backdropFilter: 'blur(20px)',
+        padding: '0 1rem',
+        flexShrink: 0,
+      }}>
+        {/* Left: Mobile Menu & Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden"
+            style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', border: 'none', background: isMobileMenuOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#ededed', cursor: 'pointer' }}
           >
-            <span className="hidden sm:inline-block">.env Import</span>
+            {isMobileMenuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
           </button>
           
-          <button 
-            onClick={openAddModal}
-            className="flex items-center gap-1.5 rounded bg-accent/10 px-3 py-1.5 text-sm font-medium text-accent transition-colors hover:bg-accent/20"
-          >
-            <FiPlus />
-            <span className="hidden sm:inline-block">Add Secret</span>
-          </button>
-          
-          <div className="h-4 w-px bg-zinc-800"></div>
-          
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
-            {user?.photoURL ? (
-               <img src={user.photoURL} alt="Avatar" className="h-6 w-6 rounded-full" />
-            ) : null}
-            <span className="hidden sm:inline-block">{user?.email}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.25rem' }}>
+            <div style={{
+              width: 28, height: 28,
+              borderRadius: '0.5rem',
+              background: 'linear-gradient(135deg, oklch(0.55 0.25 280) 0%, oklch(0.50 0.20 300) 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 12px oklch(0.55 0.25 280 / 0.35)',
+            }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>S</span>
+            </div>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#ededed' }} className="hidden sm:inline">Scync</span>
+            <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '0.375rem', background: 'rgba(124,106,247,0.15)', color: '#7c6af7', border: '1px solid rgba(124,106,247,0.25)' }} className="hidden sm:inline">BETA</span>
           </div>
-          
-          <button 
-            onClick={lock}
-            className="flex items-center gap-2 rounded text-sm text-zinc-400 transition-colors hover:text-white ml-2"
-            title="Lock Vault"
+        </div>
+
+        {/* Right: Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <button
+            onClick={openEnvImportModal}
+            className="hidden sm:flex"
+            style={{ alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: 'none', background: 'transparent', color: '#8b8b9e', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer' }}
           >
-            <FiLock />
+            <FiUpload size={14} />
+            <span>.env</span>
+          </button>
+
+          <button
+            onClick={openAddModal}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.875rem', borderRadius: '0.5rem', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', background: 'linear-gradient(135deg, oklch(0.55 0.25 280), oklch(0.50 0.20 300))' }}
+          >
+            <FiPlus size={16} />
+            <span className="hidden sm:inline">Add Secret</span>
+          </button>
+
+          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.07)', margin: '0 0.375rem' }} className="hidden sm:block" />
+
+          {/* User avatar */}
+          <div className="hidden sm:flex items-center gap-2">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="" style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)' }} />
+            ) : (
+              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, oklch(0.55 0.25 280), oklch(0.50 0.20 300))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: 'white' }}>
+                {user?.email?.charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={lock}
+            title="Lock Vault"
+            style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', border: 'none', background: 'transparent', color: '#8b8b9e', cursor: 'pointer' }}
+          >
+            <FiLock size={18} />
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        
-        <div className="flex-1 overflow-y-auto p-6 bg-[#0a0a0a]">
-          {activeView === 'dashboard' ? (
-            <Dashboard />
-          ) : (
-            <SecretList />
-          )}
-        </div>
+      {/* ─── Body ─── */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <Sidebar className="hidden md:flex" />
 
-        {selectedSecretId && (
-           <SecretDetail />
-        )}
+        {/* Main content - allow expanding globally */}
+        <motion.div
+          key={activeView}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 md:p-10 lg:p-12 xl:p-16 w-full"
+          style={{ width: '100%', maxWidth: '100vw' }}
+        >
+          {activeView === 'dashboard' ? <Dashboard /> : <SecretList />}
+        </motion.div>
+
+        {/* Detail panel with animation - Mobile Bottom Sheet or Desktop Side Panel */}
+        <AnimatePresence>
+          {selectedSecretId && (
+            <>
+              {/* Mobile overlay backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => selectSecret(null)}
+                className="lg:hidden absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
+              />
+              
+              <motion.div
+                key="detail"
+                initial={{ opacity: 0, x: '100%' }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: '100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="absolute right-0 top-0 bottom-0 z-50 lg:relative lg:z-auto"
+                style={{ width: '100%', maxWidth: '420px', height: '100%' }}
+              >
+                <SecretDetail />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={toggleMobileMenu}
+              className="md:hidden absolute inset-0 top-[60px] bg-black/70 backdrop-blur-md z-40"
+            />
+            <motion.div
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="md:hidden absolute left-0 top-[60px] bottom-0 z-50"
+              style={{ width: '280px' }}
+            >
+              <Sidebar className="flex w-full border-r-0 shadow-2xl" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modals */}
       <AddEditModal />
       <EnvImportModal />
     </div>

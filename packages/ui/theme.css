@@ -1,32 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  /* Define custom theme tokens per spec */
+  /* ─── Brand ─── */
   --color-accent: #7c6af7;
   --color-accent-hover: #9284ff;
   --color-accent-dim: #3d3560;
+  --color-accent-glow: oklch(0.65 0.28 280 / 0.25);
 
-  --color-base: #0a0a0a;
-  --color-surface: #111111;
-  --color-elevated: #1a1a1a;
-  --color-hover: #1f1f1f;
+  /* ─── Surfaces ─── */
+  --color-base: #06060a;
+  --color-surface: #0c0c12;
+  --color-elevated: #12121c;
+  --color-hover: #1a1a28;
+  --color-glass: oklch(0.15 0.01 270 / 0.55);
+  --color-glass-border: oklch(0.25 0.01 270 / 0.35);
 
+  /* ─── Text ─── */
   --color-text-primary: #ededed;
-  --color-text-secondary: #888888;
-  --color-text-muted: #444444;
+  --color-text-secondary: #8b8b9e;
+  --color-text-muted: #44445a;
 
-  --color-border-subtle: #1f1f1f;
-  --color-border-default: #2e2e2e;
+  /* ─── Borders ─── */
+  --color-border-subtle: #1a1a28;
+  --color-border-default: #26263a;
   --color-border-focus: var(--color-accent);
 
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  /* ─── Semantics ─── */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
   --color-info: #60a5fa;
 
-  --color-value-masked: #3a3a3a;
+  /* ─── Secret values ─── */
+  --color-value-masked: #3a3a4a;
   --color-value-revealed: #a3e635;
 
-  --font-sans: "Inter", "system-ui", sans-serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", monospace;
+  /* ─── Typography ─── */
+  --font-sans: "Inter", "system-ui", -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
 }

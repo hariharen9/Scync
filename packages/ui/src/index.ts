@@ -5,6 +5,7 @@ export * from './stores/projectStore';
 
 export * from './components/AuthGuard';
 export * from './components/VaultGuard';
+export * from './components/Dropdown';
 export * from './components/MaskedValue';
 export * from './components/SecretCard';
 export * from './components/SecretList';
