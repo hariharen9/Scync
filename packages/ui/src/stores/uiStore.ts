@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { VaultFilter } from '@scync/core';
+import type { VaultFilter } from '@scync/core';
 
 interface UIState {
   // Navigation

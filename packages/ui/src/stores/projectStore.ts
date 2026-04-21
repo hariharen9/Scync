@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { Project, subscribeToProjects, createProject, updateProject, deleteProject } from '@scync/core';
+import type { Project } from '@scync/core';
+import { subscribeToProjects, createProject, updateProject, deleteProject } from '@scync/core';
 
 interface ProjectState {
   projects: Project[];

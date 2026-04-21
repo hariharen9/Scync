@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
-import { FiUpload, FiFileText, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiUpload, FiCheck, FiAlertCircle } from 'react-icons/fi';
 
 export const EnvImportModal: React.FC = () => {
   const { isEnvImportModalOpen, closeEnvImportModal } = useUIStore();

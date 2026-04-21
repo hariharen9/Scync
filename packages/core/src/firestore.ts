@@ -1,10 +1,10 @@
 import { 
   collection, doc, setDoc, updateDoc, deleteDoc, 
-  onSnapshot, serverTimestamp, getDoc, Timestamp 
+  onSnapshot, serverTimestamp, getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
-import { 
+import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
   Project, EncryptedField
 } from './types';
@@ -165,7 +165,7 @@ export async function updateProject(
 export async function deleteProject(
   uid: string, 
   projectId: string, 
-  moveSecretsTo: string | null
+  _moveSecretsTo: string | null
 ): Promise<void> {
   // In a real implementation this would ideally be a batch operation
   // querying all secrets with the projectId and updating them to moveSecretsTo

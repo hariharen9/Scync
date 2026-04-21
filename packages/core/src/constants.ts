@@ -1,4 +1,4 @@
-import { ServiceName, SecretType, Environment, SecretStatus, ProjectColor } from './types';
+import type { ServiceName, SecretType, Environment, SecretStatus, ProjectColor } from './types';
 
 export const SERVICES: readonly ServiceName[] = [
   'Google', 'Anthropic', 'GitHub', 'OpenRouter', 'AWS', 'Vercel', 'Stripe',

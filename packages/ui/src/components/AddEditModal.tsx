@@ -4,7 +4,7 @@ import { SecretForm } from './SecretForm';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
-import { SecretFormData } from '@scync/core';
+import type { SecretFormData } from '@scync/core';
 import { FiPlus, FiEdit2, FiX } from 'react-icons/fi';
 
 export const AddEditModal: React.FC = () => {

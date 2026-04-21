@@ -1,4 +1,4 @@
-import { EncryptedField } from './types';
+import type { EncryptedField } from './types';
 
 // Base64 Utilities
 export function utf8Encode(s: string): Uint8Array {
@@ -38,7 +38,7 @@ export async function deriveKey(password: string, uid: string, saltBase64: strin
   const inputMaterial = password + uid;
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    utf8Encode(inputMaterial),
+    utf8Encode(inputMaterial) as any,
     "PBKDF2",
     false,
     ["deriveKey"]
@@ -47,7 +47,7 @@ export async function deriveKey(password: string, uid: string, saltBase64: strin
   return crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: base64Decode(saltBase64),
+      salt: base64Decode(saltBase64) as any,
       iterations: 310000,
       hash: "SHA-256"
     },
@@ -62,9 +62,9 @@ export async function deriveKey(password: string, uid: string, saltBase64: strin
 export async function encrypt(key: CryptoKey, plaintext: string): Promise<EncryptedField> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv },
+    { name: "AES-GCM", iv: iv as any },
     key,
-    utf8Encode(plaintext)
+    utf8Encode(plaintext) as any
   );
 
   return {
@@ -76,9 +76,9 @@ export async function encrypt(key: CryptoKey, plaintext: string): Promise<Encryp
 // Function 4: decrypt
 export async function decrypt(key: CryptoKey, field: EncryptedField): Promise<string> {
   const plaintextBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: base64Decode(field.iv) },
+    { name: "AES-GCM", iv: base64Decode(field.iv) as any },
     key,
-    base64Decode(field.ciphertext)
+    base64Decode(field.ciphertext) as any
   );
 
   return utf8Decode(plaintextBuffer);

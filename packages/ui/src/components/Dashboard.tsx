@@ -78,8 +78,11 @@ export const Dashboard: React.FC = () => {
       style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}
     >
       {/* ── Hero ── */}
-      <div style={{ marginBottom: '3rem' }}>
-        <h2 style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ededed', margin: 0 }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 
+          className="text-3xl sm:text-4xl"
+          style={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#ededed', margin: 0 }}
+        >
           {greeting}.{' '}
           <span className="gradient-text">Your vault is unlocked.</span>
         </h2>
@@ -93,7 +96,12 @@ export const Dashboard: React.FC = () => {
         variants={container}
         initial="hidden"
         animate="show"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem', marginBottom: '2.5rem' }}
+        style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '1rem', 
+          marginBottom: '2rem' 
+        }}
       >
         <StatCard
           label="Active Secrets"

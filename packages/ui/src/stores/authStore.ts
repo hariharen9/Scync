@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { User, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '@scync/core';
 
 interface AuthState {

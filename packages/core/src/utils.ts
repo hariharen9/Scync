@@ -1,4 +1,4 @@
-import { StoredSecret, RecoveryCodeSet } from './types';
+import type { StoredSecret } from './types';
 
 export function getAttentionSecrets(secrets: StoredSecret[]): {
   expired: StoredSecret[];

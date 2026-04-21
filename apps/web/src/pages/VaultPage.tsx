@@ -72,7 +72,7 @@ export const VaultPage: React.FC = () => {
 
           <button
             onClick={openAddModal}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.875rem', borderRadius: '0.5rem', border: 'none', background: 'var(--color-primary)', color: 'white', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', background: 'linear-gradient(135deg, oklch(0.55 0.25 280), oklch(0.50 0.20 300))' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 0.875rem', borderRadius: '0.5rem', border: 'none', color: 'white', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', background: 'linear-gradient(135deg, oklch(0.55 0.25 280), oklch(0.50 0.20 300))' }}
           >
             <FiPlus size={16} />
             <span className="hidden sm:inline">Add Secret</span>
@@ -103,7 +103,7 @@ export const VaultPage: React.FC = () => {
 
       {/* ─── Body ─── */}
       <div className="flex flex-1 overflow-hidden relative">
-        <Sidebar className="hidden md:flex" />
+        <Sidebar className="hidden md:flex flex-col" />
 
         {/* Main content - allow expanding globally */}
         <motion.div
@@ -159,7 +159,7 @@ export const VaultPage: React.FC = () => {
               className="md:hidden absolute left-0 top-[60px] bottom-0 z-50"
               style={{ width: '280px' }}
             >
-              <Sidebar className="flex w-full border-r-0 shadow-2xl" />
+              <Sidebar className="flex flex-col w-full border-r-0 shadow-2xl" />
             </motion.div>
           </>
         )}

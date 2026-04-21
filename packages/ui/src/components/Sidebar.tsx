@@ -1,6 +1,5 @@
 import React from 'react';
 import { FiSearch, FiGrid, FiList, FiFolder, FiPlus } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useVaultStore } from '../stores/vaultStore';
@@ -33,8 +32,6 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     width: 240,
     minWidth: 240,
     height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
     borderRight: '1px solid rgba(255,255,255,0.05)',
     background: 'rgba(12,12,18,0.7)',
     backdropFilter: 'blur(12px)',

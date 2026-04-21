@@ -3,9 +3,9 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { SecretCard } from './SecretCard';
-import { Dropdown, DropdownOption } from './Dropdown';
+import { Dropdown, type DropdownOption } from './Dropdown';
 import { motion } from 'framer-motion';
-import { FiKey, FiPlus, FiFilter, FiX } from 'react-icons/fi';
+import { FiKey, FiPlus, FiFilter, FiX, FiSearch } from 'react-icons/fi';
 import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES } from '@scync/core';
 
 const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[] => [
@@ -70,40 +70,67 @@ export const SecretList: React.FC = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div 
-        style={{ 
-          display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem'
-        }}>
-        <FiFilter size={14} style={{ color: '#44445a', flexShrink: 0 }} />
-        <div style={{ minWidth: 160 }}>
+      {/* Search & Filters */}
+      <div style={{ marginBottom: '2rem' }}>
+        <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
+          <FiSearch size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#44445a' }} />
+          <input
+            type="text"
+            placeholder="Search secrets by name, service, or type..."
+            value={filter.search || ''}
+            onChange={e => setFilter({ search: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem 0.75rem 2.75rem',
+              borderRadius: '0.875rem',
+              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#ededed',
+              fontSize: '0.9375rem',
+              outline: 'none',
+              transition: 'all 0.2s',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,106,247,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,106,247,0.15)'; }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.boxShadow = 'none'; }}
+          />
+        </div>
+
+        <div 
+          style={{ 
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem'
+          }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#44445a', marginRight: '0.2rem' }}>
+          <FiFilter size={15} />
+          <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filters</span>
+        </div>
+        <div style={{ flex: '1 1 120px' }}>
           <Dropdown
             size="sm"
-            options={toOptions(SERVICES, 'All Services')}
+            options={toOptions(SERVICES, 'Services')}
             value={filter.service || ''}
             onChange={v => setFilter({ service: v as any })}
           />
         </div>
-        <div style={{ minWidth: 160 }}>
+        <div style={{ flex: '1 1 120px' }}>
           <Dropdown
             size="sm"
-            options={toOptions(SECRET_TYPES, 'All Types')}
+            options={toOptions(SECRET_TYPES, 'Types')}
             value={filter.type || ''}
             onChange={v => setFilter({ type: v as any })}
           />
         </div>
-        <div style={{ minWidth: 150 }}>
+        <div style={{ flex: '1 1 120px' }}>
           <Dropdown
             size="sm"
-            options={toOptions(ENVIRONMENTS, 'All Envs')}
+            options={toOptions(ENVIRONMENTS, 'Envs')}
             value={filter.environment || ''}
             onChange={v => setFilter({ environment: v as any })}
           />
         </div>
-        <div style={{ minWidth: 150 }}>
+        <div style={{ flex: '1 1 120px' }}>
           <Dropdown
             size="sm"
-            options={toOptions(STATUSES, 'All Status')}
+            options={toOptions(STATUSES, 'Status')}
             value={filter.status || ''}
             onChange={v => setFilter({ status: v as any })}
           />
@@ -117,6 +144,7 @@ export const SecretList: React.FC = () => {
           </button>
         )}
       </div>
+    </div>
 
       {/* Empty state */}
       {visibleSecrets.length === 0 ? (

@@ -3,9 +3,8 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { MaskedValue } from './MaskedValue';
-import { FiX, FiEdit2, FiCalendar, FiClock, FiTag, FiFolder, FiHash, FiRefreshCw, FiShield } from 'react-icons/fi';
-import { DecryptedSecret } from '@scync/core';
-import { motion, AnimatePresence } from 'framer-motion';
+import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw } from 'react-icons/fi';
+import type { DecryptedSecret } from '@scync/core';
 
 const SERVICE_COLORS_MAP: Record<string, string> = {
   'AWS': '#f59e0b', 'GCP': '#4285f4', 'Azure': '#0089d6',
@@ -44,7 +43,7 @@ export const SecretDetail: React.FC = () => {
   let statusColor = '#34d399';
   if (isExpired) { statusBg = 'rgba(248,113,113,0.12)'; statusColor = '#f87171'; }
   else if (isExpiringSoon) { statusBg = 'rgba(251,191,36,0.12)'; statusColor = '#fbbf24'; }
-  else if (secret.status === 'Deprecated' || secret.status === 'Revoked') {
+  else if (secret.status === 'Revoked') {
     statusBg = 'rgba(139,139,158,0.1)'; statusColor = '#8b8b9e';
   }
 

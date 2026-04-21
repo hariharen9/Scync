@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiClock, FiCopy, FiEye } from 'react-icons/fi';
-import { StoredSecret, SERVICE_COLORS, STATUS_COLORS, PROJECT_COLORS, Project } from '@scync/core';
+import { FiMoreVertical, FiEdit2, FiTrash2, FiClock } from 'react-icons/fi';
+import { type StoredSecret, type Project } from '@scync/core';
 import { MaskedValue } from './MaskedValue';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
@@ -26,10 +26,10 @@ const SERVICE_BORDER_COLORS: Record<string, string> = {
   'Other': '#7c6af7',
 };
 
-export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
+export const SecretCard: React.FC<SecretCardProps> = ({ secret }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
-  const { decryptValue, deleteSecret } = useVaultStore();
+  const { decryptValue } = useVaultStore();
   const { openEditModal, selectSecret } = useUIStore();
 
   const handleRevealToggle = async (revealed: boolean) => {
@@ -48,7 +48,6 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   let statusText = '#34d399';
   if (isExpired) { statusBg = 'rgba(248,113,113,0.12)'; statusText = '#f87171'; }
   else if (isExpiringSoon) { statusBg = 'rgba(251,191,36,0.12)'; statusText = '#fbbf24'; }
-  else if (secret.status === 'Deprecated') { statusBg = 'rgba(139,139,158,0.12)'; statusText = '#8b8b9e'; }
   else if (secret.status === 'Revoked') { statusBg = 'rgba(248,113,113,0.12)'; statusText = '#f87171'; }
 
   return (

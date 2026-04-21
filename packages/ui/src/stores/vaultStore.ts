@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { 
-  StoredSecret, SecretFormData, DecryptedSecret, 
+  type StoredSecret, type SecretFormData, type DecryptedSecret,
   deriveKey, createSecret, updateSecret, deleteSecret,
   decryptSecret as coreDecryptSecret,
   subscribeToSecrets,

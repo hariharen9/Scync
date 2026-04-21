@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import type { SecretFormData, StoredSecret } from '@scync/core';
 import {
-  SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES,
-  SecretFormData, StoredSecret
+  SERVICES, SECRET_TYPES, ENVIRONMENTS
 } from '@scync/core';
 import { useProjectStore } from '../stores/projectStore';
-import { Dropdown, DropdownOption } from './Dropdown';
+import { Dropdown, type DropdownOption } from './Dropdown';
 import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface SecretFormProps {
