@@ -9,7 +9,7 @@ import { FiUploadCloud, FiCheck, FiAlertCircle, FiFileText, FiCode, FiX, FiFolde
 import { ENVIRONMENTS, Environment } from '@scync/core';
 
 export const EnvImportModal: React.FC = () => {
-  const { isEnvImportModalOpen, closeEnvImportModal } = useUIStore();
+  const { isEnvImportModalOpen, closeEnvImportModal, openAddProjectModal } = useUIStore();
   const { createSecret } = useVaultStore();
   const { user } = useAuthStore();
   const { projects } = useProjectStore();
@@ -237,7 +237,7 @@ export const EnvImportModal: React.FC = () => {
                 {step === 'review' && (
                   <motion.div key="review" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                      <Dropdown label="Project" options={projectOptions} value={targetProject} onChange={(v) => setTargetProject(v)} />
+                      <Dropdown label="Project" labelAction={{ label: '+ Add New', onClick: openAddProjectModal }} options={projectOptions} value={targetProject} onChange={(v) => setTargetProject(v)} />
                       <Dropdown label="Environment" options={envOptions} value={targetEnv} onChange={(v) => setTargetEnv(v as Environment)} />
                     </div>
                     

@@ -60,6 +60,9 @@ export const Dashboard: React.FC = () => {
   const { storedSecrets } = useVaultStore();
   const { projects } = useProjectStore();
   const { openAddModal } = useUIStore();
+  
+  const getProject = (projectId: string | null) =>
+    projectId ? (projects.find(p => p.id === projectId) || null) : null;
 
   const attention = useMemo(() => getAttentionSecrets(storedSecrets), [storedSecrets]);
   const hasIssues = attention.expired.length > 0 || attention.expiringSoon.length > 0 || attention.rotationOverdue.length > 0;
@@ -167,7 +170,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                 {[...attention.expired, ...attention.expiringSoon].map(s => (
-                  <SecretCard key={s.id} secret={s} />
+                  <SecretCard key={s.id} secret={s} project={getProject(s.projectId)} />
                 ))}
               </div>
             </div>
@@ -182,7 +185,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
                 {attention.rotationOverdue.map(s => (
-                  <SecretCard key={s.id} secret={s} />
+                  <SecretCard key={s.id} secret={s} project={getProject(s.projectId)} />
                 ))}
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal } from '@scync/ui';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -178,6 +178,7 @@ export const VaultPage: React.FC = () => {
       {/* Modals */}
       <AddEditModal />
       <EnvImportModal />
+      <AddProjectModal />
     </div>
   );
 };

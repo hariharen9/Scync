@@ -26,7 +26,7 @@ const SERVICE_BORDER_COLORS: Record<string, string> = {
   'Other': '#7c6af7',
 };
 
-export const SecretCard: React.FC<SecretCardProps> = ({ secret }) => {
+export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const { decryptValue } = useVaultStore();
@@ -173,8 +173,25 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret }) => {
           </div>
         </div>
 
-        {/* Type + Env meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+        {/* Project + Type + Env meta */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+          {project && (
+            <>
+              <span style={{ 
+                fontSize: '0.7rem', 
+                fontWeight: 700, 
+                letterSpacing: '0.05em',
+                color: '#7c6af7',
+                background: 'rgba(124,106,247,0.1)',
+                padding: '0.1rem 0.4rem',
+                borderRadius: '0.4rem',
+                whiteSpace: 'nowrap'
+              }}>
+                {project.name}
+              </span>
+              <span style={{ color: '#2e2e3a', fontWeight: 400 }}>/</span>
+            </>
+          )}
           <span style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#44445a' }}>
             {secret.type}
           </span>

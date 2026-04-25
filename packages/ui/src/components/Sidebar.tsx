@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useVaultStore } from '../stores/vaultStore';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const { activeView, setActiveView, filter, setFilter, closeMobileMenu } = useUIStore();
+  const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal } = useUIStore();
   const { projects, selectedProjectId, selectProject } = useProjectStore();
   const { storedSecrets } = useVaultStore();
 
@@ -126,7 +126,12 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#44445a' }}>
             Projects
           </span>
-          <button style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.375rem', border: 'none', background: 'transparent', color: '#44445a', cursor: 'pointer', transition: 'all 0.15s' }}>
+          <button 
+            onClick={openAddProjectModal}
+            style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.375rem', border: 'none', background: 'transparent', color: '#44445a', cursor: 'pointer', transition: 'all 0.15s' }}
+            onMouseEnter={e => { (e.currentTarget).style.color = '#ededed'; (e.currentTarget).style.background = 'rgba(255,255,255,0.05)' }}
+            onMouseLeave={e => { (e.currentTarget).style.color = '#44445a'; (e.currentTarget).style.background = 'transparent' }}
+          >
             <FiPlus size={13} />
           </button>
         </div>

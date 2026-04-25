@@ -4,6 +4,7 @@ import {
   SERVICES, SECRET_TYPES, ENVIRONMENTS
 } from '@scync/core';
 import { useProjectStore } from '../stores/projectStore';
+import { useUIStore } from '../stores/uiStore';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
 
@@ -52,6 +53,7 @@ const toOptions = (arr: readonly string[]): DropdownOption[] =>
 
 export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting }) => {
   const { projects } = useProjectStore();
+  const { openAddProjectModal } = useUIStore();
 
   const [formData, setFormData] = useState<SecretFormData>({
     name: initialData?.name || '',
@@ -139,6 +141,7 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
         <Dropdown
           label="Project"
+          labelAction={{ label: '+ Add New', onClick: openAddProjectModal }}
           options={projectOptions}
           value={formData.projectId || ''}
           onChange={v => setFormData(p => ({ ...p, projectId: v || null }))}

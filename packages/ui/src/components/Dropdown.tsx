@@ -15,6 +15,7 @@ interface DropdownProps {
   onChange: (value: string) => void;
   placeholder?: string;
   label?: string;
+  labelAction?: { label: string; onClick: () => void };
   size?: 'sm' | 'md';
 }
 
@@ -24,6 +25,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   onChange,
   placeholder = 'Select...',
   label,
+  labelAction,
   size = 'md',
 }) => {
   const [open, setOpen] = useState(false);
@@ -119,8 +121,19 @@ export const Dropdown: React.FC<DropdownProps> = ({
   return (
     <div style={{ position: 'relative', width: '100%' }} ref={ref}>
       {label && (
-        <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b8b9e', marginBottom: '0.5rem' }}>
-          {label}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b8b9e' }}>
+            {label}
+          </div>
+          {labelAction && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); labelAction.onClick(); }}
+              style={{ background: 'transparent', border: 'none', color: '#7c6af7', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+            >
+              {labelAction.label}
+            </button>
+          )}
         </div>
       )}
 
