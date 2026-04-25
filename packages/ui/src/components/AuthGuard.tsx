@@ -2,52 +2,29 @@ import React, { useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@scync/core';
 import { useAuthStore } from '../stores/authStore';
-import { motion } from 'framer-motion';
 import { FiLock } from 'react-icons/fi';
 
-interface AuthGuardProps {
-  children: React.ReactNode;
-  fallback: React.ReactNode;
-}
+interface AuthGuardProps { children: React.ReactNode; fallback: React.ReactNode; }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children, fallback }) => {
   const { user, isLoading, setUser } = useAuthStore();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-    });
-    return () => unsubscribe();
-  }, [setUser]);
+  useEffect(() => { const u = onAuthStateChanged(auth, (fu) => { setUser(fu); }); return () => u(); }, [setUser]);
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-base">
-        {/* Animated loader */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center"
-        >
-          <div className="relative mb-5">
-            <div className="h-12 w-12 rounded-xl gradient-bg accent-glow-sm flex items-center justify-center">
-              <FiLock className="h-5 w-5 text-white" />
-            </div>
-            <motion.div
-              className="absolute -inset-2 rounded-2xl border border-accent/20"
-              animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', background: 'var(--color-bg)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeIn .4s ease-out' }}>
+          <div style={{ width: 40, height: 40, background: 'var(--color-surface)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
+            <FiLock size={16} color="var(--color-green)" />
           </div>
-          <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <div className="h-1 w-1 rounded-full bg-accent animate-pulse" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--color-text-2)' }}>
+            <div style={{ width: 4, height: 4, background: 'var(--color-green)', animation: 'fadeIn 1s ease-in-out infinite alternate' }} />
             Loading Scync...
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
-
   if (!user) return <>{fallback}</>;
   return <>{children}</>;
 };

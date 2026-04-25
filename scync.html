@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scync — Secrets Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #060606;
+  --bg-subtle: #0a0a0a;
+  --surface: #0f0f0f;
+  --surface-2: #141414;
+  --surface-3: #1c1c1c;
+  --border: #1e1e1e;
+  --border-2: #282828;
+  --border-focus: #3a3a3a;
+  --text: #ececec;
+  --text-2: #888;
+  --text-3: #444;
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,.08);
+  --green-border: rgba(16,185,129,.2);
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,.08);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,.08);
+  --white: #fff;
+  --font: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --sidebar-w: 216px;
+  --transition: 140ms cubic-bezier(.4,0,.2,1);
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+/* ── SCROLLBAR ─────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+/* ── VIEWS ─────────────────────────────── */
+.view { display: none; min-height: 100vh; }
+.view.active { display: flex; }
+
+/* ══════════════════════════════════════════
+   LANDING
+══════════════════════════════════════════ */
+#view-landing {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 30%, transparent 100%);
+  opacity: .4;
+}
+
+.landing-glow {
+  position: absolute;
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(16,185,129,.05) 0%, transparent 70%);
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.landing-inner {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 48px;
+  animation: fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+}
+
+.landing-logo {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+}
+
+.logo-mark {
+  width: 44px; height: 44px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center;
+  position: relative;
+}
+
+.logo-mark::before {
+  content: '';
+  position: absolute; inset: -1px;
+  background: linear-gradient(135deg, var(--border-focus), transparent 60%);
+  z-index: -1;
+}
+
+.logo-mark svg { opacity: .9; }
+
+.landing-wordmark {
+  font-size: 40px; font-weight: 800; letter-spacing: -.04em;
+  color: var(--text);
+}
+
+.landing-tagline {
+  font-size: 13px; color: var(--text-2); letter-spacing: .02em;
+  font-weight: 400;
+}
+
+.landing-card {
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  width: 380px;
+  padding: 28px;
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--white);
+  color: #111;
+  border: none;
+  padding: 11px 20px;
+  font-family: var(--font);
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  letter-spacing: -.01em;
+}
+
+.google-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+
+.google-btn:active { transform: translateY(0); }
+
+.landing-divider {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 10px; color: var(--text-3); letter-spacing: .12em; text-transform: uppercase;
+}
+
+.landing-divider::before, .landing-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.feature-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+
+.feature-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.feature-icon {
+  width: 26px; height: 26px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  color: var(--text-2);
+}
+
+.feature-label { font-size: 11.5px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+.feature-desc { font-size: 10.5px; color: var(--text-2); line-height: 1.4; }
+
+.landing-footer {
+  font-size: 11px; color: var(--text-3); display: flex; gap: 16px;
+  letter-spacing: .01em;
+}
+
+.landing-footer span { display: flex; align-items: center; gap: 5px; }
+.landing-footer span::before {
+  content: '·'; color: var(--text-3);
+}
+.landing-footer span:first-child::before { display: none; }
+
+/* ══════════════════════════════════════════
+   UNLOCK
+══════════════════════════════════════════ */
+#view-unlock {
+  flex-direction: column; align-items: center; justify-content: center;
+  background: var(--bg);
+  position: relative; overflow: hidden;
+}
+
+#view-unlock .landing-grid { opacity: .2; }
+
+.unlock-card {
+  position: relative; z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  width: 340px;
+  padding: 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+}
+
+.user-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.avatar-lock {
+  position: absolute; bottom: -2px; right: -2px;
+  width: 20px; height: 20px;
+  background: var(--amber);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  border: 2px solid var(--surface);
+}
+
+.unlock-name { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+.unlock-subtitle { font-size: 11.5px; color: var(--text-2); margin-top: -12px; }
+
+.unlock-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  outline: none;
+  transition: border-color var(--transition);
+  letter-spacing: .08em;
+}
+
+.unlock-input::placeholder { color: var(--text-3); letter-spacing: 0; font-family: var(--font); font-size: 12px; }
+.unlock-input:focus { border-color: var(--border-focus); }
+
+.unlock-btn {
+  width: 100%;
+  background: var(--white);
+  color: #0a0a0a;
+  border: none;
+  padding: 11px;
+  font-family: var(--font);
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  letter-spacing: -.01em;
+}
+
+.unlock-btn:hover { background: #e8e8e8; transform: translateY(-1px); }
+.unlock-btn:active { transform: translateY(0); }
+
+.unlock-signout {
+  background: none; border: none; color: var(--text-3);
+  font-family: var(--font); font-size: 11.5px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: color var(--transition);
+  padding: 4px;
+}
+.unlock-signout:hover { color: var(--text-2); }
+
+/* ══════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════ */
+#view-app {
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+/* ── SIDEBAR ────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  position: sticky; top: 0;
+  display: flex; flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.sidebar-top {
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+.sidebar-logo {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 15px; font-weight: 800; letter-spacing: -.04em;
+}
+
+.logo-icon {
+  width: 26px; height: 26px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-2);
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+
+.beta-badge {
+  font-size: 9px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3); border: 1px solid var(--border-2);
+  padding: 2px 5px;
+}
+
+.sidebar-actions {
+  display: flex; gap: 6px;
+}
+
+.sidebar-action-btn {
+  width: 26px; height: 26px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-2); cursor: pointer;
+  display: grid; place-items: center;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+.sidebar-action-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--surface-3); }
+
+.sidebar-search {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.search-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 7px 10px 7px 30px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 12px;
+  outline: none;
+  transition: border-color var(--transition);
+  position: relative;
+}
+
+.search-wrap { position: relative; }
+.search-icon {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  color: var(--text-3); pointer-events: none;
+}
+.search-input:focus { border-color: var(--border-focus); }
+.search-input::placeholder { color: var(--text-3); }
+
+.sidebar-nav { padding: 10px 8px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 8px;
+  color: var(--text-2); font-size: 12.5px; font-weight: 500;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: color var(--transition);
+  letter-spacing: -.01em;
+  border: 1px solid transparent;
+}
+
+.nav-item::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--surface-3);
+  transform: translateX(-100%);
+  transition: transform 180ms cubic-bezier(.4,0,.2,1);
+}
+
+.nav-item:hover { color: var(--text); border-color: var(--border); }
+.nav-item:hover::before { transform: translateX(0); }
+.nav-item.active { color: var(--text); background: var(--surface-3); border-color: var(--border-2); }
+.nav-item.active::before { display: none; }
+
+.nav-item > * { position: relative; z-index: 1; }
+
+.nav-count {
+  margin-left: auto; font-size: 10.5px; font-family: var(--mono);
+  color: var(--text-3); background: var(--surface);
+  border: 1px solid var(--border); padding: 1px 5px;
+}
+.nav-item.active .nav-count { background: var(--surface-2); color: var(--text-2); }
+
+.nav-section-label {
+  font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--text-3);
+  padding: 12px 8px 5px;
+}
+
+.sidebar-footer {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+
+.user-mini-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--border-2);
+  overflow: hidden; flex-shrink: 0;
+}
+.user-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.user-mini-name { font-size: 11.5px; font-weight: 600; color: var(--text-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.lock-btn {
+  background: none; border: 1px solid var(--border);
+  color: var(--text-3); cursor: pointer;
+  width: 24px; height: 24px; display: grid; place-items: center;
+  transition: all var(--transition);
+}
+.lock-btn:hover { color: var(--amber); border-color: var(--amber); }
+
+/* ── MAIN CONTENT ──────────────────────── */
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  min-height: 100vh; background: var(--bg);
+  overflow: hidden;
+}
+
+.topbar {
+  height: 52px; padding: 0 28px;
+  display: flex; align-items: center; justify-content: flex-end;
+  border-bottom: 1px solid var(--border);
+  gap: 8px; flex-shrink: 0;
+  background: var(--bg);
+}
+
+.env-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--font); font-size: 11.5px;
+  padding: 6px 10px; cursor: pointer;
+  transition: all var(--transition);
+  font-weight: 500;
+}
+.env-btn:hover { border-color: var(--border-2); color: var(--text); }
+
+.add-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--white); color: #080808;
+  border: none; font-family: var(--font);
+  font-size: 12px; font-weight: 700;
+  padding: 7px 14px; cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: -.01em;
+}
+.add-btn:hover { background: #e4e4e4; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+.add-btn:active { transform: translateY(0); }
+
+.content { padding: 36px 28px; flex: 1; overflow-y: auto; }
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 28px; }
+.page-greeting { font-size: 17px; font-weight: 700; color: var(--text); letter-spacing: -.03em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.page-greeting .unlocked { color: var(--green); }
+.page-meta { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.page-meta .dot { width: 3px; height: 3px; background: var(--border-2); border-radius: 50%; }
+.page-title { font-size: 24px; font-weight: 800; letter-spacing: -.05em; margin-bottom: 4px; }
+.page-count { font-size: 12px; color: var(--text-2); }
+
+/* DASHBOARD TOOLBAR */
+.dash-toolbar { display: flex; gap: 10px; margin-bottom: 28px; }
+
+.toolbar-btn {
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--font); font-size: 11.5px;
+  padding: 7px 12px; cursor: pointer;
+  transition: all var(--transition); font-weight: 500;
+}
+.toolbar-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--surface); }
+.toolbar-btn.primary {
+  background: var(--white); color: #080808; border-color: transparent;
+  font-weight: 700;
+}
+.toolbar-btn.primary:hover { background: #e4e4e4; }
+
+/* HEALTH CARD */
+.health-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 24px 28px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 24px;
+  position: relative; overflow: hidden;
+}
+
+.health-card::after {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: .6;
+}
+
+.health-score {
+  font-size: 56px; font-weight: 800; letter-spacing: -.06em;
+  line-height: 1; color: var(--green);
+  font-family: var(--mono);
+}
+
+.health-score-sub { font-size: 12px; color: var(--text-3); font-family: var(--mono); margin-top: 2px; }
+.health-divider { width: 1px; height: 56px; background: var(--border); flex-shrink: 0; }
+
+.health-info { flex: 1; }
+.health-status {
+  font-size: 16px; font-weight: 700; letter-spacing: -.03em; color: var(--green); margin-bottom: 6px;
+}
+.health-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+
+.health-badge {
+  margin-left: auto; background: var(--green-bg); border: 1px solid var(--green-border);
+  color: var(--green); font-size: 10px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 10px; font-family: var(--mono);
+}
+
+/* STATS ROW */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); margin-bottom: 20px; }
+
+.stat-card {
+  background: var(--surface); padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 6px;
+  position: relative;
+}
+
+.stat-value {
+  font-size: 32px; font-weight: 800; letter-spacing: -.05em;
+  color: var(--text); font-family: var(--mono);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-3); font-weight: 600;
+}
+
+.stat-icon {
+  position: absolute; top: 20px; right: 20px;
+  color: var(--text-3);
+}
+
+/* CHARTS ROW */
+.charts-row { display: grid; grid-template-columns: 1fr 260px 1fr; gap: 1px; background: var(--border); margin-bottom: 20px; }
+
+.chart-card {
+  background: var(--surface); padding: 20px 22px;
+}
+
+.chart-title {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-3); font-weight: 600; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 7px;
+}
+
+/* BAR CHART */
+.bar-list { display: flex; flex-direction: column; gap: 8px; }
+
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label { font-size: 11px; color: var(--text-2); width: 90px; flex-shrink: 0; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { flex: 1; height: 3px; background: var(--surface-3); position: relative; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--text-3); transition: width .8s cubic-bezier(.16,1,.3,1); position: relative; }
+.bar-fill.is-top { background: var(--text-2); }
+.bar-count { font-size: 10px; font-family: var(--mono); color: var(--text-3); width: 16px; text-align: right; flex-shrink: 0; }
+
+/* DONUT CHART */
+.donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.donut-svg { display: block; }
+.donut-legend { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-2); }
+.legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.legend-val { margin-left: auto; font-family: var(--mono); font-size: 10.5px; color: var(--text-3); }
+
+/* BOTTOM ROW */
+.bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+
+.bottom-card { background: var(--surface); padding: 20px 22px; }
+.bottom-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.bottom-card-link { font-size: 10.5px; color: var(--text-3); cursor: pointer; letter-spacing: .02em; text-decoration: none; font-family: var(--mono); transition: color var(--transition); }
+.bottom-card-link:hover { color: var(--text-2); }
+
+.project-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.project-item:last-child { border-bottom: none; }
+.project-icon { width: 22px; height: 22px; background: var(--surface-3); border: 1px solid var(--border-2); display: grid; place-items: center; color: var(--text-3); flex-shrink: 0; }
+.project-name { font-size: 12px; color: var(--text); flex: 1; font-weight: 500; letter-spacing: -.01em; }
+.project-count { font-size: 10.5px; font-family: var(--mono); color: var(--text-3); }
+
+.activity-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.activity-item:last-child { border-bottom: none; }
+.activity-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.activity-dot.green { background: var(--green); }
+.activity-dot.amber { background: var(--amber); }
+.activity-dot.blue { background: #60a5fa; }
+.activity-info { flex: 1; }
+.activity-name { font-size: 11.5px; color: var(--text); font-weight: 500; letter-spacing: -.01em; }
+.activity-action { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-top: 1px; }
+.activity-time { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-top: 4px; flex-shrink: 0; }
+
+/* ══════════════════════════════════════════
+   ALL SECRETS PAGE
+══════════════════════════════════════════ */
+.secrets-search {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); padding: 10px 14px 10px 36px;
+  color: var(--text); font-family: var(--font); font-size: 13px;
+  outline: none; transition: border-color var(--transition);
+  margin-bottom: 12px; letter-spacing: -.01em;
+}
+.secrets-search:focus { border-color: var(--border-focus); }
+.secrets-search::placeholder { color: var(--text-3); font-size: 12.5px; }
+.secrets-search-wrap { position: relative; margin-bottom: 12px; }
+.secrets-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+
+.filter-row { display: flex; gap: 8px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
+.filter-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; font-weight: 600; }
+
+.filter-select {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--font); font-size: 11.5px;
+  padding: 6px 28px 6px 10px; cursor: pointer; outline: none;
+  transition: all var(--transition); appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23444'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center;
+}
+.filter-select:hover { border-color: var(--border-2); color: var(--text); }
+.filter-select:focus { border-color: var(--border-focus); }
+
+/* SECRET CARDS */
+.secrets-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); }
+
+.secret-card {
+  background: var(--surface); padding: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  cursor: pointer;
+  transition: background var(--transition);
+  position: relative;
+  border: 1px solid transparent;
+  margin: -1px; /* offset the gap background */
+}
+
+.secret-card:hover { background: var(--surface-2); border-color: var(--border-2); z-index: 1; }
+
+.secret-card-top { display: flex; align-items: flex-start; justify-content: space-between; }
+
+.secret-service {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--text-3); font-weight: 600;
+}
+
+.service-icon {
+  width: 18px; height: 18px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  display: grid; place-items: center; font-size: 8px; font-weight: 700; color: var(--text-3);
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+
+.secret-menu-btn {
+  background: none; border: none; color: var(--text-3);
+  cursor: pointer; padding: 2px; display: grid; place-items: center;
+  opacity: 0; transition: opacity var(--transition), color var(--transition);
+}
+.secret-card:hover .secret-menu-btn { opacity: 1; }
+.secret-menu-btn:hover { color: var(--text-2); }
+
+.secret-name {
+  font-size: 13.5px; font-weight: 700; color: var(--text);
+  letter-spacing: -.02em; line-height: 1.2;
+}
+
+.secret-meta {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+
+.meta-tag {
+  font-size: 9.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--text-3);
+  border: 1px solid var(--border); padding: 2px 5px;
+  font-family: var(--mono);
+}
+
+.meta-tag.env-dev { color: #60a5fa; border-color: rgba(96,165,250,.25); background: rgba(96,165,250,.04); }
+.meta-tag.env-personal { color: #a78bfa; border-color: rgba(167,139,250,.25); background: rgba(167,139,250,.04); }
+.meta-tag.env-prod { color: var(--amber); border-color: rgba(245,158,11,.25); background: var(--amber-bg); }
+
+.secret-value-row {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.secret-value {
+  font-family: var(--mono); font-size: 12px; color: var(--text-3);
+  flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  letter-spacing: .06em; transition: color var(--transition);
+}
+
+.secret-value.revealed { color: var(--text-2); letter-spacing: .03em; }
+
+.value-btn {
+  background: none; border: none; color: var(--text-3);
+  cursor: pointer; padding: 3px; display: grid; place-items: center;
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+.value-btn:hover { color: var(--text-2); }
+.value-btn.copied { color: var(--green); }
+
+.secret-footer { display: flex; align-items: center; justify-content: space-between; }
+.status-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; padding: 3px 6px; font-family: var(--mono);
+}
+.status-badge.active { color: var(--green); background: var(--green-bg); border: 1px solid var(--green-border); }
+.status-badge.expiring { color: var(--amber); background: var(--amber-bg); border: 1px solid rgba(245,158,11,.25); }
+.status-badge.expired { color: var(--red); background: var(--red-bg); border: 1px solid rgba(239,68,68,.25); }
+
+/* ══════════════════════════════════════════
+   MODALS
+══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.8);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity 160ms ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  width: 440px; max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  transform: scale(.96) translateY(8px);
+  transition: transform 200ms cubic-bezier(.16,1,.3,1);
+  position: relative;
+}
+
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+.modal-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+
+.modal-title-wrap { display: flex; align-items: center; gap: 10px; }
+.modal-icon {
+  width: 30px; height: 30px; background: var(--surface-3);
+  border: 1px solid var(--border-2); display: grid; place-items: center;
+  flex-shrink: 0; color: var(--text-2);
+}
+.modal-title { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+.modal-subtitle { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+.modal-close {
+  background: none; border: 1px solid var(--border); color: var(--text-3);
+  cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center;
+  transition: all var(--transition); flex-shrink: 0;
+}
+.modal-close:hover { border-color: var(--border-2); color: var(--text); }
+
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-footer {
+  padding: 14px 20px; border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+}
+
+/* FORM FIELDS */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); font-weight: 600; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.field-input, .field-textarea, .field-select {
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font); font-size: 12.5px;
+  padding: 9px 12px; outline: none; width: 100%;
+  transition: border-color var(--transition);
+  letter-spacing: -.01em;
+}
+.field-input:focus, .field-textarea:focus, .field-select:focus { border-color: var(--border-focus); }
+.field-input::placeholder, .field-textarea::placeholder { color: var(--text-3); }
+
+.field-textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+
+.field-select {
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23444'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+}
+
+.field-select-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;
+}
+.field-add-link { font-size: 10px; color: var(--text-3); cursor: pointer; font-family: var(--mono); transition: color var(--transition); }
+.field-add-link:hover { color: var(--text-2); }
+
+.value-field-wrap { position: relative; }
+.value-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text-3); cursor: pointer;
+  padding: 4px; display: grid; place-items: center; transition: color var(--transition);
+}
+.value-toggle:hover { color: var(--text-2); }
+.field-value-input { padding-right: 36px; font-family: var(--mono); letter-spacing: .06em; }
+
+/* Buttons */
+.btn {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  padding: 9px 16px; cursor: pointer; border: 1px solid;
+  transition: all var(--transition); letter-spacing: -.01em;
+}
+.btn-ghost { background: none; border-color: var(--border); color: var(--text-2); }
+.btn-ghost:hover { border-color: var(--border-2); color: var(--text); background: var(--surface-3); }
+.btn-primary { background: var(--white); border-color: transparent; color: #080808; font-weight: 700; }
+.btn-primary:hover { background: #e4e4e4; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* IMPORT MODAL */
+.drop-zone {
+  border: 1px dashed var(--border-2); padding: 36px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  cursor: pointer; transition: all var(--transition); position: relative;
+  background: var(--surface-2);
+}
+.drop-zone:hover { border-color: var(--border-focus); background: var(--surface-3); }
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.drop-icon { color: var(--text-3); }
+.drop-title { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -.02em; }
+.drop-sub { font-size: 11.5px; color: var(--text-3); }
+
+.or-divider {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 9.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em;
+}
+.or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.paste-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--mono); font-size: 12px;
+  padding: 11px; cursor: pointer; width: 100%;
+  transition: all var(--transition);
+}
+.paste-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--surface-3); }
+
+/* ══════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-1 { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .05s both; }
+.stagger-2 { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .10s both; }
+.stagger-3 { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .15s both; }
+.stagger-4 { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .20s both; }
+.stagger-5 { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) .25s both; }
+
+.card-enter {
+  animation: fadeUp .4s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* ══════════════════════════════════════════
+   NOTIFICATION TOAST
+══════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 200;
+  background: var(--surface-3); border: 1px solid var(--border-2);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--text); font-weight: 500;
+  opacity: 0; transform: translateY(8px);
+  transition: all 200ms cubic-bezier(.16,1,.3,1);
+  pointer-events: none;
+  letter-spacing: -.01em;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-icon { color: var(--green); flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+  LANDING
+═══════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+  <div class="landing-grid"></div>
+  <div class="landing-glow"></div>
+  <div class="landing-inner">
+    <div class="landing-logo">
+      <div class="logo-mark">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" stroke="#888" stroke-width="1.5" fill="none"/>
+          <path d="M10 6L14 8.5V13.5L10 16L6 13.5V8.5L10 6Z" fill="#333"/>
+          <circle cx="10" cy="10" r="1.5" fill="#888"/>
+        </svg>
+      </div>
+      <div>
+        <div class="landing-wordmark">Scync</div>
+        <div class="landing-tagline">Your secrets. Synced. Encrypted. Everywhere.</div>
+      </div>
+    </div>
+
+    <div class="landing-card">
+      <button class="google-btn" onclick="showView('unlock')">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="landing-divider">Zero-Knowledge Vault</div>
+
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div>
+            <div class="feature-label">Zero-Knowledge</div>
+            <div class="feature-desc">Server never sees your secrets</div>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div>
+            <div class="feature-label">AES-256-GCM</div>
+            <div class="feature-desc">Military-grade encryption</div>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 2 13 9 20 9"/><path d="M7 20H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9l5 5v3"/><path d="M14 14v8"/><path d="M10 18l4-4 4 4"/></svg>
+          </div>
+          <div>
+            <div class="feature-label">Instant Sync</div>
+            <div class="feature-desc">Real-time across all devices</div>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="1"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <div>
+            <div class="feature-label">Cross-Platform</div>
+            <div class="feature-desc">Web, Desktop &amp; Mobile</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="landing-footer">
+      <span>Open source</span>
+      <span>Self-hostable</span>
+      <span>No tracking</span>
+      <span>MIT licensed</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  UNLOCK
+═══════════════════════════════════════ -->
+<div id="view-unlock" class="view">
+  <div class="landing-grid"></div>
+  <div class="unlock-card">
+    <div class="user-avatar" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display:grid; place-items:center;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div class="avatar-lock">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="#080808"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <div class="unlock-name">Hariharen S S</div>
+      <div class="unlock-subtitle">Vault is locked</div>
+    </div>
+    <input type="password" class="unlock-input" placeholder="Enter vault password" id="vaultPassInput" />
+    <button class="unlock-btn" onclick="showView('app')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Unlock Vault
+    </button>
+    <button class="unlock-signout" onclick="showView('landing')">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  APP
+═══════════════════════════════════════ -->
+<div id="view-app" class="view">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" stroke="#888" stroke-width="1.5" fill="none"/>
+            <circle cx="10" cy="10" r="1.5" fill="#888"/>
+          </svg>
+        </div>
+        Scync
+      </div>
+      <div class="beta-badge">BETA</div>
+    </div>
+
+    <div class="sidebar-search">
+      <div class="search-wrap">
+        <svg class="search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" placeholder="Search secrets..." id="sidebarSearch" oninput="handleSidebarSearch(this.value)" />
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" id="nav-secrets" onclick="showPage('secrets')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        All Secrets
+        <span class="nav-count">23</span>
+      </div>
+
+      <div class="nav-section-label">Projects</div>
+      <div class="nav-item" onclick="filterByProject('Test')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        Test
+        <span class="nav-count">1</span>
+      </div>
+      <div class="nav-item" onclick="filterByProject('Uncategorized')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Uncategorized
+        <span class="nav-count">22</span>
+      </div>
+
+      <div class="nav-section-label">Services</div>
+      <div class="nav-item" onclick="filterByService('Anthropic')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d4a27a" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Anthropic
+        <span class="nav-count">2</span>
+      </div>
+      <div class="nav-item" onclick="filterByService('GitHub')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="#888"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        GitHub
+        <span class="nav-count">1</span>
+      </div>
+      <div class="nav-item" onclick="filterByService('Netlify')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Netlify
+        <span class="nav-count">1</span>
+      </div>
+      <div class="nav-item" onclick="filterByService('OpenAI')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        OpenAI
+        <span class="nav-count">1</span>
+      </div>
+      <div class="nav-item" onclick="filterByService('Other')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+        Other
+        <span class="nav-count">15</span>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-mini-avatar" style="background:linear-gradient(135deg,#1a1a2e,#16213e); display:grid; place-items:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="user-mini-name">Hariharen S S</div>
+      <button class="lock-btn" onclick="showView('unlock')" title="Lock vault">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <button class="env-btn" onclick="openModal('import')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+        .env
+      </button>
+      <button class="add-btn" onclick="openModal('add')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Secret
+      </button>
+    </header>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div id="page-dashboard">
+        <div class="page-header stagger-1">
+          <div class="page-greeting">
+            Good afternoon. <span class="unlocked">Your vault is unlocked.</span>
+          </div>
+          <div class="page-meta">
+            <span>23 secrets</span>
+            <span class="dot"></span>
+            <span>1 project</span>
+            <span class="dot"></span>
+            <span>23 active</span>
+          </div>
+        </div>
+
+        <div class="dash-toolbar stagger-2">
+          <button class="toolbar-btn primary" onclick="openModal('add')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Secret
+          </button>
+          <button class="toolbar-btn" onclick="openModal('import')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+            Import .env
+          </button>
+          <button class="toolbar-btn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            New Project
+          </button>
+        </div>
+
+        <div class="health-card stagger-3">
+          <div>
+            <div class="health-score">100</div>
+            <div class="health-score-sub">/ 100</div>
+          </div>
+          <div class="health-divider"></div>
+          <div class="health-info">
+            <div class="health-status">Healthy</div>
+            <div class="health-desc">All secrets are in good standing. No expired keys or overdue rotations.</div>
+          </div>
+          <div class="health-badge">ALL CLEAR</div>
+        </div>
+
+        <div class="stats-row stagger-4">
+          <div class="stat-card">
+            <svg class="stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            <div class="stat-value" data-target="23">0</div>
+            <div class="stat-label">Active</div>
+          </div>
+          <div class="stat-card">
+            <svg class="stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="stat-value" data-target="0">0</div>
+            <div class="stat-label">Expiring Soon</div>
+          </div>
+          <div class="stat-card">
+            <svg class="stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/></svg>
+            <div class="stat-value" data-target="0">0</div>
+            <div class="stat-label">Rotation Due</div>
+          </div>
+          <div class="stat-card">
+            <svg class="stat-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <div class="stat-value" data-target="1">0</div>
+            <div class="stat-label">Projects</div>
+          </div>
+        </div>
+
+        <div class="charts-row stagger-5">
+          <div class="chart-card">
+            <div class="chart-title">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+              Services
+            </div>
+            <div class="bar-list" id="services-bars"></div>
+          </div>
+
+          <div class="chart-card" style="display:flex; flex-direction:column;">
+            <div class="chart-title">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              Environments
+            </div>
+            <div class="donut-wrap" style="flex:1; justify-content:center;">
+              <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#1c1c1c" stroke-width="16"/>
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#60a5fa" stroke-width="16"
+                  stroke-dasharray="146 155" stroke-dashoffset="38" style="transition:stroke-dasharray .8s cubic-bezier(.16,1,.3,1)"/>
+                <circle cx="60" cy="60" r="48" fill="none" stroke="#a78bfa" stroke-width="16"
+                  stroke-dasharray="92 208" stroke-dashoffset="-108" style="transition:stroke-dasharray .8s cubic-bezier(.16,1,.3,1)"/>
+                <text x="60" y="56" text-anchor="middle" fill="#ececec" font-family="DM Mono, monospace" font-size="18" font-weight="500">23</text>
+                <text x="60" y="70" text-anchor="middle" fill="#888" font-family="Syne, sans-serif" font-size="8" letter-spacing="1">TOTAL</text>
+              </svg>
+              <div class="donut-legend" style="width:140px;">
+                <div class="legend-row"><span class="legend-dot" style="background:#60a5fa"></span> Development <span class="legend-val">14</span></div>
+                <div class="legend-row"><span class="legend-dot" style="background:#a78bfa"></span> Personal <span class="legend-val">9</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Secret Types
+            </div>
+            <div class="bar-list" id="types-bars"></div>
+          </div>
+        </div>
+
+        <div class="bottom-row stagger-5">
+          <div class="bottom-card">
+            <div class="bottom-card-header">
+              <div class="chart-title" style="margin-bottom:0;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                Projects
+              </div>
+              <a class="bottom-card-link" onclick="openModal('add')">+ ADD</a>
+            </div>
+            <div class="project-item">
+              <div class="project-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="#f59e0b"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></div>
+              <div class="project-name">Test</div>
+              <div class="project-count">1 secret</div>
+            </div>
+            <div class="project-item">
+              <div class="project-icon"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+              <div class="project-name">Uncategorized</div>
+              <div class="project-count">22 secrets</div>
+            </div>
+          </div>
+          <div class="bottom-card">
+            <div class="bottom-card-header">
+              <div class="chart-title" style="margin-bottom:0;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Recent Activity
+              </div>
+              <a class="bottom-card-link">VIEW ALL</a>
+            </div>
+            <div id="activity-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECRETS PAGE -->
+      <div id="page-secrets" style="display:none;">
+        <div class="page-header stagger-1">
+          <div class="page-title">All Secrets</div>
+          <div class="page-count" id="secrets-count">23 secrets</div>
+        </div>
+
+        <div class="secrets-search-wrap">
+          <svg class="secrets-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="secrets-search" placeholder="Search secrets by name, service, or type..." id="secretsSearch" oninput="filterSecrets()" />
+        </div>
+
+        <div class="filter-row">
+          <span class="filter-label" style="display:flex;align-items:center;gap:5px;">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            Filters
+          </span>
+          <select class="filter-select" id="filter-service" onchange="filterSecrets()">
+            <option value="">All Services</option>
+            <option>Anthropic</option>
+            <option>GitHub</option>
+            <option>Google</option>
+            <option>HuggingFace</option>
+            <option>Netlify</option>
+            <option>OpenAI</option>
+            <option>OpenRouter</option>
+            <option>Other</option>
+          </select>
+          <select class="filter-select" id="filter-type" onchange="filterSecrets()">
+            <option value="">All Types</option>
+            <option>API Key</option>
+            <option>Personal Access Token</option>
+            <option>Secret Key</option>
+            <option>Recovery Codes</option>
+            <option>Password</option>
+          </select>
+          <select class="filter-select" id="filter-env" onchange="filterSecrets()">
+            <option value="">All Envs</option>
+            <option>Development</option>
+            <option>Personal</option>
+            <option>Production</option>
+          </select>
+          <select class="filter-select" id="filter-status" onchange="filterSecrets()">
+            <option value="">All Status</option>
+            <option>Active</option>
+            <option>Expiring</option>
+            <option>Expired</option>
+          </select>
+        </div>
+
+        <div class="secrets-grid" id="secrets-grid"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════
+  MODAL: ADD SECRET
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-add" onclick="handleOverlayClick(event, 'add')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <div class="modal-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Add New Secret</div>
+          <div class="modal-subtitle">Encrypted locally before sync</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('add')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-label">Secret Name</label>
+        <input class="field-input" placeholder="e.g. OpenAI API Key" id="add-name" />
+      </div>
+      <div class="field">
+        <label class="field-label">Secret Value</label>
+        <div class="value-field-wrap">
+          <input class="field-input field-value-input" type="password" placeholder="sk-proj-..." id="add-value" />
+          <button class="value-toggle" onclick="toggleValueVis('add-value', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-select-header">
+            <label class="field-label">Project</label>
+            <span class="field-add-link">+ Add New</span>
+          </div>
+          <select class="field-select">
+            <option>Uncategorized</option>
+            <option>Test</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-select-header">
+            <label class="field-label">Service</label>
+            <span class="field-add-link">+ Add New</span>
+          </div>
+          <select class="field-select">
+            <option>Other</option>
+            <option>Anthropic</option>
+            <option>GitHub</option>
+            <option>Google</option>
+            <option>Netlify</option>
+            <option>OpenAI</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Type</label>
+          <select class="field-select">
+            <option>API Key</option>
+            <option>Personal Access Token</option>
+            <option>Secret Key</option>
+            <option>Recovery Codes</option>
+            <option>Password</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Environment</label>
+          <select class="field-select">
+            <option>Personal</option>
+            <option>Development</option>
+            <option>Production</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label">Last Rotated (optional)</label>
+          <input class="field-input" type="date" style="color:var(--text-2);" />
+        </div>
+        <div class="field">
+          <label class="field-label">Expires On (optional)</label>
+          <input class="field-input" type="date" style="color:var(--text-2);" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Notes (optional)</label>
+        <textarea class="field-textarea" placeholder="Any context about this secret..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('add')">Cancel</button>
+      <button class="btn btn-primary" onclick="addSecret()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Secret
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  MODAL: IMPORT .ENV
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-import" onclick="handleOverlayClick(event, 'import')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:400px;">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <div class="modal-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Import .env File</div>
+          <div class="modal-subtitle">Sync your local configuration securely</div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('import')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" accept=".env,text/plain" />
+        <svg class="drop-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        <div class="drop-title">Drop your .env file here</div>
+        <div class="drop-sub">or click to browse from files</div>
+      </div>
+      <div class="or-divider">or</div>
+      <button class="paste-btn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        Paste raw config text
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg class="toast-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Copied to clipboard</span>
+</div>
+
+<script>
+/* ──────────────────────────────────────────
+   DATA
+────────────────────────────────────────── */
+const secrets = [
+  { id:1,  name:'Claude API Key',            service:'Anthropic',  type:'API Key',               env:'Development', status:'active', value:'sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxx',  project:'Uncategorized' },
+  { id:2,  name:'VSCode Marketplace',        service:'Other',      type:'Personal Access Token',  env:'Personal',    status:'active', value:'vscm_xxxxxxxxxxxxxxxxxxxxxxxx',             project:'Test'          },
+  { id:3,  name:'Instagram API',             service:'Other',      type:'Personal Access Token',  env:'Personal',    status:'active', value:'IGQWRPxxxxxxxxxxxxxxxxxxxxxxxxx',            project:'Uncategorized' },
+  { id:4,  name:'Claude 2',                  service:'Anthropic',  type:'API Key',               env:'Development', status:'active', value:'sk-ant-api03-yyyyyyyyyyyyyyyyyy',             project:'Uncategorized' },
+  { id:5,  name:'Azure DevOps',              service:'Other',      type:'Personal Access Token',  env:'Development', status:'active', value:'azdo_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',      project:'Uncategorized' },
+  { id:6,  name:'Reddit',                    service:'Other',      type:'Secret Key',             env:'Personal',    status:'active', value:'rdt_xxxxxxxxxxxxxxxxxxxxxxxxxx',             project:'Uncategorized' },
+  { id:7,  name:'Netlify',                   service:'Netlify',    type:'API Key',               env:'Development', status:'active', value:'ntly_xxxxxxxxxxxxxxxxxxxxxxxx',              project:'Uncategorized' },
+  { id:8,  name:'Proton Account',            service:'Other',      type:'Recovery Codes',         env:'Personal',    status:'active', value:'xxxx-yyyy-zzzz-1234 xxxx-yyyy-zzzz-5678',  project:'Uncategorized' },
+  { id:9,  name:'PyPI',                      service:'Other',      type:'Personal Access Token',  env:'Development', status:'active', value:'pypi-AgAAAAxxxxxxxxxxxxxxxxxxxxxxxxx',      project:'Uncategorized' },
+  { id:10, name:'NASA',                      service:'Other',      type:'API Key',               env:'Personal',    status:'active', value:'NASA_xxxxxxxxxxxxxxxxxxxxxxxx',              project:'Uncategorized' },
+  { id:11, name:'Github PAT',               service:'GitHub',     type:'Personal Access Token',  env:'Development', status:'active', value:'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',      project:'Uncategorized' },
+  { id:12, name:'Github PAT - Homebrew',    service:'Other',      type:'Personal Access Token',  env:'Personal',    status:'active', value:'ghp_yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy',         project:'Uncategorized' },
+  { id:13, name:'OpenAI API Key',            service:'OpenAI',     type:'API Key',               env:'Development', status:'active', value:'sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',    project:'Uncategorized' },
+  { id:14, name:'OpenRouter Key',            service:'OpenRouter', type:'API Key',               env:'Development', status:'active', value:'sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',  project:'Uncategorized' },
+  { id:15, name:'HuggingFace Token',         service:'HuggingFace',type:'Personal Access Token', env:'Personal',    status:'active', value:'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',      project:'Uncategorized' },
+  { id:16, name:'Google Cloud API',          service:'Google',     type:'API Key',               env:'Development', status:'active', value:'AIzaSy_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',         project:'Uncategorized' },
+  { id:17, name:'Stripe Secret Key',         service:'Other',      type:'Secret Key',             env:'Development', status:'active', value:'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxx',          project:'Uncategorized' },
+  { id:18, name:'Twilio Auth Token',         service:'Other',      type:'API Key',               env:'Development', status:'active', value:'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',            project:'Uncategorized' },
+  { id:19, name:'SendGrid API',              service:'Other',      type:'API Key',               env:'Development', status:'active', value:'SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxx',            project:'Uncategorized' },
+  { id:20, name:'AWS Access Key',            service:'Other',      type:'API Key',               env:'Production',  status:'active', value:'AKIAIOSFODNN7EXAMPLE',                      project:'Uncategorized' },
+  { id:21, name:'Cloudflare API',            service:'Other',      type:'API Key',               env:'Development', status:'active', value:'cf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',      project:'Uncategorized' },
+  { id:22, name:'Vercel Token',              service:'Other',      type:'Personal Access Token',  env:'Development', status:'active', value:'vercel_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',   project:'Uncategorized' },
+  { id:23, name:'Railway API Key',           service:'Other',      type:'API Key',               env:'Development', status:'active', value:'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',      project:'Uncategorized' },
+];
+
+const activities = [
+  { name:'VSCode Marketplace', action:'UPDATED', time:'2m ago',   color:'amber' },
+  { name:'Claude API Key',     action:'COPIED',  time:'14m ago',  color:'green' },
+  { name:'OpenAI API Key',     action:'ADDED',   time:'1h ago',   color:'blue'  },
+  { name:'HuggingFace Token',  action:'ADDED',   time:'3h ago',   color:'blue'  },
+  { name:'NASA',               action:'COPIED',  time:'1d ago',   color:'green' },
+];
+
+const serviceData  = [{ l:'Other', n:15 },{ l:'Anthropic', n:2 },{ l:'Netlify', n:1 },{ l:'GitHub', n:1 },{ l:'OpenRouter', n:1 },{ l:'OpenAI', n:1 },{ l:'HuggingFace', n:1 },{ l:'Google', n:1 }];
+const typeData     = [{ l:'API Key', n:9 },{ l:'Personal Access...', n:8 },{ l:'Recovery Codes', n:3 },{ l:'Secret Key', n:2 },{ l:'Password', n:1 }];
+
+const revealedIds = new Set();
+
+/* ──────────────────────────────────────────
+   NAVIGATION
+────────────────────────────────────────── */
+function showView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  if (v === 'app') {
+    initApp();
+  }
+}
+
+function showPage(p) {
+  document.getElementById('page-dashboard').style.display = p === 'dashboard' ? '' : 'none';
+  document.getElementById('page-secrets').style.display   = p === 'secrets'   ? '' : 'none';
+  document.getElementById('nav-dashboard').classList.toggle('active', p === 'dashboard');
+  document.getElementById('nav-secrets').classList.toggle('active', p === 'secrets');
+  if (p === 'secrets') { renderSecrets(secrets); }
+}
+
+function filterByProject(proj) { showPage('secrets'); setTimeout(() => { renderSecrets(secrets.filter(s => s.project === proj)); }, 50); }
+function filterByService(svc)  { showPage('secrets'); setTimeout(() => { renderSecrets(secrets.filter(s => s.service === svc)); }, 50); }
+
+/* ──────────────────────────────────────────
+   INIT
+────────────────────────────────────────── */
+function initApp() {
+  renderBars('services-bars', serviceData);
+  renderBars('types-bars', typeData);
+  renderActivity();
+  animateCounters();
+}
+
+function renderBars(containerId, data) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const max = data[0].n;
+  el.innerHTML = data.map((d, i) => `
+    <div class="bar-row">
+      <span class="bar-label">${d.l}</span>
+      <div class="bar-track">
+        <div class="bar-fill ${i===0?'is-top':''}" style="width:0%" data-w="${Math.round(d.n/max*100)}"></div>
+      </div>
+      <span class="bar-count">${d.n}</span>
+    </div>`).join('');
+  requestAnimationFrame(() => {
+    el.querySelectorAll('.bar-fill').forEach(bar => {
+      setTimeout(() => { bar.style.width = bar.dataset.w + '%'; }, 100);
+    });
+  });
+}
+
+function renderActivity() {
+  const el = document.getElementById('activity-list');
+  if (!el) return;
+  el.innerHTML = activities.map(a => `
+    <div class="activity-item">
+      <div class="activity-dot ${a.color}"></div>
+      <div class="activity-info">
+        <div class="activity-name">${a.name}</div>
+        <div class="activity-action">${a.action}</div>
+      </div>
+      <div class="activity-time">${a.time}</div>
+    </div>`).join('');
+}
+
+function animateCounters() {
+  document.querySelectorAll('.stat-value[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const dur = 600;
+    const start = performance.now();
+    function update(now) {
+      const t = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      el.textContent = Math.round(ease * target);
+      if (t < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+/* ──────────────────────────────────────────
+   SECRETS
+────────────────────────────────────────── */
+const SERVICE_COLORS = { Anthropic:'#d4a27a', GitHub:'#aaa', Google:'#4285F4', Netlify:'#38bdf8', OpenAI:'#10b981', OpenRouter:'#a78bfa', HuggingFace:'#f59e0b', Other:'#555' };
+const ENV_CLASS = { Development:'env-dev', Personal:'env-personal', Production:'env-prod' };
+
+function maskValue(v) { return '•'.repeat(Math.min(v.length, 16)); }
+
+function renderSecrets(list) {
+  const grid = document.getElementById('secrets-grid');
+  document.getElementById('secrets-count').textContent = list.length + ' secret' + (list.length !== 1 ? 's' : '');
+  if (!list.length) { grid.innerHTML = '<div style="padding:48px;color:var(--text-3);font-size:13px;grid-column:1/-1;text-align:center;">No secrets found</div>'; return; }
+
+  grid.innerHTML = list.map((s, i) => {
+    const initials = s.service.slice(0,2).toUpperCase();
+    const col = SERVICE_COLORS[s.service] || '#555';
+    const masked = revealedIds.has(s.id);
+    const displayVal = masked ? s.value : maskValue(s.value);
+    return `
+    <div class="secret-card card-enter" style="animation-delay:${i * 20}ms" data-id="${s.id}">
+      <div class="secret-card-top">
+        <div class="secret-service">
+          <div class="service-icon" style="color:${col}; border-color:${col}22;">${initials}</div>
+          ${s.service}
+        </div>
+        <button class="secret-menu-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </button>
+      </div>
+      <div class="secret-name">${s.name}</div>
+      <div class="secret-meta">
+        <span class="meta-tag">${s.type}</span>
+        <span class="meta-tag ${ENV_CLASS[s.env]||''}">${s.env}</span>
+      </div>
+      <div class="secret-value-row">
+        <span class="secret-value${masked?' revealed':''}" id="val-${s.id}" style="font-family:var(--mono)">${displayVal}</span>
+        <button class="value-btn" onclick="copySecret(event,${s.id})" title="Copy" id="copy-${s.id}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="1"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="value-btn" onclick="toggleReveal(event,${s.id})" title="Reveal">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="eye-${s.id}"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="secret-footer">
+        <span class="status-badge ${s.status}">${s.status.toUpperCase()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleReveal(e, id) {
+  e.stopPropagation();
+  const s = secrets.find(x => x.id === id);
+  if (!s) return;
+  const valEl = document.getElementById('val-' + id);
+  if (revealedIds.has(id)) {
+    revealedIds.delete(id);
+    valEl.textContent = maskValue(s.value);
+    valEl.classList.remove('revealed');
+  } else {
+    revealedIds.add(id);
+    valEl.textContent = s.value;
+    valEl.classList.add('revealed');
+  }
+}
+
+function copySecret(e, id) {
+  e.stopPropagation();
+  const s = secrets.find(x => x.id === id);
+  if (!s) return;
+  navigator.clipboard.writeText(s.value).catch(() => {});
+  const btn = document.getElementById('copy-' + id);
+  btn.classList.add('copied');
+  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+  showToast('Copied to clipboard');
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="1"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+  }, 1800);
+}
+
+function filterSecrets() {
+  const q   = (document.getElementById('secretsSearch')?.value || '').toLowerCase();
+  const svc = document.getElementById('filter-service')?.value || '';
+  const typ = document.getElementById('filter-type')?.value    || '';
+  const env = document.getElementById('filter-env')?.value     || '';
+  const sts = document.getElementById('filter-status')?.value  || '';
+  const filtered = secrets.filter(s =>
+    (!q   || s.name.toLowerCase().includes(q) || s.service.toLowerCase().includes(q) || s.type.toLowerCase().includes(q)) &&
+    (!svc || s.service === svc) &&
+    (!typ || s.type === typ)    &&
+    (!env || s.env === env)     &&
+    (!sts || s.status.toLowerCase() === sts.toLowerCase())
+  );
+  renderSecrets(filtered);
+}
+
+function handleSidebarSearch(val) {
+  if (val.trim()) { showPage('secrets'); document.getElementById('secretsSearch').value = val; filterSecrets(); }
+}
+
+/* ──────────────────────────────────────────
+   MODALS
+────────────────────────────────────────── */
+function openModal(id) {
+  document.getElementById('modal-' + id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById('modal-' + id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+function handleOverlayClick(e, id) {
+  if (e.target === document.getElementById('modal-' + id)) closeModal(id);
+}
+
+function addSecret() {
+  const name = document.getElementById('add-name').value.trim();
+  const val  = document.getElementById('add-value').value.trim();
+  if (!name || !val) { showToast('Please fill in name and value'); return; }
+  closeModal('add');
+  showToast('Secret saved successfully');
+}
+
+function toggleValueVis(inputId, btn) {
+  const el = document.getElementById(inputId);
+  const isPass = el.type === 'password';
+  el.type = isPass ? 'text' : 'password';
+  btn.style.color = isPass ? 'var(--text-2)' : 'var(--text-3)';
+}
+
+/* ──────────────────────────────────────────
+   TOAST
+────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast').classList.add('show');
+  toastTimer = setTimeout(() => document.getElementById('toast').classList.remove('show'), 2400);
+}
+
+/* ──────────────────────────────────────────
+   KEYBOARD
+────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    ['add','import'].forEach(id => closeModal(id));
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    const appView = document.getElementById('view-app');
+    if (appView.classList.contains('active')) {
+      document.getElementById('sidebarSearch').focus();
+    }
+  }
+});
+</script>
+</body>
+</html>

@@ -4,7 +4,6 @@ import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { SecretCard } from './SecretCard';
 import { Dropdown, type DropdownOption } from './Dropdown';
-import { motion } from 'framer-motion';
 import { FiKey, FiPlus, FiFilter, FiX, FiSearch } from 'react-icons/fi';
 import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES } from '@scync/core';
 
@@ -48,166 +47,140 @@ export const SecretList: React.FC = () => {
     : 'All Secrets';
 
   return (
-    <div style={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ededed', margin: 0 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0 }}>
             {title}
           </h2>
-          <p style={{ fontSize: '0.875rem', color: '#8b8b9e', margin: '0.375rem 0 0 0' }}>
+          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
             {visibleSecrets.length} secret{visibleSecrets.length !== 1 ? 's' : ''}
           </p>
         </div>
         <button
           onClick={openAddModal}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.5rem 1rem', borderRadius: '0.625rem', border: 'none', background: 'rgba(124,106,247,0.15)', color: '#7c6af7', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit' }}
-          onMouseEnter={e => { (e.currentTarget).style.background = 'rgba(124,106,247,0.25)'; }}
-          onMouseLeave={e => { (e.currentTarget).style.background = 'rgba(124,106,247,0.15)'; }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+            background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+            color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
         >
-          <FiPlus size={15} />
+          <FiPlus size={13} />
           Add Secret
         </button>
       </div>
 
       {/* Search & Filters */}
-      <div style={{ marginBottom: '2rem' }}>
-        <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
-          <FiSearch size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#44445a' }} />
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ position: 'relative', marginBottom: 14 }}>
+          <FiSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
           <input
             type="text"
             placeholder="Search secrets by name, service, or type..."
             value={filter.search || ''}
             onChange={e => setFilter({ search: e.target.value })}
             style={{
-              width: '100%',
-              padding: '0.75rem 1rem 0.75rem 2.75rem',
-              borderRadius: '0.875rem',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#ededed',
-              fontSize: '0.9375rem',
-              outline: 'none',
-              transition: 'all 0.2s',
+              width: '100%', padding: '9px 12px 9px 34px',
+              border: '1px solid var(--color-border)', background: 'var(--color-surface-2)',
+              color: 'var(--color-text)', fontSize: 13, outline: 'none',
+              fontFamily: 'var(--font-sans)', transition: 'border-color 140ms',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(124,106,247,0.4)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124,106,247,0.15)'; }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.boxShadow = 'none'; }}
+            onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
+            onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
           />
         </div>
 
-        <div 
-          style={{ 
-            display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.625rem'
-          }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#44445a', marginRight: '0.2rem' }}>
-          <FiFilter size={15} />
-          <span style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filters</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--color-text-3)', marginRight: 4 }}>
+            <FiFilter size={13} />
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filters</span>
+          </div>
+          <div style={{ flex: '1 1 120px' }}>
+            <Dropdown size="sm" options={toOptions(SERVICES, 'Services')} value={filter.service || ''} onChange={v => setFilter({ service: v as any })} />
+          </div>
+          <div style={{ flex: '1 1 120px' }}>
+            <Dropdown size="sm" options={toOptions(SECRET_TYPES, 'Types')} value={filter.type || ''} onChange={v => setFilter({ type: v as any })} />
+          </div>
+          <div style={{ flex: '1 1 120px' }}>
+            <Dropdown size="sm" options={toOptions(ENVIRONMENTS, 'Envs')} value={filter.environment || ''} onChange={v => setFilter({ environment: v as any })} />
+          </div>
+          <div style={{ flex: '1 1 120px' }}>
+            <Dropdown size="sm" options={toOptions(STATUSES, 'Status')} value={filter.status || ''} onChange={v => setFilter({ status: v as any })} />
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              style={{
+                display: 'flex', flexShrink: 0, alignItems: 'center', gap: 5,
+                fontSize: 11, fontWeight: 600, padding: '5px 10px',
+                border: '1px solid rgba(239,68,68,0.2)', background: 'var(--color-red-bg)',
+                color: 'var(--color-red)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <FiX size={11} /> Clear
+            </button>
+          )}
         </div>
-        <div style={{ flex: '1 1 120px' }}>
-          <Dropdown
-            size="sm"
-            options={toOptions(SERVICES, 'Services')}
-            value={filter.service || ''}
-            onChange={v => setFilter({ service: v as any })}
-          />
-        </div>
-        <div style={{ flex: '1 1 120px' }}>
-          <Dropdown
-            size="sm"
-            options={toOptions(SECRET_TYPES, 'Types')}
-            value={filter.type || ''}
-            onChange={v => setFilter({ type: v as any })}
-          />
-        </div>
-        <div style={{ flex: '1 1 120px' }}>
-          <Dropdown
-            size="sm"
-            options={toOptions(ENVIRONMENTS, 'Envs')}
-            value={filter.environment || ''}
-            onChange={v => setFilter({ environment: v as any })}
-          />
-        </div>
-        <div style={{ flex: '1 1 120px' }}>
-          <Dropdown
-            size="sm"
-            options={toOptions(STATUSES, 'Status')}
-            value={filter.status || ''}
-            onChange={v => setFilter({ status: v as any })}
-          />
-        </div>
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            style={{ display: 'flex', flexShrink: 0, alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', fontWeight: 600, padding: '0.35rem 0.625rem', borderRadius: '0.5rem', border: 'none', background: 'rgba(248,113,113,0.12)', color: '#f87171', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            <FiX size={12} /> Clear
-          </button>
-        )}
       </div>
-    </div>
 
       {/* Empty state */}
       {visibleSecrets.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            borderRadius: '1rem',
-            border: '1px dashed rgba(255,255,255,0.07)',
-            background: 'rgba(18,18,28,0.4)',
-            padding: '5rem 2rem',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-          }}
-        >
-          <div style={{ width: 52, height: 52, borderRadius: '0.875rem', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-            <FiKey size={22} style={{ color: '#44445a' }} />
+        <div style={{
+          border: '1px dashed var(--color-border-2)', background: 'var(--color-surface)',
+          padding: '64px 32px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 48, height: 48, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center',
+            marginBottom: 16,
+          }}>
+            <FiKey size={20} color="var(--color-text-3)" />
           </div>
           {filter.search ? (
             <>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#ededed', margin: '0 0 0.5rem 0' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>
                 No results for "{filter.search}"
               </h3>
-              <p style={{ fontSize: '0.875rem', color: '#8b8b9e', margin: 0 }}>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: 0 }}>
                 Try a different search term or clear filters.
               </p>
             </>
           ) : (
             <>
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#ededed', margin: '0 0 0.5rem 0' }}>No secrets yet</h3>
-              <p style={{ fontSize: '0.875rem', color: '#8b8b9e', margin: '0 0 1.5rem 0' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>No secrets yet</h3>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '0 0 20px 0' }}>
                 Add your first secret to get started.
               </p>
               <button
                 onClick={openAddModal}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.25rem', borderRadius: '0.625rem', border: 'none', background: 'linear-gradient(135deg, oklch(0.55 0.25 280), oklch(0.50 0.20 300))', color: 'white', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+                  background: 'white', color: '#080808', border: 'none',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                }}
               >
-                <FiPlus size={15} /> Add Secret
+                <FiPlus size={14} /> Add Secret
               </button>
             </>
           )}
-        </motion.div>
+        </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: selectedSecretId
-              ? 'repeat(2, 1fr)'
-              : 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '1.25rem',
-          }}
-        >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: selectedSecretId
+            ? 'repeat(2, 1fr)'
+            : 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 1,
+          background: 'var(--color-border)',
+          border: '1px solid var(--color-border)',
+        }}>
           {visibleSecrets.map(secret => (
-            <motion.div
-              key={secret.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <SecretCard secret={secret} project={getProject(secret.projectId)} />
-            </motion.div>
+            <SecretCard key={secret.id} secret={secret} project={getProject(secret.projectId)} />
           ))}
         </div>
       )}

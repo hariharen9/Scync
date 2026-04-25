@@ -1,39 +1,55 @@
 @theme {
-  /* ─── Brand ─── */
-  --color-accent: #7c6af7;
-  --color-accent-hover: #9284ff;
-  --color-accent-dim: #3d3560;
-  --color-accent-glow: oklch(0.65 0.28 280 / 0.25);
+  /* ─── Brutalist Palette ─── */
+  --color-bg: #060606;
+  --color-bg-subtle: #0a0a0a;
+  --color-surface: #0f0f0f;
+  --color-surface-2: #141414;
+  --color-surface-3: #1c1c1c;
+  --color-border: #1e1e1e;
+  --color-border-2: #282828;
+  --color-border-focus: #3a3a3a;
 
-  /* ─── Surfaces ─── */
-  --color-base: #06060a;
-  --color-surface: #0c0c12;
-  --color-elevated: #12121c;
-  --color-hover: #1a1a28;
-  --color-glass: oklch(0.15 0.01 270 / 0.55);
-  --color-glass-border: oklch(0.25 0.01 270 / 0.35);
+  /* ─── Surfaces (keep old aliases for guards) ─── */
+  --color-base: #060606;
+  --color-elevated: #141414;
+  --color-hover: #1c1c1c;
 
   /* ─── Text ─── */
-  --color-text-primary: #ededed;
-  --color-text-secondary: #8b8b9e;
-  --color-text-muted: #44445a;
+  --color-text: #ececec;
+  --color-text-2: #888888;
+  --color-text-3: #444444;
+  --color-text-primary: #ececec;
+  --color-text-secondary: #888888;
+  --color-text-muted: #444444;
 
-  /* ─── Borders ─── */
-  --color-border-subtle: #1a1a28;
-  --color-border-default: #26263a;
-  --color-border-focus: var(--color-accent);
+  /* ─── Borders (keep old aliases) ─── */
+  --color-border-subtle: #1e1e1e;
+  --color-border-default: #282828;
+
+  /* ─── Accent Colors ─── */
+  --color-green: #10b981;
+  --color-green-bg: rgba(16, 185, 129, 0.08);
+  --color-green-border: rgba(16, 185, 129, 0.2);
+  --color-amber: #f59e0b;
+  --color-amber-bg: rgba(245, 158, 11, 0.08);
+  --color-red: #ef4444;
+  --color-red-bg: rgba(239, 68, 68, 0.08);
 
   /* ─── Semantics ─── */
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
   --color-info: #60a5fa;
+  --color-accent: #10b981;
 
   /* ─── Secret values ─── */
-  --color-value-masked: #3a3a4a;
-  --color-value-revealed: #a3e635;
+  --color-value-masked: #444444;
+  --color-value-revealed: #888888;
 
   /* ─── Typography ─── */
-  --font-sans: "Inter", "system-ui", -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "Cascadia Code", "Fira Code", monospace;
+  --font-sans: 'Syne', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* ─── Layout ─── */
+  --sidebar-w: 216px;
 }

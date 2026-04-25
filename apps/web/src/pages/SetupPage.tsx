@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore, useVaultStore } from '@scync/ui';
-import { motion } from 'framer-motion';
-import { FiLock, FiAlertCircle, FiShield, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiLock, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 
 export const SetupPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -25,7 +24,7 @@ export const SetupPage: React.FC = () => {
   })();
 
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'][strength];
-  const strengthColor = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'][strength];
+  const strengthColor = ['', '#ef4444', '#f59e0b', '#eab308', '#10b981', '#10b981'][strength];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,126 +49,157 @@ export const SetupPage: React.FC = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center bg-base p-4">
-      {/* Background effects */}
-      <div className="pointer-events-none absolute inset-0 mesh-gradient" />
-      <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{
-          width: 500,
-          height: 500,
-          background: 'radial-gradient(circle, oklch(0.40 0.22 280 / 0.12), transparent 70%)',
-        }}
-        animate={{ scale: [1, 1.15, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-      />
+    <div style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', position: 'relative', overflow: 'hidden', background: 'var(--color-bg)',
+    }}>
+      {/* Grid background */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)',
+        backgroundSize: '52px 52px',
+        maskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
+        WebkitMaskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
+        opacity: 0.3,
+      }} />
 
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-md"
-      >
-        <div className="rounded-2xl glass p-8">
+      <div style={{
+        position: 'relative', zIndex: 1, width: 400,
+        animation: 'fadeUp .5s cubic-bezier(.16,1,.3,1) both',
+      }}>
+        <div style={{
+          background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
+          padding: 28,
+        }}>
           {/* Header */}
-          <div className="mb-7 flex flex-col items-center">
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200 }}
-              className="mb-8 flex h-40 w-40 items-center justify-center"
-            >
-              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
-            </motion.div>
-            <h2 className="text-xl font-bold text-text-primary">Create Vault Password</h2>
-            <p className="mt-2 max-w-xs text-center text-sm text-text-secondary leading-relaxed">
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{ width: 56, height: 56, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            </div>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, letterSpacing: '-0.03em' }}>
+              Create Vault Password
+            </h2>
+            <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
               This password encrypts your secrets locally.
-              <span className="text-warning"> It cannot be recovered if lost.</span>
+              <span style={{ color: 'var(--color-amber)' }}> It cannot be recovered if lost.</span>
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-4 flex items-center gap-2 rounded-xl bg-danger/10 p-3.5 text-sm text-danger"
-            >
-              <FiAlertCircle className="h-4 w-4 shrink-0" />
-              <p>{error}</p>
-            </motion.div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'var(--color-red-bg)', border: '1px solid rgba(239,68,68,0.2)',
+              padding: '10px 12px', marginBottom: 16, fontSize: 12, color: 'var(--color-red)',
+            }}>
+              <FiAlertCircle size={14} style={{ flexShrink: 0 }} />
+              <p style={{ margin: 0 }}>{error}</p>
+            </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Password Field */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Password */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-secondary">Vault Password</label>
-              <div className="relative">
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 6 }}>
+                Vault Password
+              </label>
+              <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="input-field pr-10"
+                  style={{
+                    width: '100%', background: 'var(--color-surface-2)',
+                    border: '1px solid var(--color-border)', color: 'var(--color-text)',
+                    padding: '9px 36px 9px 12px', fontSize: 13,
+                    fontFamily: 'var(--font-sans)', outline: 'none',
+                    transition: 'border-color 140ms',
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
+                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
                   placeholder="Min 8 characters"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', color: 'var(--color-text-3)',
+                    cursor: 'pointer', display: 'flex', padding: 0,
+                  }}
                 >
-                  {showPassword ? <FiEyeOff className="h-4 w-4" /> : <FiEye className="h-4 w-4" />}
+                  {showPassword ? <FiEyeOff size={14} /> : <FiEye size={14} />}
                 </button>
               </div>
 
               {/* Strength meter */}
               {password && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-2.5"
-                >
-                  <div className="flex gap-1">
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 3 }}>
                     {[1, 2, 3, 4, 5].map(i => (
                       <div
                         key={i}
-                        className="h-1 flex-1 rounded-full transition-all duration-300"
                         style={{
-                          backgroundColor: i <= strength ? strengthColor : 'var(--color-border-subtle)',
+                          height: 3, flex: 1,
+                          background: i <= strength ? strengthColor : 'var(--color-border)',
+                          transition: 'background 200ms',
                         }}
                       />
                     ))}
                   </div>
-                  <p className="mt-1 text-xs" style={{ color: strengthColor }}>{strengthLabel}</p>
-                </motion.div>
+                  <p style={{ fontSize: 10, marginTop: 4, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</p>
+                </div>
               )}
             </div>
 
-            {/* Confirm Field */}
+            {/* Confirm */}
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-text-secondary">Confirm Password</label>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 6 }}>
+                Confirm Password
+              </label>
               <input
                 type="password"
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
-                className="input-field"
+                style={{
+                  width: '100%', background: 'var(--color-surface-2)',
+                  border: '1px solid var(--color-border)', color: 'var(--color-text)',
+                  padding: '9px 12px', fontSize: 13,
+                  fontFamily: 'var(--font-sans)', outline: 'none',
+                  transition: 'border-color 140ms',
+                }}
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
                 placeholder="Confirm password"
               />
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                width: '100%', background: 'white', color: '#080808',
+                border: 'none', padding: '10px 16px', marginTop: 4,
+                fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.5 : 1,
+                transition: 'opacity 140ms',
+              }}
+            >
               {loading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#080808', animation: 'spin 0.7s linear infinite' }} />
               ) : (
                 <>
-                  <FiLock className="h-4 w-4" />
+                  <FiLock size={13} />
                   Create Vault
                 </>
               )}
             </button>
           </form>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

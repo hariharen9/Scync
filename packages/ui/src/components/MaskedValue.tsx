@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { FiCopy, FiEye, FiEyeOff, FiCheck } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useClipboard } from '../hooks/useClipboard';
 
 interface MaskedValueProps {
@@ -53,56 +52,66 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
     copy(value);
   };
 
-  const iconBtnClass = `flex items-center justify-center rounded-lg transition-all duration-200 ${
-    compact ? 'h-6 w-6' : 'h-7 w-7'
-  } text-text-muted hover:bg-hover hover:text-text-secondary`;
+  const iconBtnStyle: React.CSSProperties = {
+    display: 'grid', placeItems: 'center',
+    width: compact ? 22 : 26, height: compact ? 22 : 26,
+    background: 'none', border: 'none',
+    color: 'var(--color-text-3)', cursor: 'pointer',
+    transition: 'color 140ms',
+  };
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <AnimatePresence mode="wait">
-        <motion.code
-          key={revealed ? 'revealed' : 'masked'}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.15 }}
-          className={`font-mono truncate ${compact ? 'text-xs' : 'text-sm'} ${
-            revealed
-              ? 'text-value-revealed'
-              : 'text-text-muted tracking-[0.3em]'
-          }`}
-        >
-          {revealed ? value : '••••••••••••'}
-        </motion.code>
-      </AnimatePresence>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} className={className}>
+      <code style={{
+        fontFamily: 'var(--font-mono)',
+        fontSize: compact ? '11px' : '12.5px',
+        color: revealed ? 'var(--color-text-2)' : 'var(--color-text-3)',
+        letterSpacing: revealed ? '0' : '0.2em',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        flex: 1,
+        transition: 'color 140ms',
+      }}>
+        {revealed ? value : '••••••••••••'}
+      </code>
 
-      <div className="flex items-center gap-0.5 shrink-0">
-        <button onClick={handleCopy} className={iconBtnClass} title="Copy">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+        <button
+          onClick={handleCopy}
+          style={iconBtnStyle}
+          title="Copy"
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+        >
           {hasCopied ? (
-            <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
-              <FiCheck className="text-success" style={{ width: compact ? 12 : 14, height: compact ? 12 : 14 }} />
-            </motion.div>
+            <FiCheck style={{ width: compact ? 11 : 13, height: compact ? 11 : 13, color: 'var(--color-green)' }} />
           ) : (
-            <FiCopy style={{ width: compact ? 12 : 14, height: compact ? 12 : 14 }} />
+            <FiCopy style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
           )}
         </button>
 
-        <button onClick={toggleReveal} className={iconBtnClass} title={revealed ? 'Hide' : 'Reveal'}>
+        <button
+          onClick={toggleReveal}
+          style={iconBtnStyle}
+          title={revealed ? 'Hide' : 'Reveal'}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+        >
           {revealed ? (
-            <FiEyeOff style={{ width: compact ? 12 : 14, height: compact ? 12 : 14 }} />
+            <FiEyeOff style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
           ) : (
-            <FiEye style={{ width: compact ? 12 : 14, height: compact ? 12 : 14 }} />
+            <FiEye style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
           )}
         </button>
 
         {countdown !== null && (
-          <motion.span
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="ml-0.5 rounded bg-elevated px-1 py-0.5 text-[9px] font-mono font-bold text-text-muted"
-          >
+          <span style={{
+            fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 500,
+            color: 'var(--color-text-3)', padding: '1px 4px',
+            background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+            marginLeft: 2,
+          }}>
             {countdown}s
-          </motion.span>
+          </span>
         )}
       </div>
     </div>

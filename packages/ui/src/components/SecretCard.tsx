@@ -6,7 +6,6 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { SERVICE_COLORS } from '@scync/core';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ServiceIcon } from './ServiceIcon';
 
 interface SecretCardProps {
@@ -14,15 +13,23 @@ interface SecretCardProps {
   project?: Project | null;
 }
 
-// Accent color resolver
 const getServiceColor = (service: string, customServices: any[]) => {
   const custom = customServices.find(s => s.name === service);
   if (custom) return custom.color;
-  return SERVICE_COLORS[service as keyof typeof SERVICE_COLORS] || '#7c6af7';
+  return SERVICE_COLORS[service as keyof typeof SERVICE_COLORS] || '#10b981';
+};
+
+const ENV_BADGE_COLORS: Record<string, { bg: string; color: string }> = {
+  'Development': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6' },
+  'Staging': { bg: 'rgba(245,158,11,0.08)', color: '#f59e0b' },
+  'Production': { bg: 'rgba(239,68,68,0.08)', color: '#ef4444' },
+  'Personal': { bg: 'rgba(139,92,246,0.08)', color: '#8b5cf6' },
+  'Work': { bg: 'rgba(59,130,246,0.08)', color: '#3b82f6' },
 };
 
 export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const { decryptValue } = useVaultStore();
   const { customServices } = useServiceStore();
@@ -38,204 +45,160 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const isExpired = secret.expiresOn && secret.expiresOn.getTime() < Date.now();
   const isExpiringSoon = !isExpired && secret.expiresOn && (secret.expiresOn.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
 
-  const borderAccent = getServiceColor(secret.service, customServices);
+  const accentColor = getServiceColor(secret.service, customServices);
+  const envStyle = ENV_BADGE_COLORS[secret.environment] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
 
-  let statusBg = 'rgba(52,211,153,0.12)';
-  let statusText = '#34d399';
-  if (isExpired) { statusBg = 'rgba(248,113,113,0.12)'; statusText = '#f87171'; }
-  else if (isExpiringSoon) { statusBg = 'rgba(251,191,36,0.12)'; statusText = '#fbbf24'; }
-  else if (secret.status === 'Revoked') { statusBg = 'rgba(248,113,113,0.12)'; statusText = '#f87171'; }
+  let statusLabel: string = secret.status;
+  let statusBg = 'var(--color-green-bg)';
+  let statusColor = 'var(--color-green)';
+  if (isExpired) { statusLabel = 'Expired'; statusBg = 'var(--color-red-bg)'; statusColor = 'var(--color-red)'; }
+  else if (isExpiringSoon) { statusLabel = 'Expiring'; statusBg = 'var(--color-amber-bg)'; statusColor = 'var(--color-amber)'; }
+  else if (secret.status === 'Revoked') { statusBg = 'var(--color-red-bg)'; statusColor = 'var(--color-red)'; }
 
   return (
-    <motion.div
-      layout
-      whileHover={{ y: -3, boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}
-      transition={{ duration: 0.2 }}
+    <div
       onClick={() => selectSecret(secret.id)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setMenuOpen(false); }}
       style={{
-        position: 'relative',
-        cursor: 'pointer',
-        borderRadius: '0.875rem',
-        border: '1px solid rgba(255,255,255,0.07)',
-        background: 'rgba(15,15,22,0.85)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
+        position: 'relative', cursor: 'pointer',
+        background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
+        padding: 18, display: 'flex', flexDirection: 'column', gap: 10,
+        transition: 'background 140ms',
       }}
     >
-      {/* Left accent bar */}
-      <div style={{
-        position: 'absolute',
-        top: 0, bottom: 0, left: 0,
-        width: 3,
-        background: borderAccent,
-        opacity: 0.7,
-        borderRadius: '4px 0 0 4px',
-      }} />
-
-      <div style={{ padding: '1.25rem 1.25rem 1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-        {/* Top row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', minWidth: 0, flex: 1 }}>
-            {/* Service badge */}
-            <span style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              alignSelf: 'flex-start',
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              padding: '0.15rem 0.5rem',
-              borderRadius: '0.375rem',
-              background: `${borderAccent}20`,
-              color: borderAccent,
-              border: `1px solid ${borderAccent}30`,
-            }}>
-              <ServiceIcon service={secret.service} size={11} className="text-current" />
-              {secret.service}
-            </span>
-            {/* Name */}
-            <h3 style={{
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              color: '#ededed',
-              margin: 0,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: 1.3,
-            }} title={secret.name}>
-              {secret.name}
-            </h3>
-          </div>
-
-          {/* Context menu */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-              style={{
-                width: 28, height: 28,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: '0.5rem',
-                background: 'transparent',
-                border: 'none',
-                color: '#44445a',
-                cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#8b8b9e'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#44445a'; }}
-            >
-              <FiMoreVertical size={15} />
-            </button>
-
-            <AnimatePresence>
-              {menuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                  transition={{ duration: 0.12 }}
-                  style={{
-                    position: 'absolute', right: 0, top: '100%', zIndex: 100,
-                    marginTop: '0.375rem',
-                    width: 130,
-                    borderRadius: '0.75rem',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: '#1a1a2a',
-                    boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <button
-                    onClick={e => { e.stopPropagation(); setMenuOpen(false); openEditModal(secret.id); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.875rem', fontSize: '0.8125rem', color: '#8b8b9e', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = '#ededed'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = '#8b8b9e'; }}
-                  >
-                    <FiEdit2 size={13} /> Edit
-                  </button>
-                  <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0 0.75rem' }} />
-                  <button
-                    onClick={e => { e.stopPropagation(); setMenuOpen(false); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0.875rem', fontSize: '0.8125rem', color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(248,113,113,0.05)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
-                  >
-                    <FiTrash2 size={13} /> Delete
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Project + Type + Env meta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
-          {project && (
-            <>
-              <span style={{ 
-                fontSize: '0.7rem', 
-                fontWeight: 700, 
-                letterSpacing: '0.05em',
-                color: '#7c6af7',
-                background: 'rgba(124,106,247,0.1)',
-                padding: '0.1rem 0.4rem',
-                borderRadius: '0.4rem',
-                whiteSpace: 'nowrap'
-              }}>
-                {project.name}
-              </span>
-              <span style={{ color: '#2e2e3a', fontWeight: 400 }}>/</span>
-            </>
-          )}
-          <span style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#44445a' }}>
-            {secret.type}
-          </span>
-          <span style={{ color: '#2e2e3a', fontWeight: 400 }}>·</span>
-          <span style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#44445a' }}>
-            {secret.environment}
-          </span>
-        </div>
-
-        {/* Masked value */}
-        <div style={{
-          borderRadius: '0.625rem',
-          background: 'rgba(0,0,0,0.3)',
-          padding: '0.5rem 0.75rem',
-          border: '1px solid rgba(255,255,255,0.05)',
-        }}>
-          <MaskedValue
-            value={decryptedValue || ''}
-            onRevealToggled={handleRevealToggle}
-            compact
-          />
-        </div>
-
-        {/* Bottom: status + expiry */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginTop: 'auto' }}>
-          <span style={{
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            padding: '0.2rem 0.5rem',
-            borderRadius: '0.375rem',
-            background: statusBg,
-            color: statusText,
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0, flex: 1 }}>
+          {/* Service */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+            fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: accentColor,
           }}>
-            {isExpired ? 'Expired' : secret.status}
-          </span>
-          {secret.expiresOn && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', color: isExpiringSoon ? '#fbbf24' : '#44445a' }}>
-              <FiClock size={11} />
-              {secret.expiresOn.toLocaleDateString()}
-            </span>
+            <ServiceIcon service={secret.service} size={10} className="text-current" />
+            {secret.service}
+          </div>
+          {/* Name */}
+          <h3 style={{
+            fontSize: '13.5px', fontWeight: 700, color: 'var(--color-text)',
+            margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            letterSpacing: '-0.01em',
+          }} title={secret.name}>
+            {secret.name}
+          </h3>
+        </div>
+
+        {/* 3-dot menu (visible on hover) */}
+        <div style={{ position: 'relative', flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 140ms' }}>
+          <button
+            onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            style={{
+              width: 26, height: 26, display: 'grid', placeItems: 'center',
+              background: 'none', border: 'none',
+              color: 'var(--color-text-3)', cursor: 'pointer',
+              transition: 'color 140ms',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+          >
+            <FiMoreVertical size={14} />
+          </button>
+
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
+              width: 120, background: 'var(--color-surface-2)',
+              border: '1px solid var(--color-border-2)',
+              boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
+            }}>
+              <button
+                onClick={e => { e.stopPropagation(); setMenuOpen(false); openEditModal(secret.id); }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
+                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+              >
+                <FiEdit2 size={12} /> Edit
+              </button>
+              <div style={{ height: 1, background: 'var(--color-border)' }} />
+              <button
+                onClick={e => { e.stopPropagation(); setMenuOpen(false); }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
+                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'var(--font-sans)', transition: 'background 100ms',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <FiTrash2 size={12} /> Delete
+              </button>
+            </div>
           )}
         </div>
       </div>
-    </motion.div>
+
+      {/* Meta tags */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+        {project && (
+          <>
+            <span style={{
+              fontSize: '9.5px', fontWeight: 600, letterSpacing: '0.05em',
+              color: 'var(--color-green)', background: 'var(--color-green-bg)',
+              border: '1px solid var(--color-green-border)', padding: '1px 5px',
+            }}>
+              {project.name}
+            </span>
+            <span style={{ color: 'var(--color-border-2)', fontSize: 10 }}>/</span>
+          </>
+        )}
+        <span style={{ fontSize: '9.5px', fontWeight: 500, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {secret.type}
+        </span>
+        <span style={{ color: 'var(--color-border-2)', fontSize: 10 }}>·</span>
+        <span style={{
+          fontSize: '9.5px', fontWeight: 600,
+          padding: '1px 5px',
+          background: envStyle.bg, color: envStyle.color,
+          border: `1px solid ${envStyle.color}20`,
+        }}>
+          {secret.environment}
+        </span>
+      </div>
+
+      {/* Masked value */}
+      <div style={{
+        background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+        padding: '6px 10px',
+      }}>
+        <MaskedValue
+          value={decryptedValue || ''}
+          onRevealToggled={handleRevealToggle}
+          compact
+        />
+      </div>
+
+      {/* Bottom: status + expiry */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' }}>
+        <span style={{
+          fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
+          padding: '2px 6px', background: statusBg, color: statusColor,
+        }}>
+          {statusLabel}
+        </span>
+        {secret.expiresOn && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: isExpiringSoon ? 'var(--color-amber)' : 'var(--color-text-3)' }}>
+            <FiClock size={10} />
+            {secret.expiresOn.toLocaleDateString()}
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
