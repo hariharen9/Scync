@@ -145,6 +145,9 @@ export const UnlockPage: React.FC = () => {
                 </>
               )}
             </button>
+            <p style={{ fontSize: 10, color: 'var(--color-text-3)', textAlign: 'center', marginTop: 4 }}>
+              Zero-knowledge vault. Lost passwords <span style={{ color: 'var(--color-amber)' }}>cannot</span> be recovered.
+            </p>
           </form>
 
           {/* Sign out */}

@@ -101,3 +101,21 @@
   --color-value-masked: #444444;
   --color-value-revealed: #888888;
 }
+
+/* Brutalist Scrollbar Utility */
+.brutalist-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.brutalist-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.brutalist-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 0;
+}
+
+.brutalist-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-3);
+}

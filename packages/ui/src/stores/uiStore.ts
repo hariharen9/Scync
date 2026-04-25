@@ -43,6 +43,7 @@ export interface UIState {
   isAddServiceModalOpen: boolean;
   isAboutModalOpen: boolean;
   isSettingsModalOpen: boolean;
+  isCommandBarOpen: boolean;
   confirmConfig: ConfirmConfig | null;
   
   settings: SettingsConfig;
@@ -67,6 +68,8 @@ export interface UIState {
   closeAboutModal: () => void;
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
+  openCommandBar: () => void;
+  closeCommandBar: () => void;
   openConfirmModal: (config: ConfirmConfig) => void;
   closeConfirmModal: () => void;
   updateSettings: (partial: Partial<SettingsConfig>) => void;
@@ -102,6 +105,7 @@ export const useUIStore = create<UIState>((set) => ({
   isAddServiceModalOpen: false,
   isAboutModalOpen: false,
   isSettingsModalOpen: false,
+  isCommandBarOpen: false,
   confirmConfig: null,
   isMobileMenuOpen: false,
   
@@ -126,6 +130,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeAboutModal: () => set({ isAboutModalOpen: false }),
   openSettingsModal: () => set({ isSettingsModalOpen: true, isMobileMenuOpen: false }),
   closeSettingsModal: () => set({ isSettingsModalOpen: false }),
+  openCommandBar: () => set({ isCommandBarOpen: true, isMobileMenuOpen: false }),
+  closeCommandBar: () => set({ isCommandBarOpen: false }),
   openConfirmModal: (config) => set({ confirmConfig: config }),
   closeConfirmModal: () => set({ confirmConfig: null }),
   

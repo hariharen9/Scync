@@ -1,3 +1,4 @@
+// UI Components and Stores
 export * from './stores/authStore';
 export * from './stores/vaultStore';
 export * from './stores/uiStore';
@@ -6,6 +7,7 @@ export * from './stores/serviceStore';
 
 export * from './components/AuthGuard';
 export * from './components/VaultGuard';
+export * from './components/CommandBar';
 export * from './components/Dropdown';
 export * from './components/MaskedValue';
 export * from './components/SecretCard';

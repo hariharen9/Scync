@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { AuthGuard, VaultGuard, useUIStore } from '@scync/ui';
+import React, { useEffect } from 'react'; // Re-evaluating imports
+import { AuthGuard, VaultGuard, useUIStore, CommandBar } from '@scync/ui';
 import { AuthPage } from './pages/AuthPage';
 import { SetupPage } from './pages/SetupPage';
 import { UnlockPage } from './pages/UnlockPage';
@@ -7,7 +7,20 @@ import { VaultPage } from './pages/VaultPage';
 import { ReactLenis } from 'lenis/react';
 
 const App: React.FC = () => {
-  const { settings } = useUIStore();
+  const { settings, openCommandBar, isCommandBarOpen, closeCommandBar } = useUIStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (isCommandBarOpen) closeCommandBar();
+        else openCommandBar();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCommandBarOpen, openCommandBar, closeCommandBar]);
 
   useEffect(() => {
     const applyTheme = (theme: 'light' | 'dark' | 'system') => {
@@ -33,6 +46,7 @@ const App: React.FC = () => {
           unlockFallback={<UnlockPage />}
         >
           <VaultPage />
+          <CommandBar />
         </VaultGuard>
       </AuthGuard>
     </ReactLenis>

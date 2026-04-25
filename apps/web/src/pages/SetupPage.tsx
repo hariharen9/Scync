@@ -80,9 +80,14 @@ export const SetupPage: React.FC = () => {
               Create Vault Password
             </h2>
             <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
-              This password encrypts your secrets locally.
-              <span style={{ color: 'var(--color-amber)' }}> It cannot be recovered if lost.</span>
+              This password encrypts your secrets locally using AES-256-GCM.
             </p>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: 4, display: 'flex', gap: 10, alignItems: 'center' }}>
+              <FiAlertCircle size={14} color="var(--color-amber)" style={{ flexShrink: 0 }} />
+              <p style={{ fontSize: 11, color: 'var(--color-amber)', margin: 0, fontWeight: 500, lineHeight: 1.4 }}>
+                This password MUST be remembered. There is NO recovery if forgotten.
+              </p>
+            </div>
           </div>
 
           {/* Error */}
