@@ -1,5 +1,70 @@
 @theme {
-  /* ─── Brutalist Palette ─── */
+  /* ─── Typography ─── */
+  --font-sans: 'Syne', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* ─── Layout ─── */
+  --sidebar-w: 216px;
+
+  /* Map Tailwind classes to dynamic CSS variables */
+  --color-bg: var(--color-bg);
+  --color-bg-subtle: var(--color-bg-subtle);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-border: var(--color-border);
+  --color-border-2: var(--color-border-2);
+  --color-border-focus: var(--color-border-focus);
+  --color-text: var(--color-text);
+  --color-text-2: var(--color-text-2);
+  --color-text-3: var(--color-text-3);
+  --color-text-muted: var(--color-text-muted);
+  --color-green: var(--color-green);
+  --color-green-bg: var(--color-green-bg);
+  --color-green-border: var(--color-green-border);
+}
+
+:root {
+  /* LIGHT MODE (BRUTALIST) */
+  --color-bg: #fdfdfd;
+  --color-bg-subtle: #f4f4f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-surface-3: #e4e4e7;
+  --color-border: #d4d4d8;
+  --color-border-2: #a1a1aa;
+  --color-border-focus: #71717a;
+
+  --color-text: #09090b;
+  --color-text-2: #3f3f46;
+  --color-text-3: #71717a;
+  --color-text-primary: #09090b;
+  --color-text-secondary: #3f3f46;
+  --color-text-muted: #71717a;
+
+  --color-border-subtle: #e4e4e7;
+  --color-border-default: #d4d4d8;
+
+  --color-green: #059669;
+  --color-green-bg: rgba(16, 185, 129, 0.1);
+  --color-green-border: rgba(16, 185, 129, 0.3);
+  --color-amber: #d97706;
+  --color-amber-bg: rgba(245, 158, 11, 0.1);
+  --color-red: #dc2626;
+  --color-red-bg: rgba(239, 68, 68, 0.1);
+
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-info: #3b82f6;
+  --color-accent: #059669;
+
+  --color-value-masked: #a1a1aa;
+  --color-value-revealed: #3f3f46;
+}
+
+.dark {
+  /* DARK MODE (CURRENT MVP) */
   --color-bg: #060606;
   --color-bg-subtle: #0a0a0a;
   --color-surface: #0f0f0f;
@@ -9,12 +74,6 @@
   --color-border-2: #282828;
   --color-border-focus: #3a3a3a;
 
-  /* ─── Surfaces (keep old aliases for guards) ─── */
-  --color-base: #060606;
-  --color-elevated: #141414;
-  --color-hover: #1c1c1c;
-
-  /* ─── Text ─── */
   --color-text: #ececec;
   --color-text-2: #888888;
   --color-text-3: #444444;
@@ -22,11 +81,9 @@
   --color-text-secondary: #888888;
   --color-text-muted: #444444;
 
-  /* ─── Borders (keep old aliases) ─── */
   --color-border-subtle: #1e1e1e;
   --color-border-default: #282828;
 
-  /* ─── Accent Colors ─── */
   --color-green: #10b981;
   --color-green-bg: rgba(16, 185, 129, 0.08);
   --color-green-border: rgba(16, 185, 129, 0.2);
@@ -35,21 +92,12 @@
   --color-red: #ef4444;
   --color-red-bg: rgba(239, 68, 68, 0.08);
 
-  /* ─── Semantics ─── */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --color-info: #60a5fa;
   --color-accent: #10b981;
 
-  /* ─── Secret values ─── */
   --color-value-masked: #444444;
   --color-value-revealed: #888888;
-
-  /* ─── Typography ─── */
-  --font-sans: 'Syne', system-ui, -apple-system, sans-serif;
-  --font-mono: 'DM Mono', 'Cascadia Code', 'Fira Code', monospace;
-
-  /* ─── Layout ─── */
-  --sidebar-w: 216px;
 }

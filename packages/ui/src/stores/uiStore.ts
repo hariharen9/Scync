@@ -12,11 +12,13 @@ export interface ConfirmConfig {
 export interface SettingsConfig {
   inactivityLockMinutes: number | null; // null means never
   windowBlurLock: boolean;
+  theme: 'light' | 'dark' | 'system';
 }
 
 const DEFAULT_SETTINGS: SettingsConfig = {
   inactivityLockMinutes: 15,
   windowBlurLock: false,
+  theme: 'system'
 };
 
 const getStoredSettings = (): SettingsConfig => {

@@ -123,7 +123,7 @@ export const SettingsModal: React.FC = () => {
                     marginBottom: -1, fontSize: 13, fontFamily: 'var(--font-sans)', transition: 'all 0.2s'
                   }}
                 >
-                  Security
+                  General & Security
                 </button>
                 <button
                   disabled={isSubmitting}
@@ -142,6 +142,21 @@ export const SettingsModal: React.FC = () => {
               {/* Security Tab */}
               {activeTab === 'security' && (
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <div style={{ marginBottom: 28 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Appearance</h3>
+                    <Dropdown
+                      options={[
+                        { value: 'dark', label: 'Dark Mode' },
+                        { value: 'light', label: 'Light Mode' },
+                        { value: 'system', label: 'System Default' }
+                      ]}
+                      value={settings.theme}
+                      onChange={(val) => updateSettings({ theme: val as any })}
+                    />
+                  </div>
+                  
+                  <div style={{ height: 1, background: 'var(--color-border)', margin: '24px 0' }} />
+
                   <div style={{ marginBottom: 28 }}>
                     <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text)' }}>
                       <FiLock size={13} /> Inactivity Auto-Lock
