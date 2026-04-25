@@ -77,9 +77,9 @@ export const SetupPage: React.FC = () => {
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200 }}
-              className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-bg accent-glow-sm"
+              className="mb-8 flex h-40 w-40 items-center justify-center"
             >
-              <FiShield className="h-6 w-6 text-white" />
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
             </motion.div>
             <h2 className="text-xl font-bold text-text-primary">Create Vault Password</h2>
             <p className="mt-2 max-w-xs text-center text-sm text-text-secondary leading-relaxed">

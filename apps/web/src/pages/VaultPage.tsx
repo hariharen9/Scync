@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useAuthStore, useVaultStore, useProjectStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal } from '@scync/ui';
+import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -14,7 +14,8 @@ export const VaultPage: React.FC = () => {
     if (!user) return;
     const unsubSecrets = subscribeToSecrets(user.uid);
     const unsubProjects = subscribeToProjects(user.uid);
-    return () => { unsubSecrets(); unsubProjects(); };
+    const unsubServices = useServiceStore.getState().subscribeToServices(user.uid);
+    return () => { unsubSecrets(); unsubProjects(); unsubServices(); };
   }, [user, subscribeToSecrets, subscribeToProjects]);
 
   return (
@@ -53,14 +54,8 @@ export const VaultPage: React.FC = () => {
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.25rem' }}>
-            <div style={{
-              width: 28, height: 28,
-              borderRadius: '0.5rem',
-              background: 'linear-gradient(135deg, oklch(0.55 0.25 280) 0%, oklch(0.50 0.20 300) 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 12px oklch(0.55 0.25 280 / 0.35)',
-            }}>
-              <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>S</span>
+            <div style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="/logo.png" alt="Scync Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#ededed' }} className="hidden sm:inline">Scync</span>
             <span style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0.15rem 0.4rem', borderRadius: '0.375rem', background: 'rgba(124,106,247,0.15)', color: '#7c6af7', border: '1px solid rgba(124,106,247,0.25)' }} className="hidden sm:inline">BETA</span>
@@ -179,6 +174,7 @@ export const VaultPage: React.FC = () => {
       <AddEditModal />
       <EnvImportModal />
       <AddProjectModal />
+      <AddServiceModal />
     </div>
   );
 };

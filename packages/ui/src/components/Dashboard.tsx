@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
 import { useVaultStore } from '../stores/vaultStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { getAttentionSecrets } from '@scync/core';
 import type { StoredSecret } from '@scync/core';
 import { motion } from 'framer-motion';
 import {
-  FiShield, FiAlertTriangle, FiRefreshCw, FiPlus, FiKey,
-  FiUploadCloud, FiFolder, FiClock, FiChevronRight,
+  FiAlertTriangle, FiRefreshCw, FiPlus, FiKey,
+  FiUploadCloud, FiFolder, FiChevronRight,
   FiActivity, FiLayers, FiGlobe, FiLock
 } from 'react-icons/fi';
 
@@ -200,7 +201,16 @@ const TimelineItem: React.FC<{ secret: StoredSecret; isLast: boolean }> = ({ sec
 export const Dashboard: React.FC = () => {
   const { storedSecrets } = useVaultStore();
   const { projects } = useProjectStore();
+  const { customServices } = useServiceStore();
   const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView } = useUIStore();
+
+  const serviceColorMap = useMemo(() => {
+    const map = { ...SERVICE_COLORS };
+    customServices.forEach(s => {
+      map[s.name] = s.color;
+    });
+    return map;
+  }, [customServices]);
 
   const attention = useMemo(() => getAttentionSecrets(storedSecrets), [storedSecrets]);
 
@@ -405,7 +415,7 @@ export const Dashboard: React.FC = () => {
             <div style={sectionTitle}><FiLayers size={12} /> Services</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
               {serviceBreakdown.slice(0, 8).map(([svc, count]) => (
-                <HBar key={svc} label={svc} count={count} max={maxService} color={SERVICE_COLORS[svc] || '#7c6af7'} />
+                <HBar key={svc} label={svc} count={count} max={maxService} color={serviceColorMap[svc] || '#7c6af7'} />
               ))}
             </div>
           </div>

@@ -4,6 +4,7 @@ import {
   SERVICES, SECRET_TYPES, ENVIRONMENTS
 } from '@scync/core';
 import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { DatePicker } from './DatePicker';
@@ -54,7 +55,8 @@ const toOptions = (arr: readonly string[]): DropdownOption[] =>
 
 export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting }) => {
   const { projects } = useProjectStore();
-  const { openAddProjectModal } = useUIStore();
+  const { customServices } = useServiceStore();
+  const { openAddProjectModal, openAddServiceModal } = useUIStore();
 
   const [formData, setFormData] = useState<SecretFormData>({
     name: initialData?.name || '',
@@ -84,6 +86,16 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
   const projectOptions: DropdownOption[] = [
     { value: '', label: 'Uncategorized' },
     ...projects.map(p => ({ value: p.id, label: p.name, icon: <span>{p.icon || '📁'}</span> })),
+  ];
+
+  const serviceOptions: DropdownOption[] = [
+    ...toOptions(SERVICES),
+    ...customServices.map(s => ({ 
+      value: s.name, 
+      label: s.name, 
+      icon: <span style={{ fontSize: '1.1rem' }}>{s.icon || '🌐'}</span>,
+      description: 'Custom Service'
+    })),
   ];
 
   return (
@@ -149,9 +161,10 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
         />
         <Dropdown
           label="Service"
-          options={toOptions(SERVICES)}
+          labelAction={{ label: '+ Add New', onClick: openAddServiceModal }}
+          options={serviceOptions}
           value={formData.service}
-          onChange={v => setFormData(p => ({ ...p, service: v as any }))}
+          onChange={v => setFormData(p => ({ ...p, service: v }))}
         />
         <Dropdown
           label="Type"

@@ -3,7 +3,9 @@ import { FiMoreVertical, FiEdit2, FiTrash2, FiClock } from 'react-icons/fi';
 import { type StoredSecret, type Project } from '@scync/core';
 import { MaskedValue } from './MaskedValue';
 import { useVaultStore } from '../stores/vaultStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
+import { SERVICE_COLORS } from '@scync/core';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SecretCardProps {
@@ -11,25 +13,18 @@ interface SecretCardProps {
   project?: Project | null;
 }
 
-// Service → accent color mapping for the left border
-const SERVICE_BORDER_COLORS: Record<string, string> = {
-  'AWS': '#f59e0b',
-  'GCP': '#4285f4',
-  'Azure': '#0089d6',
-  'GitHub': '#f0f6fc',
-  'Stripe': '#635bff',
-  'OpenAI': '#74aa9c',
-  'Vercel': '#ffffff',
-  'Supabase': '#3ecf8e',
-  'Firebase': '#ffa000',
-  'Database': '#06b6d4',
-  'Other': '#7c6af7',
+// Accent color resolver
+const getServiceColor = (service: string, customServices: any[]) => {
+  const custom = customServices.find(s => s.name === service);
+  if (custom) return custom.color;
+  return SERVICE_COLORS[service as keyof typeof SERVICE_COLORS] || '#7c6af7';
 };
 
 export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const { decryptValue } = useVaultStore();
+  const { customServices } = useServiceStore();
   const { openEditModal, selectSecret } = useUIStore();
 
   const handleRevealToggle = async (revealed: boolean) => {
@@ -42,7 +37,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const isExpired = secret.expiresOn && secret.expiresOn.getTime() < Date.now();
   const isExpiringSoon = !isExpired && secret.expiresOn && (secret.expiresOn.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
 
-  const borderAccent = SERVICE_BORDER_COLORS[secret.service] || SERVICE_BORDER_COLORS['Other'];
+  const borderAccent = getServiceColor(secret.service, customServices);
 
   let statusBg = 'rgba(52,211,153,0.12)';
   let statusText = '#34d399';

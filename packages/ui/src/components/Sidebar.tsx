@@ -1,16 +1,20 @@
 import React from 'react';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus } from 'react-icons/fi';
-import { useUIStore } from '../stores/uiStore';
+import { useUIStore, type UIState } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { useVaultStore } from '../stores/vaultStore';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiLayers } from 'react-icons/fi';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal } = useUIStore();
   const { projects, selectedProjectId, selectProject } = useProjectStore();
   const { storedSecrets } = useVaultStore();
 
-  const handleNav = (view: any) => {
+  const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
+    if (view === 'all') {
+      setFilter({ service: '', search: '', type: '', environment: '', status: '' });
+    }
     closeMobileMenu();
   };
 
@@ -20,8 +24,19 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     closeMobileMenu();
   };
 
+  const handleServiceNav = (name: string) => {
+    setActiveView('all');
+    setFilter({ service: name });
+    closeMobileMenu();
+  };
+
   const getProjectCount = (id: string | null) =>
     storedSecrets.filter(s => s.projectId === id).length;
+
+  const getServiceCount = (name: string) =>
+    storedSecrets.filter(s => s.service === name).length;
+
+  const { customServices } = useServiceStore();
 
   const navItems = [
     { id: 'dashboard' as const, icon: FiGrid, label: 'Dashboard' },
@@ -174,6 +189,38 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
               </button>
             );
           })()}
+        </div>
+
+        {/* Services section */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '1.5rem 0 1rem' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem', padding: '0 0.25rem' }}>
+          <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#44445a' }}>
+            Services
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', paddingBottom: '1.5rem' }}>
+          {/* Group and count services from existing secrets + custom services */}
+          {[...new Set([...storedSecrets.map(s => s.service), ...customServices.map(s => s.name)])].sort().map(svc => {
+            const isActive = activeView === 'all' && filter.service === svc;
+            const custom = customServices.find(cs => cs.name === svc);
+            return (
+              <button
+                key={svc}
+                onClick={() => handleServiceNav(svc)}
+                style={navBtnStyle(isActive)}
+                onMouseEnter={e => { if (!isActive) { (e.currentTarget).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget).style.color = '#ededed'; } }}
+                onMouseLeave={e => { if (!isActive) { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = '#8b8b9e'; } }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
+                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>{custom?.icon || <FiLayers size={14} />}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc}</span>
+                </div>
+                <span style={countBadgeStyle(isActive)}>{getServiceCount(svc)}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

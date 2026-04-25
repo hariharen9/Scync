@@ -233,6 +233,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           {open && (
              <motion.div
                ref={menuRef}
+               data-lenis-prevent="true"
                initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
                animate={{ opacity: 1, y: 0, scaleY: 1 }}
                exit={{ opacity: 0, y: -6, scaleY: 0.95 }}

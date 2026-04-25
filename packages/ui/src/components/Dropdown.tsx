@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { FiCheck, FiChevronDown } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -30,15 +31,44 @@ export const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
-  const ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
 
   const selected = options.find(o => o.value === value);
+
+  const updateCoords = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.top + rect.height + 6,
+        left: rect.left,
+        width: rect.width
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const isInsideTrigger = containerRef.current && containerRef.current.contains(e.target as Node);
+      const isInsideMenu = menuRef.current && menuRef.current.contains(e.target as Node);
+      
+      if (!isInsideTrigger && !isInsideMenu) {
         setOpen(false);
         setFocusedIndex(-1);
       }
@@ -72,7 +102,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   useEffect(() => {
     if (focusedIndex >= 0 && listRef.current) {
       const items = listRef.current.querySelectorAll('[data-option]');
-      items[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+      (items[focusedIndex] as HTMLElement)?.scrollIntoView({ block: 'nearest' });
     }
   }, [focusedIndex]);
 
@@ -101,11 +131,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
   };
 
   const menuStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 'calc(100% + 6px)',
-    left: 0,
-    minWidth: '100%',
-    zIndex: 999,
+    position: 'fixed',
+    top: coords.top,
+    left: coords.left,
+    width: coords.width,
+    minWidth: 160,
+    zIndex: 9999,
     borderRadius: '0.75rem',
     border: '1px solid rgba(255,255,255,0.1)',
     background: 'rgba(18,18,28,0.97)',
@@ -116,10 +147,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
     overflowY: 'auto',
     scrollbarWidth: 'thin',
     scrollbarColor: '#26263a transparent',
+    transformOrigin: 'top',
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%' }} ref={ref}>
+    <div style={{ position: 'relative', width: '100%' }} ref={containerRef}>
       {label && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
           <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8b8b9e' }}>
@@ -139,6 +171,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
       {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         role="combobox"
         aria-expanded={open}
@@ -161,82 +194,86 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </motion.span>
       </button>
 
-      {/* Dropdown Menu */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            data-lenis-prevent="true"
-            initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
-            animate={{ opacity: 1, y: 0, scaleY: 1 }}
-            exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
-            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            style={{ ...menuStyle, transformOrigin: 'top' }}
-            ref={listRef}
-          >
-            <div style={{ padding: '0.375rem' }}>
-              {options.map((option, idx) => {
-                const isSelected = option.value === value;
-                const isFocused = idx === focusedIndex;
+      {/* Dropdown Menu (via Portal) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              ref={menuRef}
+              data-lenis-prevent="true"
+              initial={{ opacity: 0, y: -6, scaleY: 0.95 }}
+              animate={{ opacity: 1, y: 0, scaleY: 1 }}
+              exit={{ opacity: 0, y: -6, scaleY: 0.95 }}
+              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              style={menuStyle}
+            >
+              <div ref={listRef} style={{ padding: '0.375rem' }}>
+                {options.map((option, idx) => {
+                  const isSelected = option.value === value;
+                  const isFocused = idx === focusedIndex;
 
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    data-option
-                    onClick={() => { onChange(option.value); setOpen(false); setFocusedIndex(-1); }}
-                    onMouseEnter={() => setFocusedIndex(idx)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '0.5rem',
-                      padding: isSm ? '0.4rem 0.625rem' : '0.5rem 0.75rem',
-                      borderRadius: '0.5rem',
-                      border: 'none',
-                      background: isSelected
-                        ? 'rgba(124,106,247,0.15)'
-                        : isFocused
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'transparent',
-                      color: isSelected ? '#7c6af7' : isFocused ? '#ededed' : '#8b8b9e',
-                      fontSize: isSm ? '0.8rem' : '0.875rem',
-                      fontWeight: isSelected ? 600 : 400,
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontFamily: 'inherit',
-                      transition: 'background 0.1s, color 0.1s',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                      {option.icon && <span style={{ flexShrink: 0 }}>{option.icon}</span>}
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ whiteSpace: 'nowrap' }}>
-                          {option.label}
-                        </div>
-                        {option.description && (
-                          <div style={{ fontSize: '0.7rem', color: '#44445a', marginTop: '0.1rem' }}>
-                            {option.description}
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      data-option
+                      onClick={() => { onChange(option.value); setOpen(false); setFocusedIndex(-1); }}
+                      onMouseEnter={() => setFocusedIndex(idx)}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '0.5rem',
+                        padding: isSm ? '0.4rem 0.625rem' : '0.5rem 0.75rem',
+                        borderRadius: '0.5rem',
+                        border: 'none',
+                        background: isSelected
+                          ? 'rgba(124,106,247,0.15)'
+                          : isFocused
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'transparent',
+                        color: isSelected ? '#7c6af7' : isFocused ? '#ededed' : '#8b8b9e',
+                        fontSize: isSm ? '0.8rem' : '0.875rem',
+                        fontWeight: isSelected ? 600 : 400,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'inherit',
+                        transition: 'background 0.1s, color 0.1s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                        {option.icon && <span style={{ flexShrink: 0 }}>{option.icon}</span>}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ whiteSpace: 'nowrap' }}>
+                            {option.label}
                           </div>
-                        )}
+                          {option.description && (
+                            <div style={{ fontSize: '0.7rem', color: '#44445a', marginTop: '0.1rem' }}>
+                              {option.description}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    {isSelected && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        style={{ color: '#7c6af7', flexShrink: 0 }}
-                      >
-                        <FiCheck size={13} />
-                      </motion.span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                      {isSelected && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          style={{ color: '#7c6af7', flexShrink: 0 }}
+                        >
+                          <FiCheck size={13} />
+                        </motion.span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
+

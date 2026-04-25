@@ -75,8 +75,8 @@ export const AuthPage: React.FC = () => {
           className="mb-8 flex flex-col items-center"
         >
           <div className="relative mb-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-bg shadow-lg accent-glow">
-              <FiLock className="h-7 w-7 text-white" />
+            <div className="flex h-48 w-48 items-center justify-center">
+              <img src="/logo.png" alt="Scync" className="h-full w-full object-contain" />
             </div>
             <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-base bg-success" />
           </div>

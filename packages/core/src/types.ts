@@ -43,25 +43,16 @@ export interface SecretFormData {
   projectId?: string | null;
 }
 
-export type ServiceName =
-  | 'Google'
-  | 'Anthropic'
-  | 'GitHub'
-  | 'OpenRouter'
-  | 'AWS'
-  | 'Vercel'
-  | 'Stripe'
-  | 'Cloudflare'
-  | 'Supabase'
-  | 'OpenAI'
-  | 'HuggingFace'
-  | 'Twilio'
-  | 'SendGrid'
-  | 'Netlify'
-  | 'Railway'
-  | 'PlanetScale'
-  | 'Neon'
-  | 'Other';
+export type ServiceName = string;
+
+export interface CustomService {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export type SecretType =
   | 'API Key'

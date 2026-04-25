@@ -6,7 +6,7 @@ import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
-  Project, EncryptedField
+  Project, EncryptedField, CustomService
 } from './types';
 
 // Vault Meta
@@ -191,5 +191,40 @@ export function subscribeToProjects(
       } as Project;
     });
     callback(projects);
+  });
+}
+
+export async function createService(
+  uid: string, 
+  data: Omit<CustomService, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<void> {
+  const servicesRef = collection(db, "users", uid, "services");
+  const newRef = doc(servicesRef);
+  
+  await setDoc(newRef, {
+    ...data,
+    id: newRef.id,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export function subscribeToServices(
+  uid: string, 
+  callback: (services: CustomService[]) => void
+): () => void {
+  const servicesRef = collection(db, "users", uid, "services");
+  
+  return onSnapshot(servicesRef, (snapshot) => {
+    const services = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as CustomService;
+    });
+    callback(services);
   });
 }

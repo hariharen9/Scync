@@ -1,31 +1,26 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../stores/authStore';
-import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { Dropdown } from './Dropdown';
-import type { ProjectColor } from '@scync/core';
-import { FiFolderPlus, FiX } from 'react-icons/fi';
+import { FiPlus, FiX } from 'react-icons/fi';
 
-const PROJECT_COLORS: ProjectColor[] = [
-  'violet', 'blue', 'green', 'orange', 'red', 'pink', 'yellow', 'gray'
+const SERVICE_COLORS = [
+  { value: '#7c6af7', label: 'Violet' },
+  { value: '#3b82f6', label: 'Blue' },
+  { value: '#10b981', label: 'Emerald' },
+  { value: '#f59e0b', label: 'Amber' },
+  { value: '#ef4444', label: 'Rose' },
+  { value: '#ec4899', label: 'Pink' },
+  { value: '#8b5cf6', label: 'Purple' },
+  { value: '#64748b', label: 'Slate' },
 ];
 
-const PROJECT_COLOR_MAP: Record<ProjectColor, string> = {
-  violet: '#7c6af7',
-  blue: '#3b82f6',
-  green: '#10b981',
-  orange: '#f59e0b',
-  red: '#ef4444',
-  pink: '#ec4899',
-  yellow: '#eab308',
-  gray: '#6b7280',
-};
-
-const colorOptions = PROJECT_COLORS.map(c => ({
-  value: c,
-  label: c.charAt(0).toUpperCase() + c.slice(1),
-  icon: <div style={{ width: 12, height: 12, borderRadius: '50%', background: PROJECT_COLOR_MAP[c] }} />
+const colorOptions = SERVICE_COLORS.map(c => ({
+  value: c.value,
+  label: c.label,
+  icon: <div style={{ width: 12, height: 12, borderRadius: '50%', background: c.value }} />
 }));
 
 const inputStyle: React.CSSProperties = {
@@ -52,27 +47,25 @@ const labelStyle: React.CSSProperties = {
   marginBottom: '0.5rem',
 };
 
-export const AddProjectModal: React.FC = () => {
-  const { isAddProjectModalOpen, closeAddProjectModal } = useUIStore();
-  const { createProject } = useProjectStore();
+export const AddServiceModal: React.FC = () => {
+  const { isAddServiceModalOpen, closeAddServiceModal } = useUIStore();
+  const { createService } = useServiceStore();
   const { user } = useAuthStore();
 
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [icon, setIcon] = useState('📁');
-  const [color, setColor] = useState<ProjectColor>('violet');
+  const [icon, setIcon] = useState('🌐');
+  const [color, setColor] = useState(SERVICE_COLORS[0].value);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
 
   const resetForm = () => {
     setName('');
-    setDescription('');
-    setIcon('📁');
-    setColor('violet');
+    setIcon('🌐');
+    setColor(SERVICE_COLORS[0].value);
   };
 
   const handleClose = () => {
-    closeAddProjectModal();
+    closeAddServiceModal();
     setTimeout(resetForm, 250);
   };
 
@@ -82,10 +75,9 @@ export const AddProjectModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await createProject(user.uid, {
+      await createService(user.uid, {
         name: name.trim(),
-        description: description.trim(),
-        icon: icon.trim() || '📁',
+        icon: icon.trim() || '🌐',
         color,
       });
       handleClose();
@@ -102,8 +94,8 @@ export const AddProjectModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      {isAddProjectModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      {isAddServiceModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 350, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -121,7 +113,7 @@ export const AddProjectModal: React.FC = () => {
             style={{
               position: 'relative',
               width: '100%',
-              maxWidth: 420,
+              maxWidth: 400,
               borderRadius: '1.25rem',
               border: '1px solid rgba(255,255,255,0.1)',
               background: 'rgba(15,15,22,0.95)',
@@ -134,11 +126,11 @@ export const AddProjectModal: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
                 <div style={{ width: 36, height: 36, borderRadius: '0.625rem', background: 'rgba(124,106,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <FiFolderPlus size={16} color="#7c6af7" />
+                  <FiPlus size={16} color="#7c6af7" />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#ededed', margin: 0 }}>Add New Project</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#8b8b9e', margin: '0.2rem 0 0 0' }}>Organize your vaults better</p>
+                  <h2 style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#ededed', margin: 0 }}>Add Custom Service</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#8b8b9e', margin: '0.2rem 0 0 0' }}>For provider not in our list</p>
                 </div>
               </div>
               <button
@@ -150,19 +142,19 @@ export const AddProjectModal: React.FC = () => {
             </div>
 
             {/* Body */}
-            <div data-lenis-prevent="true" style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto' }}>
+            <div style={{ padding: '1.5rem' }}>
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.125rem' }}>
                 <div>
-                  <label style={labelStyle}>Project Name</label>
+                  <label style={labelStyle}>Service Name</label>
                   <input
                     required
-                    maxLength={32}
+                    maxLength={24}
                     value={name}
                     onChange={e => setName(e.target.value)}
                     onFocus={() => setFocused('name')}
                     onBlur={() => setFocused(null)}
                     style={{ ...inputStyle, ...focusedBorder('name') }}
-                    placeholder="e.g. Scync V2, Personal"
+                    placeholder="e.g. MyLocalDB, Internal API"
                     autoFocus
                   />
                 </div>
@@ -182,26 +174,12 @@ export const AddProjectModal: React.FC = () => {
                   </div>
                   <div>
                     <Dropdown
-                      label="Color"
+                      label="Theme Color"
                       options={colorOptions}
                       value={color}
-                      onChange={v => setColor(v as ProjectColor)}
+                      onChange={v => setColor(v)}
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label style={labelStyle}>Description <span style={{ opacity: 0.4 }}>(Optional)</span></label>
-                  <textarea
-                    maxLength={100}
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    onFocus={() => setFocused('description')}
-                    onBlur={() => setFocused(null)}
-                    rows={2}
-                    style={{ ...inputStyle, resize: 'none', ...focusedBorder('description') }}
-                    placeholder="A short description..."
-                  />
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.625rem', paddingTop: '0.5rem' }}>
@@ -221,7 +199,7 @@ export const AddProjectModal: React.FC = () => {
                   >
                     {isSubmitting ? (
                       <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', animation: 'spin 0.7s linear infinite' }} />
-                    ) : 'Create Project'}
+                    ) : 'Add Service'}
                   </button>
                 </div>
               </form>

@@ -5,8 +5,8 @@ import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import { useProjectStore } from '../stores/projectStore';
 import { Dropdown } from './Dropdown';
-import { FiUploadCloud, FiCheck, FiAlertCircle, FiFileText, FiCode, FiX, FiFolder } from 'react-icons/fi';
-import { ENVIRONMENTS, Environment } from '@scync/core';
+import { FiUploadCloud, FiCheck, FiAlertCircle, FiFileText, FiCode, FiX } from 'react-icons/fi';
+import { ENVIRONMENTS, type Environment } from '@scync/core';
 
 export const EnvImportModal: React.FC = () => {
   const { isEnvImportModalOpen, closeEnvImportModal, openAddProjectModal } = useUIStore();

@@ -2,6 +2,7 @@ export * from './stores/authStore';
 export * from './stores/vaultStore';
 export * from './stores/uiStore';
 export * from './stores/projectStore';
+export * from './stores/serviceStore';
 
 export * from './components/AuthGuard';
 export * from './components/VaultGuard';
@@ -17,3 +18,4 @@ export * from './components/AddEditModal';
 export * from './components/EnvImportModal';
 export * from './components/AddProjectModal';
 export * from './components/DatePicker';
+export * from './components/AddServiceModal';
