@@ -18,11 +18,12 @@ export const VaultPage: React.FC = () => {
   }, [user, subscribeToSecrets, subscribeToProjects]);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-base text-text-primary">
+    <div className="flex min-h-screen w-full flex-col bg-base text-text-primary">
       {/* ─── Header ─── */}
       <header style={{
-        position: 'relative',
-        zIndex: 40,
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
         height: 60,
         minHeight: 60,
         display: 'flex',
@@ -38,8 +39,15 @@ export const VaultPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={toggleMobileMenu}
-            className="md:hidden"
-            style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '0.5rem', border: 'none', background: isMobileMenuOpen ? 'rgba(255,255,255,0.1)' : 'transparent', color: '#ededed', cursor: 'pointer' }}
+            className="flex md:hidden items-center justify-center rounded-lg transition-colors"
+            style={{ 
+              width: 40, 
+              height: 40, 
+              border: 'none', 
+              background: isMobileMenuOpen ? 'rgba(255,255,255,0.1)' : 'transparent', 
+              color: '#ededed', 
+              cursor: 'pointer' 
+            }}
           >
             {isMobileMenuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
           </button>
@@ -102,8 +110,10 @@ export const VaultPage: React.FC = () => {
       </header>
 
       {/* ─── Body ─── */}
-      <div className="flex flex-1 overflow-hidden relative">
-        <Sidebar className="hidden md:flex flex-col" />
+      <div className="flex flex-1 relative">
+        <div className="hidden md:flex flex-col sticky top-[60px] h-[calc(100vh-60px)]">
+          <Sidebar />
+        </div>
 
         {/* Main content - allow expanding globally */}
         <motion.div
@@ -111,7 +121,7 @@ export const VaultPage: React.FC = () => {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 md:p-10 lg:p-12 xl:p-16 w-full"
+          className="flex-1 px-4 py-6 sm:px-6 md:p-10 lg:p-12 xl:p-16 w-full"
           style={{ width: '100%', maxWidth: '100vw' }}
         >
           {activeView === 'dashboard' ? <Dashboard /> : <SecretList />}
@@ -125,7 +135,7 @@ export const VaultPage: React.FC = () => {
               <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => selectSecret(null)}
-                className="lg:hidden absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
+                className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               />
               
               <motion.div
@@ -134,7 +144,7 @@ export const VaultPage: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="absolute right-0 top-0 bottom-0 z-50 lg:relative lg:z-auto"
+                className="fixed lg:sticky right-0 top-[60px] h-[calc(100vh-60px)] z-50 lg:z-auto bg-base border-l border-white/5"
                 style={{ width: '100%', maxWidth: '420px', height: '100%' }}
               >
                 <SecretDetail />
@@ -151,12 +161,12 @@ export const VaultPage: React.FC = () => {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={toggleMobileMenu}
-              className="md:hidden absolute inset-0 top-[60px] bg-black/70 backdrop-blur-md z-40"
+              className="md:hidden fixed inset-0 top-[60px] bg-black/70 backdrop-blur-md z-40"
             />
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="md:hidden absolute left-0 top-[60px] bottom-0 z-50"
+              className="md:hidden fixed left-0 top-[60px] bottom-0 z-50"
               style={{ width: '280px' }}
             >
               <Sidebar className="flex flex-col w-full border-r-0 shadow-2xl" />

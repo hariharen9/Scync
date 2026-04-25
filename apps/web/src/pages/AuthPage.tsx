@@ -22,7 +22,7 @@ export const AuthPage: React.FC = () => {
   const { signIn } = useAuthStore();
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-base p-4">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-base p-4">
       {/* Animated background orbs */}
       {floatingOrbs.map((orb, i) => (
         <motion.div

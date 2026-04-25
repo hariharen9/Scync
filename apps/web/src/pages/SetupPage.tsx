@@ -50,7 +50,7 @@ export const SetupPage: React.FC = () => {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-base p-4">
+    <div className="relative flex min-h-screen w-full items-center justify-center bg-base p-4">
       {/* Background effects */}
       <div className="pointer-events-none absolute inset-0 mesh-gradient" />
       <motion.div
