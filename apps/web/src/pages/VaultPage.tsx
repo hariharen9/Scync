@@ -142,12 +142,14 @@ export const VaultPage: React.FC = () => {
         </header>
 
         {/* ─── Content ─── */}
-        <div style={{ display: 'flex', flex: 1 }}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+          {/* Main content */}
           <div
             key={activeView}
             style={{
-              flex: 1, padding: '36px 28px', width: '100%',
+              flex: 1, padding: '36px 28px', width: '100%', minWidth: 0,
               animation: 'fadeUp .35s cubic-bezier(.16,1,.3,1) both',
+              overflowY: 'auto',
             }}
           >
             {activeView === 'dashboard' ? <Dashboard /> : <SecretList />}
@@ -157,22 +159,31 @@ export const VaultPage: React.FC = () => {
           <AnimatePresence>
             {selectedSecretId && (
               <>
-                {/* Mobile overlay */}
+                {/* Mobile overlay backdrop */}
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => selectSecret(null)}
-                  className="lg:hidden fixed inset-0 z-40"
-                  style={{ background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}
+                  style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}
+                  className="lg:hidden"
                 />
 
+                {/* Panel — sticky on desktop, fixed on mobile */}
                 <motion.div
                   key="detail"
-                  initial={{ opacity: 0, x: '100%' }}
+                  initial={{ opacity: 0, x: 40 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed lg:sticky right-0 top-0 lg:top-[52px] h-screen lg:h-[calc(100vh-52px)] z-50 lg:z-auto"
-                  style={{ width: '100%', maxWidth: 400, borderLeft: '1px solid var(--color-border)' }}
+                  exit={{ opacity: 0, x: 40 }}
+                  transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+                  style={{
+                    borderLeft: '1px solid var(--color-border)',
+                    background: 'var(--color-surface)',
+                    overflowY: 'auto',
+                    flexShrink: 0,
+                  }}
+                  className="
+                    fixed right-0 top-0 h-screen w-full max-w-[400px] z-50
+                    lg:sticky lg:top-0 lg:h-[calc(100vh-52px)] lg:w-[380px] lg:max-w-[380px] lg:z-auto
+                  "
                 >
                   <SecretDetail />
                 </motion.div>

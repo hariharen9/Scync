@@ -172,9 +172,7 @@ export const SecretList: React.FC = () => {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: selectedSecretId
-            ? 'repeat(2, 1fr)'
-            : 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: 1,
           background: 'var(--color-border)',
           border: '1px solid var(--color-border)',
