@@ -6,6 +6,7 @@ import {
 import { useProjectStore } from '../stores/projectStore';
 import { useUIStore } from '../stores/uiStore';
 import { Dropdown, type DropdownOption } from './Dropdown';
+import { DatePicker } from './DatePicker';
 import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface SecretFormProps {
@@ -163,6 +164,20 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
           options={toOptions(ENVIRONMENTS)}
           value={formData.environment}
           onChange={v => setFormData(p => ({ ...p, environment: v as any }))}
+        />
+      </div>
+
+      {/* Dates */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+        <DatePicker
+          label="Last Rotated (Optional)"
+          value={formData.lastRotated}
+          onChange={v => setFormData(p => ({ ...p, lastRotated: v }))}
+        />
+        <DatePicker
+          label="Expires On (Optional)"
+          value={formData.expiresOn}
+          onChange={v => setFormData(p => ({ ...p, expiresOn: v }))}
         />
       </div>
 
