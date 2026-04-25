@@ -4,6 +4,10 @@ import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { SecretCard } from './SecretCard';
 import { Dropdown, type DropdownOption } from './Dropdown';
+import { useServiceStore } from '../stores/serviceStore';
+import { ServiceIcon } from './ServiceIcon';
+import { CustomServiceIcon } from './CustomServiceIcons';
+import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { FiKey, FiPlus, FiFilter, FiX, FiSearch } from 'react-icons/fi';
 import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES } from '@scync/core';
 
@@ -16,6 +20,7 @@ export const SecretList: React.FC = () => {
   const { storedSecrets } = useVaultStore();
   const { filter, setFilter, clearFilters, activeView, openAddModal, sortBy, sortOrder } = useUIStore();
   const { selectedProjectId, projects } = useProjectStore();
+  const { customServices } = useServiceStore();
 
   const getProject = (projectId: string | null) =>
     projectId ? (projects.find(p => p.id === projectId) || null) : null;
@@ -37,6 +42,13 @@ export const SecretList: React.FC = () => {
       const q = filter.search.toLowerCase();
       if (!s.name.toLowerCase().includes(q) && !s.service.toLowerCase().includes(q)) return false;
     }
+    if (activeView === 'all' && filter.projectId) {
+      if (filter.projectId === 'uncategorized') {
+        if (s.projectId) return false;
+      } else {
+        if (s.projectId !== filter.projectId) return false;
+      }
+    }
     return true;
   });
 
@@ -50,11 +62,23 @@ export const SecretList: React.FC = () => {
     return sortOrder === 'asc' ? diff : -diff;
   });
 
-  const hasActiveFilters = !!(filter.service || filter.type || filter.environment || filter.status);
+  const hasActiveFilters = !!(filter.service || filter.type || filter.environment || filter.status || (activeView === 'all' && filter.projectId));
 
   const title = activeView === 'project'
     ? (selectedProjectId ? projects.find(p => p.id === selectedProjectId)?.name || 'Project' : 'Uncategorized')
     : 'All Secrets';
+
+  const serviceOptions: DropdownOption[] = [
+    { value: '', label: 'Services' },
+    ...SERVICES.map(s => ({ value: s, label: s, icon: <ServiceIcon service={s} size={13} className="text-current" /> })),
+    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color as any] ?? 'var(--color-text-2)'} /> })),
+  ];
+
+  const projectOptions: DropdownOption[] = [
+    { value: '', label: 'Projects' },
+    { value: 'uncategorized', label: 'Uncategorized', icon: <span style={{ fontSize: 14 }}>📂</span> },
+    ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color as any] ?? 'var(--color-text-2)'} /> })),
+  ];
 
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
@@ -109,8 +133,13 @@ export const SecretList: React.FC = () => {
             <FiFilter size={13} />
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Filters</span>
           </div>
+          {activeView === 'all' && (
+            <div style={{ flex: '1 1 120px' }}>
+              <Dropdown size="sm" options={projectOptions} value={filter.projectId || ''} onChange={v => setFilter({ projectId: v as any })} />
+            </div>
+          )}
           <div style={{ flex: '1 1 120px' }}>
-            <Dropdown size="sm" options={toOptions(SERVICES, 'Services')} value={filter.service || ''} onChange={v => setFilter({ service: v as any })} />
+            <Dropdown size="sm" options={serviceOptions} value={filter.service || ''} onChange={v => setFilter({ service: v as any })} />
           </div>
           <div style={{ flex: '1 1 120px' }}>
             <Dropdown size="sm" options={toOptions(SECRET_TYPES, 'Types')} value={filter.type || ''} onChange={v => setFilter({ type: v as any })} />

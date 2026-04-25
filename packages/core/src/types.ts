@@ -86,6 +86,7 @@ export interface VaultFilter {
   type: SecretType | '';
   environment: Environment | '';
   status: SecretStatus | '';
+  projectId: string | '';
   search: string;
 }
 

@@ -60,6 +60,7 @@ const defaultFilter: VaultFilter = {
   type: '',
   environment: '',
   status: '',
+  projectId: '',
   search: ''
 };
 
