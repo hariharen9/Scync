@@ -7,6 +7,7 @@ import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { SERVICE_COLORS } from '@scync/core';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ServiceIcon } from './ServiceIcon';
 
 interface SecretCardProps {
   secret: StoredSecret;
@@ -79,6 +80,8 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
             {/* Service badge */}
             <span style={{
               display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
               alignSelf: 'flex-start',
               fontSize: '0.65rem',
               fontWeight: 700,
@@ -90,6 +93,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
               color: borderAccent,
               border: `1px solid ${borderAccent}30`,
             }}>
+              <ServiceIcon service={secret.service} size={11} className="text-current" />
               {secret.service}
             </span>
             {/* Name */}

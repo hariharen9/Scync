@@ -4,6 +4,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiLayers } from 'react-icons/fi';
+import { ServiceIcon } from './ServiceIcon';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal } = useUIStore();
@@ -214,7 +215,10 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
                 onMouseLeave={e => { if (!isActive) { (e.currentTarget).style.background = 'transparent'; (e.currentTarget).style.color = '#8b8b9e'; } }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', minWidth: 0 }}>
-                  <span style={{ fontSize: '1rem', opacity: 0.8 }}>{custom?.icon || <FiLayers size={14} />}</span>
+                  {custom
+                    ? <span style={{ fontSize: '1rem', lineHeight: 1 }}>{custom.icon || '🌐'}</span>
+                    : <ServiceIcon service={svc} size={14} style={{ opacity: 0.75 }} />
+                  }
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc}</span>
                 </div>
                 <span style={countBadgeStyle(isActive)}>{getServiceCount(svc)}</span>

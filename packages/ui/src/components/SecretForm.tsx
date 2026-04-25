@@ -8,6 +8,7 @@ import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { DatePicker } from './DatePicker';
+import { ServiceIcon } from './ServiceIcon';
 import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface SecretFormProps {
@@ -89,7 +90,11 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
   ];
 
   const serviceOptions: DropdownOption[] = [
-    ...toOptions(SERVICES),
+    ...SERVICES.map(s => ({
+      value: s,
+      label: s,
+      icon: <ServiceIcon service={s} size={14} className="text-current" />
+    })),
     ...customServices.map(s => ({ 
       value: s.name, 
       label: s.name, 

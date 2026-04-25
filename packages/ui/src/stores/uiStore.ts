@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { VaultFilter } from '@scync/core';
 
-interface UIState {
+export interface UIState {
   // Navigation
   activeView: 'dashboard' | 'project' | 'all';
   setActiveView: (view: UIState['activeView']) => void;
