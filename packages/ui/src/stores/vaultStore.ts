@@ -8,7 +8,8 @@ import {
   checkVerifier,
   setupVault,
   generateSalt,
-  createVerifier
+  createVerifier,
+  changeVaultPassword as coreChangeVaultPassword
 } from '@scync/core';
 
 interface VaultState {
@@ -22,6 +23,7 @@ interface VaultState {
   unlock: (password: string, uid: string) => Promise<boolean>;
   lock: () => void;
   initializeVault: (password: string, uid: string) => Promise<void>;
+  changeVaultPassword: (uid: string, oldPassword: string, newPassword: string) => Promise<boolean>;
   
   createSecret: (uid: string, formData: SecretFormData) => Promise<void>;
   updateSecret: (uid: string, id: string, formData: SecretFormData) => Promise<void>;
@@ -69,6 +71,34 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     const verifier = await createVerifier(key);
     await setupVault(uid, salt, verifier);
     set({ derivedKey: key, isLocked: false });
+  },
+
+  changeVaultPassword: async (uid: string, oldPassword: string, newPassword: string) => {
+    try {
+      const { storedSecrets } = get();
+      const meta = await getVaultMeta(uid);
+      if (!meta) return false;
+
+      // Verify old password
+      const oldKey = await deriveKey(oldPassword, uid, meta.salt);
+      const isValid = await checkVerifier(oldKey, meta.verifier);
+      if (!isValid) return false; // Incorrect old password
+
+      // Derive new key with new salt
+      const newSalt = generateSalt();
+      const newKey = await deriveKey(newPassword, uid, newSalt);
+      const newVerifier = await createVerifier(newKey);
+
+      // Batch re-encrypt
+      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets);
+
+      // Update state
+      set({ derivedKey: newKey });
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
   },
   
   createSecret: async (uid: string, formData: SecretFormData) => {

@@ -24,3 +24,5 @@ export * from './components/CustomServiceIcons';
 export * from './components/ProjectIcons';
 export * from './components/AboutModal';
 export * from './components/ConfirmModal';
+export * from './hooks/useInactivityLock';
+export * from './components/SettingsModal';

@@ -12,8 +12,8 @@ import { CustomServiceIcon } from './CustomServiceIcons';
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
   const { projects, selectedProjectId, selectProject, deleteProject, updateProject } = useProjectStore();
-  const { storedSecrets } = useVaultStore();
   const { customServices, deleteService } = useServiceStore();
+  const { storedSecrets } = useVaultStore();
   const { user } = useAuthStore();
 
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);

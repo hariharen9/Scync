@@ -9,6 +9,24 @@ export interface ConfirmConfig {
   onConfirm: () => void | Promise<void>;
 }
 
+export interface SettingsConfig {
+  inactivityLockMinutes: number | null; // null means never
+  windowBlurLock: boolean;
+}
+
+const DEFAULT_SETTINGS: SettingsConfig = {
+  inactivityLockMinutes: 15,
+  windowBlurLock: false,
+};
+
+const getStoredSettings = (): SettingsConfig => {
+  try {
+    const s = localStorage.getItem('scync_settings');
+    if (s) return { ...DEFAULT_SETTINGS, ...JSON.parse(s) };
+  } catch (e) {}
+  return DEFAULT_SETTINGS;
+};
+
 export interface UIState {
   // Navigation
   activeView: 'dashboard' | 'project' | 'all';
@@ -22,7 +40,10 @@ export interface UIState {
   isAddProjectModalOpen: boolean;
   isAddServiceModalOpen: boolean;
   isAboutModalOpen: boolean;
+  isSettingsModalOpen: boolean;
   confirmConfig: ConfirmConfig | null;
+  
+  settings: SettingsConfig;
   
   filter: VaultFilter;
   sortBy: 'createdAt' | 'name' | 'expiresOn' | 'updatedAt';
@@ -42,8 +63,11 @@ export interface UIState {
   closeAddServiceModal: () => void;
   openAboutModal: () => void;
   closeAboutModal: () => void;
+  openSettingsModal: () => void;
+  closeSettingsModal: () => void;
   openConfirmModal: (config: ConfirmConfig) => void;
   closeConfirmModal: () => void;
+  updateSettings: (partial: Partial<SettingsConfig>) => void;
   
   setFilter: (filter: Partial<VaultFilter>) => void;
   clearFilters: () => void;
@@ -75,8 +99,11 @@ export const useUIStore = create<UIState>((set) => ({
   isAddProjectModalOpen: false,
   isAddServiceModalOpen: false,
   isAboutModalOpen: false,
+  isSettingsModalOpen: false,
   confirmConfig: null,
   isMobileMenuOpen: false,
+  
+  settings: getStoredSettings(),
   
   filter: defaultFilter,
   sortBy: 'updatedAt',
@@ -95,8 +122,16 @@ export const useUIStore = create<UIState>((set) => ({
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
   openAboutModal: () => set({ isAboutModalOpen: true }),
   closeAboutModal: () => set({ isAboutModalOpen: false }),
+  openSettingsModal: () => set({ isSettingsModalOpen: true, isMobileMenuOpen: false }),
+  closeSettingsModal: () => set({ isSettingsModalOpen: false }),
   openConfirmModal: (config) => set({ confirmConfig: config }),
   closeConfirmModal: () => set({ confirmConfig: null }),
+  
+  updateSettings: (partial) => set((state) => {
+    const newSettings = { ...state.settings, ...partial };
+    try { localStorage.setItem('scync_settings', JSON.stringify(newSettings)); } catch (e) {}
+    return { settings: newSettings };
+  }),
   
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),

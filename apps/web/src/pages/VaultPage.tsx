@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal } from '@scync/ui';
-import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo } from 'react-icons/fi';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal, SettingsModal, useInactivityLock } from '@scync/ui';
+import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const VaultPage: React.FC = () => {
   const { user } = useAuthStore();
   const { subscribeToSecrets, lock } = useVaultStore();
   const { subscribeToProjects } = useProjectStore();
-  const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret, openAboutModal } = useUIStore();
+  const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret, openAboutModal, openSettingsModal } = useUIStore();
+
+  useInactivityLock();
 
   useEffect(() => {
     if (!user) return;
@@ -124,6 +126,20 @@ export const VaultPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            <button
+              onClick={openSettingsModal}
+              title="Settings"
+              style={{
+                width: 36, height: 36, display: 'grid', placeItems: 'center',
+                border: 'none', background: 'none', color: 'var(--color-text-3)',
+                cursor: 'pointer', transition: 'color 140ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+            >
+              <FiSettings size={15} />
+            </button>
 
             <button
               onClick={lock}
@@ -246,6 +262,7 @@ export const VaultPage: React.FC = () => {
       <AddProjectModal />
       <AddServiceModal />
       <AboutModal />
+      <SettingsModal />
       <ConfirmModal />
     </div>
   );

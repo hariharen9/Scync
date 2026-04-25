@@ -1,6 +1,6 @@
 import { 
   collection, doc, setDoc, updateDoc, deleteDoc, 
-  onSnapshot, serverTimestamp, getDoc
+  onSnapshot, serverTimestamp, getDoc, writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
@@ -29,6 +29,47 @@ export async function getVaultMeta(uid: string): Promise<VaultMeta | null> {
     verifier: data.verifier,
     createdAt: data.createdAt?.toDate() || new Date()
   };
+}
+
+export async function changeVaultPassword(
+  uid: string,
+  oldKey: CryptoKey,
+  newKey: CryptoKey,
+  newSalt: string,
+  newVerifier: EncryptedField,
+  secrets: StoredSecret[]
+): Promise<void> {
+  const batch = writeBatch(db);
+
+  // 1. Update Vault Meta
+  const metaRef = doc(db, "users", uid, "meta", "vault");
+  batch.update(metaRef, {
+    salt: newSalt,
+    verifier: newVerifier,
+    updatedAt: serverTimestamp()
+  });
+
+  // 2. Re-encrypt all secrets
+  for (const secret of secrets) {
+    const secretRef = doc(db, "users", uid, "secrets", secret.id);
+    
+    // Decrypt old values
+    const valuePlaintext = await decrypt(oldKey, secret.encValue);
+    const notesPlaintext = secret.encNotes ? await decrypt(oldKey, secret.encNotes) : null;
+    
+    // Re-encrypt with new key
+    const newEncValue = await encrypt(newKey, valuePlaintext);
+    const newEncNotes = notesPlaintext ? await encrypt(newKey, notesPlaintext) : null;
+    
+    batch.update(secretRef, {
+      encValue: newEncValue,
+      encNotes: newEncNotes,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // 3. Commit the batch atomic operation
+  await batch.commit();
 }
 
 // Secrets
