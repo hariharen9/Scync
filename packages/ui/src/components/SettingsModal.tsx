@@ -4,7 +4,10 @@ import { FiX, FiShield, FiLock, FiDownload, FiCheck, FiAlertTriangle, FiEye, FiE
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
+import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
 import { Dropdown } from './Dropdown';
+import { generatePortableVault } from '../utils/portableVaultTemplate';
 
 const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', padding: '8px 11px', fontSize: 12.5, color: 'var(--color-text)', outline: 'none', transition: 'border-color 140ms', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 6 };
@@ -13,7 +16,9 @@ const btnOutlineStyle: React.CSSProperties = { padding: '8px 12px', background: 
 
 export const SettingsModal: React.FC = () => {
   const { isSettingsModalOpen, closeSettingsModal, settings, updateSettings } = useUIStore();
-  const { changeVaultPassword } = useVaultStore();
+  const { changeVaultPassword, exportVault } = useVaultStore();
+  const { projects } = useProjectStore();
+  const { customServices } = useServiceStore();
   const { user } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<'security' | 'vault'>('security');
@@ -28,6 +33,13 @@ export const SettingsModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
+
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportError, setExportError] = useState('');
+  const [exportSuccess, setExportSuccess] = useState('');
+  const [showExportPass, setShowExportPass] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,17 +79,66 @@ export const SettingsModal: React.FC = () => {
     }
   };
 
+  const handleExport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setExportError('');
+    setExportSuccess('');
+
+    if (!user) return;
+    setIsSubmitting(true);
+
+    const exportData = await exportVault(user.uid, exportPassword);
+    
+    if (exportData) {
+      const fullExport = {
+        version: '1.0',
+        exportDate: new Date().toISOString(),
+        meta: exportData.meta,
+        projects: projects,
+        services: customServices,
+        secrets: exportData.secrets
+      };
+
+      const htmlContent = generatePortableVault(fullExport, user.uid);
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `scync_portable_vault_${date}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setExportSuccess('Portable Vault generated successfully!');
+      setExportPassword('');
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportSuccess('');
+      }, 3000);
+    } else {
+      setExportError('Incorrect master password.');
+    }
+    
+    setIsSubmitting(false);
+  };
+
   const handleClose = () => {
     if (isSubmitting) return; // Prevent closing while encrypting
     closeSettingsModal();
     setTimeout(() => {
       setActiveTab('security');
       setIsChangingPassword(false);
+      setIsExporting(false);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setExportPassword('');
       setPasswordError('');
       setPasswordSuccess('');
+      setExportError('');
+      setExportSuccess('');
     }, 200);
   };
 
@@ -207,7 +268,7 @@ export const SettingsModal: React.FC = () => {
               {/* Vault Tab */}
               {activeTab === 'vault' && (
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  {!isChangingPassword ? (
+                  {(!isChangingPassword && !isExporting) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)' }}>
                         <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>Change Master Password</h3>
@@ -224,17 +285,24 @@ export const SettingsModal: React.FC = () => {
                         </button>
                       </div>
 
-                      <div style={{ padding: 16, border: '1px dashed var(--color-border-2)', borderRadius: 4, opacity: 0.6 }}>
+                      <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)' }}>
                         <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text)' }}>
-                          <FiDownload /> Export Vault <span style={{ fontSize: 9, padding: '2px 6px', background: 'var(--color-border)', borderRadius: 4, letterSpacing: '0.05em' }}>COMING SOON</span>
+                          <FiDownload /> Export Portable Vault
                         </h3>
                         <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
-                          Download an AES-256-GCM encrypted offline JSON backup of your entire vault.
+                          Download a standalone, self-decrypting HTML file for offline access. You will need your master password to unlock it.
                         </p>
-                        <button style={{ ...btnOutlineStyle, opacity: 0.5, cursor: 'not-allowed' }} disabled>Export to JSON</button>
+                        <button 
+                          style={btnOutlineStyle} 
+                          onClick={() => setIsExporting(true)}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          Generate HTML Vault
+                        </button>
                       </div>
                     </div>
-                  ) : (
+                  ) : isChangingPassword ? (
                     <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>Change Master Password</h3>
@@ -316,6 +384,62 @@ export const SettingsModal: React.FC = () => {
                             Re-encrypting Vault...
                           </>
                         ) : 'Confirm Password Change'}
+                      </button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleExport} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>Export Portable Vault</h3>
+                        {!isSubmitting && (
+                          <button type="button" onClick={() => { setIsExporting(false); setExportError(''); setExportSuccess(''); }} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+
+                      {exportError && (
+                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '10px 12px', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 4, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <FiAlertTriangle size={14} /> {exportError}
+                        </div>
+                      )}
+                      
+                      {exportSuccess && (
+                        <div style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', padding: '10px 12px', border: '1px solid rgba(34, 197, 94, 0.2)', borderRadius: 4, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <FiCheck size={14} /> {exportSuccess}
+                        </div>
+                      )}
+
+                      <div style={{ position: 'relative' }}>
+                        <label style={labelStyle}>Authorize with Master Password</label>
+                        <input
+                          type={showExportPass ? 'text' : 'password'}
+                          value={exportPassword}
+                          onChange={e => setExportPassword(e.target.value)}
+                          required
+                          disabled={isSubmitting}
+                          style={inputStyle}
+                          autoFocus
+                          onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} 
+                          onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                        />
+                        <button type="button" onClick={() => setShowExportPass(!showExportPass)} style={{ position: 'absolute', right: 10, top: 28, background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                          {showExportPass ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                        </button>
+                      </div>
+
+                      <button type="submit" disabled={isSubmitting} style={{ ...btnPrimaryStyle, opacity: isSubmitting ? 0.7 : 1, marginTop: 8 }}>
+                        {isSubmitting ? (
+                          <>
+                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                              <FiLoader />
+                            </motion.div>
+                            Generating Vault...
+                          </>
+                        ) : (
+                          <>
+                            <FiDownload /> Authorize & Download HTML
+                          </>
+                        )}
                       </button>
                     </form>
                   )}

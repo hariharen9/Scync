@@ -31,6 +31,10 @@ interface VaultState {
   decryptValue: (secretId: string) => Promise<DecryptedSecret | null>;
   
   subscribeToSecrets: (uid: string) => () => void;
+  exportVault: (uid: string, password: string) => Promise<{
+    meta: { salt: string; verifier: any };
+    secrets: StoredSecret[];
+  } | null>;
 }
 
 export const useVaultStore = create<VaultState>((set, get) => ({
@@ -133,5 +137,30 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     return subscribeToSecrets(uid, (secrets) => {
       set({ storedSecrets: secrets });
     });
+  },
+
+  exportVault: async (uid: string, password: string) => {
+    try {
+      const { storedSecrets } = get();
+      const meta = await getVaultMeta(uid);
+      if (!meta) return null;
+
+      // Verify password
+      const key = await deriveKey(password, uid, meta.salt);
+      const isValid = await checkVerifier(key, meta.verifier);
+      
+      if (!isValid) return null;
+
+      return {
+        meta: {
+          salt: meta.salt,
+          verifier: meta.verifier
+        },
+        secrets: storedSecrets
+      };
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
   }
 }));
