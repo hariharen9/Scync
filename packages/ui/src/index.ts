@@ -20,4 +20,7 @@ export * from './components/AddProjectModal';
 export * from './components/DatePicker';
 export * from './components/AddServiceModal';
 export * from './components/ServiceIcon';
+export * from './components/CustomServiceIcons';
+export * from './components/ProjectIcons';
 export * from './components/AboutModal';
+export * from './components/ConfirmModal';

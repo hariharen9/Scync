@@ -14,7 +14,7 @@ const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[
 
 export const SecretList: React.FC = () => {
   const { storedSecrets } = useVaultStore();
-  const { filter, setFilter, clearFilters, activeView, selectedSecretId, openAddModal } = useUIStore();
+  const { filter, setFilter, clearFilters, activeView, openAddModal, sortBy, sortOrder } = useUIStore();
   const { selectedProjectId, projects } = useProjectStore();
 
   const getProject = (projectId: string | null) =>
@@ -38,6 +38,16 @@ export const SecretList: React.FC = () => {
       if (!s.name.toLowerCase().includes(q) && !s.service.toLowerCase().includes(q)) return false;
     }
     return true;
+  });
+
+  // Apply sorting
+  visibleSecrets = [...visibleSecrets].sort((a, b) => {
+    let diff = 0;
+    if (sortBy === 'name') diff = a.name.localeCompare(b.name);
+    else if (sortBy === 'expiresOn') diff = (a.expiresOn?.getTime() || 0) - (b.expiresOn?.getTime() || 0);
+    else if (sortBy === 'updatedAt') diff = a.updatedAt.getTime() - b.updatedAt.getTime();
+    else diff = a.createdAt.getTime() - b.createdAt.getTime();
+    return sortOrder === 'asc' ? diff : -diff;
   });
 
   const hasActiveFilters = !!(filter.service || filter.type || filter.environment || filter.status);

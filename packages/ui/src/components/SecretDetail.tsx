@@ -5,11 +5,15 @@ import { useProjectStore } from '../stores/projectStore';
 import { MaskedValue } from './MaskedValue';
 import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw } from 'react-icons/fi';
 import type { DecryptedSecret } from '@scync/core';
+import { useServiceStore } from '../stores/serviceStore';
+import { SERVICE_COLORS } from '@scync/core';
+import { PROJECT_COLOR_MAP } from './ProjectIcons';
 
 export const SecretDetail: React.FC = () => {
   const { selectedSecretId, selectSecret, openEditModal } = useUIStore();
   const { storedSecrets, decryptValue } = useVaultStore();
   const { projects } = useProjectStore();
+  const { customServices } = useServiceStore();
   const [decrypted, setDecrypted] = useState<DecryptedSecret | null>(null);
   const secret = storedSecrets.find(s => s.id === selectedSecretId);
 
@@ -50,7 +54,13 @@ export const SecretDetail: React.FC = () => {
         {/* Identity */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: 'var(--color-green-bg)', color: 'var(--color-green)', border: '1px solid var(--color-green-border)' }}>{secret.service}</span>
+            {(() => {
+              const custom = customServices.find(s => s.name === secret.service);
+              const accentColor = custom ? (PROJECT_COLOR_MAP[custom.color as any] ?? '#10b981') : (SERVICE_COLORS[secret.service as keyof typeof SERVICE_COLORS] || '#10b981');
+              return (
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40` }}>{secret.service}</span>
+              );
+            })()}
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: statusBg, color: statusColor }}>{isExpired ? 'Expired' : secret.status}</span>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em' }}>{secret.name}</h2>

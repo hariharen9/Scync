@@ -7,6 +7,8 @@ import { useUIStore } from '../stores/uiStore';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { DatePicker } from './DatePicker';
 import { ServiceIcon } from './ServiceIcon';
+import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
+import { CustomServiceIcon } from './CustomServiceIcons';
 import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface SecretFormProps {
@@ -49,11 +51,11 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
 
   const projectOptions: DropdownOption[] = [
     { value: '', label: 'Uncategorized' },
-    ...projects.map(p => ({ value: p.id, label: p.name, icon: <span>{p.icon || '📁'}</span> })),
+    ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color as any] ?? 'var(--color-text-2)'} /> })),
   ];
   const serviceOptions: DropdownOption[] = [
     ...SERVICES.map(s => ({ value: s, label: s, icon: <ServiceIcon service={s} size={13} className="text-current" /> })),
-    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <span style={{ fontSize: 14 }}>{s.icon || '🌐'}</span>, description: 'Custom' })),
+    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color as any] ?? 'var(--color-text-2)'} />, description: 'Custom' })),
   ];
 
   return (

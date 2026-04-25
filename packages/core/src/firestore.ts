@@ -209,6 +209,20 @@ export async function createService(
   });
 }
 
+export async function updateService(
+  uid: string,
+  serviceId: string,
+  data: Partial<CustomService>
+): Promise<void> {
+  const ref = doc(db, "users", uid, "services", serviceId);
+  await updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+}
+
+export async function deleteService(uid: string, serviceId: string): Promise<void> {
+  const ref = doc(db, "users", uid, "services", serviceId);
+  await deleteDoc(ref);
+}
+
 export function subscribeToServices(
   uid: string, 
   callback: (services: CustomService[]) => void

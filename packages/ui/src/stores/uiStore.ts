@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import type { VaultFilter } from '@scync/core';
 
+export interface ConfirmConfig {
+  title: string;
+  message: string;
+  confirmText?: string;
+  danger?: boolean;
+  onConfirm: () => void | Promise<void>;
+}
+
 export interface UIState {
   // Navigation
   activeView: 'dashboard' | 'project' | 'all';
@@ -14,9 +22,10 @@ export interface UIState {
   isAddProjectModalOpen: boolean;
   isAddServiceModalOpen: boolean;
   isAboutModalOpen: boolean;
+  confirmConfig: ConfirmConfig | null;
   
   filter: VaultFilter;
-  sortBy: 'createdAt' | 'name' | 'expiresOn';
+  sortBy: 'createdAt' | 'name' | 'expiresOn' | 'updatedAt';
   sortOrder: 'asc' | 'desc';
   
   // Actions
@@ -33,10 +42,13 @@ export interface UIState {
   closeAddServiceModal: () => void;
   openAboutModal: () => void;
   closeAboutModal: () => void;
+  openConfirmModal: (config: ConfirmConfig) => void;
+  closeConfirmModal: () => void;
   
   setFilter: (filter: Partial<VaultFilter>) => void;
   clearFilters: () => void;
   setSortBy: (by: UIState['sortBy']) => void;
+  setSortState: (by: UIState['sortBy'], order: UIState['sortOrder']) => void;
   // Mobile State
   isMobileMenuOpen: boolean;
   toggleMobileMenu: () => void;
@@ -62,10 +74,11 @@ export const useUIStore = create<UIState>((set) => ({
   isAddProjectModalOpen: false,
   isAddServiceModalOpen: false,
   isAboutModalOpen: false,
+  confirmConfig: null,
   isMobileMenuOpen: false,
   
   filter: defaultFilter,
-  sortBy: 'createdAt',
+  sortBy: 'updatedAt',
   sortOrder: 'desc',
   
   selectSecret: (id) => set({ selectedSecretId: id }),
@@ -81,6 +94,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
   openAboutModal: () => set({ isAboutModalOpen: true }),
   closeAboutModal: () => set({ isAboutModalOpen: false }),
+  openConfirmModal: (config) => set({ confirmConfig: config }),
+  closeConfirmModal: () => set({ confirmConfig: null }),
   
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),
@@ -91,4 +106,5 @@ export const useUIStore = create<UIState>((set) => ({
     sortBy: by,
     sortOrder: state.sortBy === by && state.sortOrder === 'desc' ? 'asc' : 'desc'
   })),
+  setSortState: (by, order) => set({ sortBy: by, sortOrder: order }),
 }));

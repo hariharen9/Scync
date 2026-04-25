@@ -5,8 +5,11 @@ import { MaskedValue } from './MaskedValue';
 import { useVaultStore } from '../stores/vaultStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
+import { useAuthStore } from '../stores/authStore';
 import { SERVICE_COLORS } from '@scync/core';
 import { ServiceIcon } from './ServiceIcon';
+import { PROJECT_COLOR_MAP } from './ProjectIcons';
+import { CustomServiceIcon } from './CustomServiceIcons';
 
 interface SecretCardProps {
   secret: StoredSecret;
@@ -15,7 +18,7 @@ interface SecretCardProps {
 
 const getServiceColor = (service: string, customServices: any[]) => {
   const custom = customServices.find(s => s.name === service);
-  if (custom) return custom.color;
+  if (custom) return PROJECT_COLOR_MAP[custom.color as any] ?? '#10b981';
   return SERVICE_COLORS[service as keyof typeof SERVICE_COLORS] || '#10b981';
 };
 
@@ -33,7 +36,26 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const { decryptValue } = useVaultStore();
   const { customServices } = useServiceStore();
-  const { openEditModal, selectSecret } = useUIStore();
+  const { openEditModal, selectSecret, openConfirmModal } = useUIStore();
+  const { user } = useAuthStore();
+  const { deleteSecret } = useVaultStore();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    if (!user) return;
+    
+    openConfirmModal({
+      title: 'Delete Secret',
+      message: `Are you sure you want to delete "${secret.name}"? This action cannot be undone.`,
+      confirmText: 'Delete Secret',
+      danger: true,
+      onConfirm: async () => {
+        await deleteSecret(user.uid, secret.id);
+        selectSecret(null); // Clear selection if deleted
+      }
+    });
+  };
 
   const handleRevealToggle = async (revealed: boolean) => {
     if (revealed && !decryptedValue) {
@@ -76,7 +98,11 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
             fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
             color: accentColor,
           }}>
-            <ServiceIcon service={secret.service} size={10} className="text-current" />
+            {(() => {
+              const custom = customServices.find(s => s.name === secret.service);
+              if (custom) return <CustomServiceIcon iconKey={custom.icon || 'FaAmazon'} size={10} color="currentcolor" />;
+              return <ServiceIcon service={secret.service} size={10} className="text-current" />;
+            })()}
             {secret.service}
           </div>
           {/* Name */}
@@ -127,7 +153,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
               </button>
               <div style={{ height: 1, background: 'var(--color-border)' }} />
               <button
-                onClick={e => { e.stopPropagation(); setMenuOpen(false); }}
+                onClick={handleDelete}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', gap: 7,
                   padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',

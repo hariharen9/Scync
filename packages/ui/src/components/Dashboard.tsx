@@ -100,7 +100,7 @@ export const Dashboard: React.FC = () => {
   const { storedSecrets } = useVaultStore();
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
-  const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView } = useUIStore();
+  const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView, setSortState, clearFilters } = useUIStore();
 
   const serviceColorMap = useMemo(() => { const map = { ...SERVICE_COLORS }; customServices.forEach(s => { map[s.name] = s.color; }); return map; }, [customServices]);
   const attention = useMemo(() => getAttentionSecrets(storedSecrets), [storedSecrets]);
@@ -250,7 +250,14 @@ export const Dashboard: React.FC = () => {
         <div style={{ ...card, border: 'none' }}>
           <div style={{ ...sTitle, justifyContent: 'space-between' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiActivity size={11} /> Recent Activity</span>
-            {storedSecrets.length > 0 && <button onClick={() => setActiveView('all')} style={{ background: 'none', border: 'none', color: 'var(--color-green)', fontSize: 9.5, fontWeight: 700, cursor: 'pointer' }}>VIEW ALL</button>}
+            {storedSecrets.length > 0 && (
+              <button 
+                onClick={() => { clearFilters(); setSortState('updatedAt', 'desc'); setActiveView('all'); }} 
+                style={{ background: 'none', border: 'none', color: 'var(--color-green)', fontSize: 9.5, fontWeight: 700, cursor: 'pointer' }}
+              >
+                VIEW ALL
+              </button>
+            )}
           </div>
           {recentSecrets.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column' }}>{recentSecrets.map((s, i) => <TimelineItem key={s.id} secret={s} isLast={i === recentSecrets.length - 1} />)}</div>

@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUIStore, type UIState } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
+import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { ServiceIcon } from './ServiceIcon';
+import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
+import { CustomServiceIcon } from './CustomServiceIcons';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal } = useUIStore();
-  const { projects, selectedProjectId, selectProject } = useProjectStore();
+  const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
+  const { projects, selectedProjectId, selectProject, deleteProject, updateProject } = useProjectStore();
   const { storedSecrets } = useVaultStore();
+  const { customServices, deleteService } = useServiceStore();
+  const { user } = useAuthStore();
+
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [hoveredService, setHoveredService] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingProjectName, setEditingProjectName] = useState('');
 
   const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
@@ -31,13 +41,51 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     closeMobileMenu();
   };
 
+  const handleDeleteProject = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    if (!user) return;
+    openConfirmModal({
+      title: 'Delete Project',
+      message: `Are you sure you want to delete "${name}"? Secrets inside will become uncategorized.`,
+      confirmText: 'Delete Project',
+      danger: true,
+      onConfirm: async () => {
+        await deleteProject(user.uid, id, null);
+      }
+    });
+  };
+
+  const handleStartEditProject = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    setEditingProjectId(id);
+    setEditingProjectName(name);
+  };
+
+  const handleSaveProjectName = async (id: string) => {
+    if (!user || !editingProjectName.trim()) { setEditingProjectId(null); return; }
+    await updateProject(user.uid, id, { name: editingProjectName.trim() });
+    setEditingProjectId(null);
+  };
+
+  const handleDeleteService = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    if (!user) return;
+    openConfirmModal({
+      title: 'Delete Custom Service',
+      message: `Are you sure you want to delete "${name}"?`,
+      confirmText: 'Delete Service',
+      danger: true,
+      onConfirm: async () => {
+        await deleteService(user.uid, id);
+      }
+    });
+  };
+
   const getProjectCount = (id: string | null) =>
     storedSecrets.filter(s => s.projectId === id).length;
 
   const getServiceCount = (name: string) =>
     storedSecrets.filter(s => s.service === name).length;
-
-  const { customServices } = useServiceStore();
 
   const navItems = [
     { id: 'dashboard' as const, icon: FiGrid, label: 'Dashboard' },
@@ -74,6 +122,14 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     letterSpacing: '0.1em', color: 'var(--color-text-3)',
     padding: '0 10px', marginBottom: 6,
   };
+
+  const iconBtn = (danger = false): React.CSSProperties => ({
+    width: 18, height: 18, display: 'grid', placeItems: 'center',
+    border: 'none', background: 'none', cursor: 'pointer', flexShrink: 0,
+    color: danger ? 'var(--color-red)' : 'var(--color-text-3)',
+    opacity: 0.8, transition: 'opacity 100ms',
+    padding: 0,
+  });
 
   return (
     <div style={sidebarStyle} className={className}>
@@ -137,18 +193,15 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           })}
         </div>
 
-        {/* Projects */}
+        {/* ── Projects ── */}
         <div style={{ height: 1, background: 'var(--color-border)', marginBottom: 12 }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionLabel, marginBottom: 8 }}>
           <span>Projects</span>
           <button
             onClick={openAddProjectModal}
-            style={{
-              width: 18, height: 18, display: 'grid', placeItems: 'center',
-              border: 'none', background: 'none', color: 'var(--color-text-3)',
-              cursor: 'pointer', transition: 'color 140ms',
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            style={iconBtn()}
+            title="Add project"
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
           >
             <FiPlus size={12} />
@@ -158,20 +211,68 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {projects.map(p => {
             const isActive = activeView === 'project' && selectedProjectId === p.id;
+            const isHovered = hoveredProject === p.id;
+            const accentColor = PROJECT_COLOR_MAP[p.color] ?? 'var(--color-text-2)';
+            const isEditing = editingProjectId === p.id;
             return (
-              <button
+              <div
                 key={p.id}
-                onClick={() => handleProjectNav(p.id)}
-                style={navBtnStyle(isActive)}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                onMouseEnter={() => setHoveredProject(p.id)}
+                onMouseLeave={() => setHoveredProject(null)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <span style={{ fontSize: 14 }}>{p.icon || '📁'}</span>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                </div>
-                <span style={countBadgeStyle}>{getProjectCount(p.id)}</span>
-              </button>
+                <button
+                  onClick={() => !isEditing && handleProjectNav(p.id)}
+                  style={{ ...navBtnStyle(isActive), flex: 1, minWidth: 0 }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+                    <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={accentColor} />
+                    {isEditing ? (
+                      <input
+                        autoFocus
+                        value={editingProjectName}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => setEditingProjectName(e.target.value)}
+                        onBlur={() => handleSaveProjectName(p.id)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleSaveProjectName(p.id); if (e.key === 'Escape') setEditingProjectId(null); }}
+                        style={{
+                          flex: 1, background: 'var(--color-surface-3)', border: '1px solid var(--color-green)',
+                          color: 'var(--color-text)', fontSize: 12, padding: '1px 4px',
+                          fontFamily: 'var(--font-sans)', outline: 'none', minWidth: 0,
+                        }}
+                      />
+                    ) : (
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    )}
+                  </div>
+                  {!isHovered && <span style={countBadgeStyle}>{getProjectCount(p.id)}</span>}
+                </button>
+                {/* Hover actions */}
+                {isHovered && !isEditing && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, paddingRight: 6, flexShrink: 0 }}>
+                    <button
+                      style={iconBtn()}
+                      title="Rename"
+                      onClick={e => handleStartEditProject(e, p.id, p.name)}
+                      onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+                      onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+                    >
+                      <FiEdit2 size={11} />
+                    </button>
+                    <button
+                      style={iconBtn(true)}
+                      title="Delete"
+                      onClick={e => handleDeleteProject(e, p.id, p.name)}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+                    >
+                      <FiTrash2 size={11} />
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
 
@@ -195,31 +296,63 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           })()}
         </div>
 
-        {/* Services */}
+        {/* ── Services ── */}
         <div style={{ height: 1, background: 'var(--color-border)', margin: '16px 0 12px' }} />
-        <div style={sectionLabel}>Services</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionLabel, marginBottom: 8 }}>
+          <span>Services</span>
+          <button
+            onClick={openAddServiceModal}
+            style={iconBtn()}
+            title="Add service"
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+          >
+            <FiPlus size={12} />
+          </button>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingBottom: 16 }}>
           {[...new Set([...storedSecrets.map(s => s.service), ...customServices.map(s => s.name)])].sort().map(svc => {
             const isActive = activeView === 'all' && filter.service === svc;
+            const isHovered = hoveredService === svc;
             const custom = customServices.find(cs => cs.name === svc);
             return (
-              <button
+              <div
                 key={svc}
-                onClick={() => handleServiceNav(svc)}
-                style={navBtnStyle(isActive)}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                style={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                onMouseEnter={() => setHoveredService(svc)}
+                onMouseLeave={() => setHoveredService(null)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  {custom
-                    ? <span style={{ fontSize: 14, lineHeight: 1 }}>{custom.icon || '🌐'}</span>
-                    : <ServiceIcon service={svc} size={13} style={{ opacity: 0.75 }} />
-                  }
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc}</span>
-                </div>
-                <span style={countBadgeStyle}>{getServiceCount(svc)}</span>
-              </button>
+                <button
+                  onClick={() => handleServiceNav(svc)}
+                  style={{ ...navBtnStyle(isActive), flex: 1, minWidth: 0 }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    {custom
+                      ? <CustomServiceIcon iconKey={custom.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[custom.color as any] ?? 'var(--color-text-2)'} />
+                      : <ServiceIcon service={svc} size={13} style={{ opacity: 0.75 }} />
+                    }
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc}</span>
+                  </div>
+                  {!isHovered && <span style={countBadgeStyle}>{getServiceCount(svc)}</span>}
+                </button>
+                {/* Hover actions — only for custom services (can't delete built-in ones) */}
+                {isHovered && custom && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, paddingRight: 6, flexShrink: 0 }}>
+                    <button
+                      style={iconBtn(true)}
+                      title="Delete"
+                      onClick={e => handleDeleteService(e, custom.id, custom.name)}
+                      onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                      onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+                    >
+                      <FiTrash2 size={11} />
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
