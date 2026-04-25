@@ -1,14 +1,14 @@
 import React, { useEffect } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal } from '@scync/ui';
-import { FiLock, FiPlus, FiUpload, FiMenu, FiX } from 'react-icons/fi';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal } from '@scync/ui';
+import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const VaultPage: React.FC = () => {
   const { user } = useAuthStore();
   const { subscribeToSecrets, lock } = useVaultStore();
   const { subscribeToProjects } = useProjectStore();
-  const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret } = useUIStore();
+  const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret, openAboutModal } = useUIStore();
 
   useEffect(() => {
     if (!user) return;
@@ -42,16 +42,32 @@ export const VaultPage: React.FC = () => {
               className="flex md:hidden"
               style={{
                 width: 36, height: 36, border: 'none', background: 'none',
-                color: 'var(--color-text-2)', cursor: 'pointer', display: 'flex',
+                color: 'var(--color-text-2)', cursor: 'pointer',
                 alignItems: 'center', justifyContent: 'center',
               }}
             >
               {isMobileMenuOpen ? <FiX size={18} /> : <FiMenu size={18} />}
             </button>
-            <div className="flex md:hidden items-center" style={{ gap: 6 }}>
-              <img src="/logo.png" alt="Scync" style={{ width: 28, height: 28, objectFit: 'contain' }} />
-              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Scync</span>
+            <div className="flex md:hidden items-center" style={{ gap: 8 }}>
+              <img src="/logo.png" alt="Scync" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Scync</span>
             </div>
+            <button
+              onClick={openAboutModal}
+              className="hidden md:flex"
+              style={{
+                alignItems: 'center', gap: 6,
+                padding: '7px 12px', border: '1px solid var(--color-border)',
+                background: 'none', color: 'var(--color-text-2)', fontSize: 12,
+                fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                transition: 'border-color 140ms, color 140ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-green-border)'; e.currentTarget.style.color = 'var(--color-green)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            >
+              <FiInfo size={12} />
+              Why Scync?
+            </button>
           </div>
 
           {/* Right: Actions */}
@@ -72,6 +88,8 @@ export const VaultPage: React.FC = () => {
               <FiUpload size={12} />
               .env
             </button>
+
+
 
             <button
               onClick={openAddModal}
@@ -162,6 +180,31 @@ export const VaultPage: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
+
+        {/* ─── Footer ─── */}
+        <footer style={{
+          padding: '14px 28px',
+          borderTop: '1px solid var(--color-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '10px',
+          color: 'var(--color-text-3)',
+          fontFamily: 'var(--font-mono)',
+          background: 'var(--color-bg)',
+          flexShrink: 0,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <span>&copy; {new Date().getFullYear()} SCYNC VAULT</span>
+            <span style={{ color: 'var(--color-border)' }}>/</span>
+            <span style={{ opacity: 0.8 }}>"YOUR VAULT. YOUR KEYS. YOUR RULES."</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <span>DISTRIBUTED UNDER MIT LICENSE</span>
+          </div>
+        </footer>
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -191,6 +234,7 @@ export const VaultPage: React.FC = () => {
       <EnvImportModal />
       <AddProjectModal />
       <AddServiceModal />
+      <AboutModal />
     </div>
   );
 };

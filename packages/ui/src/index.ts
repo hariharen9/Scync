@@ -20,3 +20,4 @@ export * from './components/AddProjectModal';
 export * from './components/DatePicker';
 export * from './components/AddServiceModal';
 export * from './components/ServiceIcon';
+export * from './components/AboutModal';

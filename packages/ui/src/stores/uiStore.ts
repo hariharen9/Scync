@@ -13,6 +13,7 @@ export interface UIState {
   isEnvImportModalOpen: boolean;
   isAddProjectModalOpen: boolean;
   isAddServiceModalOpen: boolean;
+  isAboutModalOpen: boolean;
   
   filter: VaultFilter;
   sortBy: 'createdAt' | 'name' | 'expiresOn';
@@ -30,6 +31,8 @@ export interface UIState {
   closeAddProjectModal: () => void;
   openAddServiceModal: () => void;
   closeAddServiceModal: () => void;
+  openAboutModal: () => void;
+  closeAboutModal: () => void;
   
   setFilter: (filter: Partial<VaultFilter>) => void;
   clearFilters: () => void;
@@ -58,6 +61,7 @@ export const useUIStore = create<UIState>((set) => ({
   isEnvImportModalOpen: false,
   isAddProjectModalOpen: false,
   isAddServiceModalOpen: false,
+  isAboutModalOpen: false,
   isMobileMenuOpen: false,
   
   filter: defaultFilter,
@@ -75,6 +79,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeAddProjectModal: () => set({ isAddProjectModalOpen: false }),
   openAddServiceModal: () => set({ isAddServiceModalOpen: true }),
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
+  openAboutModal: () => set({ isAboutModalOpen: true }),
+  closeAboutModal: () => set({ isAboutModalOpen: false }),
   
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),

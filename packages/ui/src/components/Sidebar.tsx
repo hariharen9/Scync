@@ -3,16 +3,13 @@ import { useUIStore, type UIState } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useVaultStore } from '../stores/vaultStore';
-import { useAuthStore } from '../stores/authStore';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiLock } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe } from 'react-icons/fi';
 import { ServiceIcon } from './ServiceIcon';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal } = useUIStore();
   const { projects, selectedProjectId, selectProject } = useProjectStore();
   const { storedSecrets } = useVaultStore();
-  const { user } = useAuthStore();
-  const { lock } = useVaultStore();
 
   const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
@@ -81,11 +78,11 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
   return (
     <div style={sidebarStyle} className={className}>
       {/* Logo */}
-      <div style={{ padding: '14px 14px 10px', display: 'flex', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--color-border)' }}>
+        <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/logo.png" alt="Scync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
-        <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--color-text)' }}>Scync</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--color-text)' }}>Scync</span>
         <span style={{
           fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
           padding: '2px 5px', background: 'var(--color-green-bg)',
@@ -102,7 +99,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
             type="text"
             placeholder="Search secrets..."
             value={filter.search}
-            onChange={e => setFilter({ search: e.target.value })}
+            onChange={e => { setFilter({ search: e.target.value }); if (e.target.value) setActiveView('all'); }}
             style={{
               width: '100%', border: '1px solid var(--color-border)',
               background: 'var(--color-surface-2)', padding: '7px 9px 7px 28px',
@@ -230,38 +227,30 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
 
       {/* Footer */}
       <div style={{
-        padding: '10px 12px', borderTop: '1px solid var(--color-border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px', borderTop: '1px solid var(--color-border)',
+        display: 'flex', flexDirection: 'column', gap: 8,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {user?.photoURL ? (
-            <img src={user.photoURL} alt="" style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid var(--color-border-2)' }} />
-          ) : (
-            <div style={{
-              width: 24, height: 24, borderRadius: '50%',
-              background: 'var(--color-surface-3)', border: '1px solid var(--color-border-2)',
-              display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, color: 'var(--color-text)',
-            }}>
-              {user?.email?.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 110 }}>
-            {user?.displayName || user?.email?.split('@')[0]}
-          </span>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-2)', letterSpacing: '0.05em' }}>
+          Scync v2.0.0
         </div>
-        <button
-          onClick={lock}
-          title="Lock Vault"
-          style={{
-            width: 28, height: 28, display: 'grid', placeItems: 'center',
-            border: 'none', background: 'none', color: 'var(--color-text-3)',
-            cursor: 'pointer', transition: 'color 140ms',
-          }}
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text-2)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
-        >
-          <FiLock size={13} />
-        </button>
+
+        <div style={{ 
+          fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', 
+          letterSpacing: '0.12em', color: 'var(--color-text-3)',
+          display: 'flex', alignItems: 'center', gap: 6, margin: '2px 0'
+        }}>
+          <span>Created by <span style={{ color: 'var(--color-green)' }}>Hariharen</span></span>
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <a href="https://hariharen.site" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
+            <FiGlobe size={11} /> <span style={{ fontSize: 10, fontWeight: 600 }}>Portfolio</span>
+          </a>
+          <a href="https://github.com/hariharen9/Scync" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
+            <FiGithub size={11} /> <span style={{ fontSize: 10, fontWeight: 600 }}>GitHub</span>
+          </a>
+        </div>
       </div>
     </div>
   );
