@@ -364,7 +364,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-2)', letterSpacing: '0.05em' }}>
-          Scync v2.0.0
+          Scync {__APP_VERSION__}
         </div>
 
         <div style={{ 
