@@ -15,6 +15,7 @@ const getVersion = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   envDir: '../../',
   plugins: [
     tailwindcss(),

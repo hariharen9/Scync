@@ -40,6 +40,8 @@ jobs:
       - name: Build Windows Installer
         working-directory: apps/desktop
         run: npx electron-builder --win --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
@@ -78,6 +80,8 @@ jobs:
       - name: Build macOS DMG
         working-directory: apps/desktop
         run: npx electron-builder --mac --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
@@ -88,17 +92,20 @@ jobs:
   create-release:
     name: Create GitHub Release
     needs: [build-windows, build-macos]
+    if: always() && (needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
       - name: Download Windows Artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: windows-installer
           path: ./artifacts/windows
 
       - name: Download macOS Artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: macos-dmg
           path: ./artifacts/macos

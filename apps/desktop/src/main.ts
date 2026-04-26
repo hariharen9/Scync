@@ -38,9 +38,28 @@ function createWindow(): void {
     });
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    // In production, load the bundled web app from extraResources
-    const appPath = path.join(process.resourcesPath, 'app', 'index.html');
-    mainWindow.loadFile(appPath);
+    // In production, load the bundled web app
+    // Try multiple possible paths to be robust against different packaging layouts
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'app', 'index.html'),
+      path.join(__dirname, '..', 'app', 'index.html'),
+      path.join(app.getAppPath(), '..', 'app', 'index.html')
+    ];
+
+    let loaded = false;
+    for (const p of possiblePaths) {
+      if (require('fs').existsSync(p)) {
+        mainWindow.loadFile(p);
+        loaded = true;
+        break;
+      }
+    }
+
+    if (!loaded) {
+      // Fallback/Log if something is very wrong
+      console.error('Could not find index.html in any of:', possiblePaths);
+      mainWindow.loadURL('data:text/html,<h1>Could not find app files</h1>');
+    }
   }
 
   // Show window when content is ready (prevents white flash)
