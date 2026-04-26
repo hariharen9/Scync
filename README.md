@@ -1,4 +1,7 @@
 <div align="center">
+<img src="./assets/header.png" width="100%" alt="Scync Header" />
+<br />
+<br />
 
 # 🔐 Scync
 
