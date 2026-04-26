@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useAuthStore } from '../stores/authStore';
 import { SecretCard } from './SecretCard';
 import { Dropdown, type DropdownOption } from './Dropdown';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useServiceStore } from '../stores/serviceStore';
 import { ServiceIcon } from './ServiceIcon';
 import { CustomServiceIcon } from './CustomServiceIcons';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
-import { FiKey, FiPlus, FiFilter, FiX, FiSearch } from 'react-icons/fi';
+import { FiKey, FiPlus, FiFilter, FiX, FiSearch, FiDownload } from 'react-icons/fi';
 import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES } from '@scync/core';
 
 const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[] => [
@@ -17,10 +19,15 @@ const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[
 ];
 
 export const SecretList: React.FC = () => {
-  const { storedSecrets } = useVaultStore();
+  const { storedSecrets, decryptValue, unlock } = useVaultStore();
   const { filter, setFilter, clearFilters, activeView, openAddModal, sortBy, sortOrder } = useUIStore();
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportError, setExportError] = useState('');
   const { selectedProjectId, projects } = useProjectStore();
   const { customServices } = useServiceStore();
+  const { user } = useAuthStore();
 
   const getProject = (projectId: string | null) =>
     projectId ? (projects.find(p => p.id === projectId) || null) : null;
@@ -80,6 +87,55 @@ export const SecretList: React.FC = () => {
     ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color] ?? 'var(--color-text-2)'} /> })),
   ];
 
+  const handleExportClick = () => {
+    if (!selectedProjectId) return;
+    setExportPassword('');
+    setExportError('');
+    setShowExportModal(true);
+  };
+
+  const confirmExportEnv = async () => {
+    if (isExporting || !selectedProjectId || !user || !exportPassword) return;
+    setIsExporting(true);
+    setExportError('');
+    try {
+      const isValid = await unlock(exportPassword, user.uid);
+      if (!isValid) {
+        setExportError('Incorrect vault password.');
+        setIsExporting(false);
+        return;
+      }
+
+      const projectSecrets = storedSecrets.filter(s => s.projectId === selectedProjectId);
+      let envContent = `# Exported from Scync - ${title}\n# Date: ${new Date().toISOString()}\n\n`;
+      for (const s of projectSecrets) {
+        const dec = await decryptValue(s.id);
+        if (dec) {
+          const keyName = s.name.toUpperCase().replace(/[\s-]+/g, '_').replace(/[^A-Z0-9_]/g, '');
+          const escapedValue = dec.value.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+          envContent += `${keyName}="${escapedValue}"\n`;
+        }
+      }
+      
+      const blob = new Blob([envContent], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.env`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setShowExportModal(false);
+    } catch (err) {
+      console.error('Failed to export env:', err);
+      setExportError('Export failed.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
@@ -92,20 +148,39 @@ export const SecretList: React.FC = () => {
             {visibleSecrets.length} secret{visibleSecrets.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={openAddModal}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-            background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-            color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
-        >
-          <FiPlus size={13} />
-          Add Secret
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {activeView === 'project' && selectedProjectId && (
+            <button
+              onClick={handleExportClick}
+              disabled={isExporting}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+                background: 'none', border: '1px solid var(--color-border)',
+                color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-green-border)'; e.currentTarget.style.color = 'var(--color-green)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            >
+              <FiDownload size={13} />
+              Export .env
+            </button>
+          )}
+          <button
+            onClick={openAddModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+          >
+            <FiPlus size={13} />
+            Add Secret
+          </button>
+        </div>
       </div>
 
       {/* Search & Filters */}
@@ -221,6 +296,75 @@ export const SecretList: React.FC = () => {
           ))}
         </div>
       )}
+
+      <AnimatePresence>
+        {showExportModal && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={() => setShowExportModal(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }} />
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }} style={{ position: 'relative', width: '100%', maxWidth: 400, background: 'var(--color-surface)', border: '1px solid var(--color-border-2)', boxShadow: '0 24px 64px rgba(0,0,0,.7)', overflow: 'hidden' }}>
+              
+              <div style={{ padding: 20 }}>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>Export .env</h3>
+                <p style={{ margin: '8px 0 16px 0', fontSize: 13, color: 'var(--color-text-2)', lineHeight: 1.5 }}>
+                  Verify your master vault password to temporarily decrypt and download these secrets as a plaintext `.env` file.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 10, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Vault Password</label>
+                  <input
+                    type="password"
+                    autoFocus
+                    placeholder="Enter master password"
+                    value={exportPassword}
+                    onChange={e => { setExportPassword(e.target.value); setExportError(''); }}
+                    onKeyDown={e => { if (e.key === 'Enter') confirmExportEnv(); }}
+                    style={{
+                      width: '100%', padding: '10px 12px', background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+                      color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-mono)', transition: 'border-color 140ms'
+                    }}
+                    onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+                    onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                  />
+                  {exportError && <span style={{ fontSize: 11, color: 'var(--color-red)', marginTop: 4 }}>{exportError}</span>}
+                </div>
+              </div>
+
+              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: 8, background: 'var(--color-surface-2)' }}>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  disabled={isExporting}
+                  style={{
+                    padding: '7px 14px', border: '1px solid var(--color-border)', background: 'var(--color-surface)',
+                    color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600, cursor: isExporting ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-sans)', transition: 'all 140ms'
+                  }}
+                  onMouseEnter={e => { if (!isExporting) { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; } }}
+                  onMouseLeave={e => { if (!isExporting) { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; } }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmExportEnv}
+                  disabled={isExporting || !exportPassword}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 16px', border: '1px solid var(--color-green-border)',
+                    background: 'var(--color-green)',
+                    color: '#fff',
+                    fontSize: 12, fontWeight: 700, cursor: (isExporting || !exportPassword) ? 'not-allowed' : 'pointer', opacity: (isExporting || !exportPassword) ? 0.5 : 1,
+                    fontFamily: 'var(--font-sans)', transition: 'opacity 140ms'
+                  }}
+                >
+                  {isExporting ? (
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid rgba(255,255,255,.3)', borderTopColor: 'white', animation: 'spin 0.7s linear infinite' }} />
+                  ) : 'Decrypt & Download'}
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
