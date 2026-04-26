@@ -1,0 +1,12 @@
+[build]
+  command = "pnpm build --filter web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+  PNPM_VERSION = "9"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
