@@ -541,70 +541,72 @@ export const AuthPage: React.FC = () => {
           <h2 className="section-h2 reveal reveal-delay-1">Every other tool misses something.</h2>
           <p className="section-sub reveal reveal-delay-2">Personal-first. Zero-knowledge. Cross-platform. Open source. Pleasant to use. All five. That's the gap Scync fills.</p>
 
-          <div className="compare-table reveal">
-            <div className="compare-header">
-              <div className="compare-cell"></div>
-              <div className="compare-cell">1Password</div>
-              <div className="compare-cell">Infisical</div>
-              <div className="compare-cell">KeePassXC</div>
-              <div className="compare-cell">Notion</div>
-              <div className="compare-cell highlight">Scync</div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Zero-knowledge</div>
-              <div className="compare-cell"><span className="c-part">partial</span></div>
-              <div className="compare-cell"><span className="c-part">partial</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Built for API keys</div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Cross-platform sync</div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Personal-first (not team)</div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Open source</div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Free forever</div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-part">free tier</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-part">free tier</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-            </div>
-            <div className="compare-row">
-              <div className="compare-cell">Rotation dashboard</div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-yes">✓</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell"><span className="c-no">✗</span></div>
-              <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+          <div className="compare-table-wrapper">
+            <div className="compare-table reveal">
+              <div className="compare-header">
+                <div className="compare-cell"></div>
+                <div className="compare-cell">1Password</div>
+                <div className="compare-cell">Infisical</div>
+                <div className="compare-cell">KeePassXC</div>
+                <div className="compare-cell">Notion</div>
+                <div className="compare-cell highlight">Scync</div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Zero-knowledge</div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Built for API keys</div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Cross-platform sync</div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Personal-first (not team)</div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Open source</div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Free forever</div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-part">free tier</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-part">free tier</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Rotation dashboard</div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -700,9 +702,9 @@ export const AuthPage: React.FC = () => {
           <a href="https://github.com/hariharen9/Scync" target="_blank">GitHub</a>
         </div>
         <div className="footer-copy">
-          © 2026 Scync. Free forever.
+          <span className="copy-text">© 2026 Scync. Free forever.</span>
           <span className="footer-sep">·</span>
-          Created by <a href="https://hariharen.site" target="_blank">Hariharen</a>
+          <span className="creator-text">Created by <a href="https://hariharen.site" target="_blank">Hariharen</a></span>
         </div>
       </footer>
     </div>
