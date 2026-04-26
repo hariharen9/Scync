@@ -253,10 +253,17 @@ app.on('window-all-closed', () => {
 app.on('web-contents-created', (_, contents) => {
   // Spoof User Agent to prevent Google Auth from blocking the internal Electron popup
   // By removing "Electron/xx.x.x" and "Scync/x.x.x" it looks like a standard Chrome browser.
-  const customUserAgent = contents.userAgent
-    .replace(/Electron\/\S*\s/, '')
-    .replace(/Scync\/\S*\s/, '');
-  contents.userAgent = customUserAgent;
+  try {
+    if (typeof contents.getUserAgent === 'function') {
+      const currentUA = contents.getUserAgent();
+      const customUserAgent = currentUA
+        .replace(/Electron\/\S*\s/, '')
+        .replace(/Scync\/\S*\s/, '');
+      contents.setUserAgent(customUserAgent);
+    }
+  } catch (e) {
+    console.error('Error spoofing User Agent:', e);
+  }
 
   contents.on('will-navigate', (event, url) => {
     // Allow navigation within the app or Google Auth
