@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, Menu } from 'electron';
+import { app, BrowserWindow, shell, Menu, globalShortcut } from 'electron';
 import * as path from 'path';
 
 // Keep a global reference of the window object to prevent garbage collection
@@ -234,12 +234,28 @@ app.whenReady().then(() => {
   createMenu();
   createWindow();
 
+  // Register a 'CommandOrControl+Shift+S' shortcut to pop open the vault
+  globalShortcut.register('CommandOrControl+Shift+S', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    } else {
+      createWindow();
+    }
+  });
+
   // macOS: re-create window when clicking dock icon if none exist
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
+});
+
+app.on('will-quit', () => {
+  // Unregister all shortcuts when the app quits
+  globalShortcut.unregisterAll();
 });
 
 // Quit when all windows are closed (except on macOS)
