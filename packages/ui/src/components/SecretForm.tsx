@@ -9,7 +9,8 @@ import { DatePicker } from './DatePicker';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
-import { FiKey, FiFileText, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiKey, FiFileText, FiEye, FiEyeOff, FiList } from 'react-icons/fi';
+import type { RecoveryCodeSet } from '@scync/core';
 
 interface SecretFormProps {
   initialData?: Omit<StoredSecret, 'encValue' | 'encNotes'> & { value?: string; notes?: string };
@@ -41,13 +42,60 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
   const [formData, setFormData] = useState<SecretFormData>({
     name: initialData?.name || '', service: initialData?.service || 'Other',
     type: initialData?.type || 'API Key', environment: initialData?.environment || 'Personal',
-    status: initialData?.status || 'Active', value: initialData?.value || '',
+    status: initialData?.status || 'Active', 
+    value: initialData?.type === 'Recovery Codes' && initialData?.value 
+      ? (() => {
+          try {
+            const parsed = JSON.parse(initialData.value) as RecoveryCodeSet;
+            return parsed.codes.filter(c => !c.used).map(c => c.code).join('\n');
+          } catch {
+            return initialData.value;
+          }
+        })()
+      : (initialData?.value || ''),
     notes: initialData?.notes || '', lastRotated: initialData?.lastRotated || null,
     expiresOn: initialData?.expiresOn || null, projectId: initialData?.projectId || null,
+    remainingCodes: initialData?.remainingCodes || null,
   });
   const [showValue, setShowValue] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); await onSubmit(formData); };
+  const handleSubmit = async (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    let finalData = { ...formData };
+    
+    if (finalData.type === 'Recovery Codes') {
+      const lines = finalData.value.split('\n').map(l => l.trim()).filter(Boolean);
+      const uniqueLines = Array.from(new Set(lines));
+      
+      let existingSet: RecoveryCodeSet = { codes: [] };
+      if (initialData?.type === 'Recovery Codes' && initialData?.value) {
+        try {
+          existingSet = JSON.parse(initialData.value);
+        } catch {}
+      }
+      
+      // Preserve used codes, append/update unused codes from the textarea
+      const existingUsed = existingSet.codes.filter(c => c.used);
+      const newCodes = uniqueLines.map(line => {
+        const existing = existingSet.codes.find(c => c.code === line);
+        if (existing) return existing;
+        return { code: line, used: false, usedAt: null };
+      });
+      
+      // We only allow editing the "unused" codes via the textarea. 
+      // So the final set is all previously used codes + the new/remaining codes in the textarea.
+      const finalSet: RecoveryCodeSet = {
+        codes: [...existingUsed, ...newCodes]
+      };
+      
+      finalData.value = JSON.stringify(finalSet);
+      finalData.remainingCodes = newCodes.length;
+    } else {
+      finalData.remainingCodes = null; // not applicable for other types
+    }
+    
+    await onSubmit(finalData); 
+  };
 
   const projectOptions: DropdownOption[] = [
     { value: '', label: 'Uncategorized' },
@@ -70,15 +118,30 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
       </div>
 
       <div>
-        <label style={labelStyle}>Secret Value</label>
+        <label style={labelStyle}>
+          {formData.type === 'Recovery Codes' ? 'Recovery Codes (One per line)' : 'Secret Value'}
+        </label>
         <div style={{ position: 'relative' }}>
-          <textarea required name="value" value={formData.value} onChange={e => setFormData(p => ({ ...p, value: e.target.value }))} rows={3}
-            style={{ ...monoInputStyle, paddingRight: 30, WebkitTextSecurity: showValue ? 'none' : 'disc' } as any} placeholder="sk-proj-..."
-            onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
-          <button type="button" onClick={() => setShowValue(!showValue)} style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', padding: 0, display: 'flex' }}>
-            {showValue ? <FiEyeOff size={13} /> : <FiEye size={13} />}
-          </button>
+          {formData.type === 'Recovery Codes' ? (
+            <textarea required name="value" value={formData.value} onChange={e => setFormData(p => ({ ...p, value: e.target.value }))} rows={6}
+              style={{ ...monoInputStyle, paddingRight: 10, resize: 'vertical' } as any} placeholder={"8f3a-2b1c-9d4e\n7e2d-1a4f-0c8b\n..."}
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
+          ) : (
+            <>
+              <textarea required name="value" value={formData.value} onChange={e => setFormData(p => ({ ...p, value: e.target.value }))} rows={3}
+                style={{ ...monoInputStyle, paddingRight: 30, WebkitTextSecurity: showValue ? 'none' : 'disc' } as any} placeholder="sk-proj-..."
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
+              <button type="button" onClick={() => setShowValue(!showValue)} style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                {showValue ? <FiEyeOff size={13} /> : <FiEye size={13} />}
+              </button>
+            </>
+          )}
         </div>
+        {formData.type === 'Recovery Codes' && formData.value && (
+          <div style={{ fontSize: 10, color: 'var(--color-green)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+            <FiList size={10} /> {formData.value.split('\n').filter(l => l.trim()).length} codes detected
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

@@ -66,6 +66,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
 
   const isExpired = secret.expiresOn && secret.expiresOn.getTime() < Date.now();
   const isExpiringSoon = !isExpired && secret.expiresOn && (secret.expiresOn.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
+  const isLowCodes = secret.type === 'Recovery Codes' && secret.remainingCodes !== null && secret.remainingCodes <= 2;
 
   const accentColor = getServiceColor(secret.service, customServices);
   const envStyle = ENV_BADGE_COLORS[secret.environment] || { bg: 'rgba(100,116,139,0.08)', color: '#64748b' };
@@ -76,6 +77,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   if (isExpired) { statusLabel = 'Expired'; statusBg = 'var(--color-red-bg)'; statusColor = 'var(--color-red)'; }
   else if (isExpiringSoon) { statusLabel = 'Expiring'; statusBg = 'var(--color-amber-bg)'; statusColor = 'var(--color-amber)'; }
   else if (secret.status === 'Revoked') { statusBg = 'var(--color-red-bg)'; statusColor = 'var(--color-red)'; }
+  else if (isLowCodes) { statusLabel = 'Low Codes'; statusBg = 'var(--color-red-bg)'; statusColor = 'var(--color-red)'; }
 
   return (
     <div
@@ -203,11 +205,17 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
         background: 'var(--color-bg)', border: '1px solid var(--color-border)',
         padding: '6px 10px',
       }}>
-        <MaskedValue
-          value={decryptedValue || ''}
-          onRevealToggled={handleRevealToggle}
-          compact
-        />
+        {secret.type === 'Recovery Codes' ? (
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--color-text-3)' }}>
+            {secret.remainingCodes ?? 0} unused codes
+          </div>
+        ) : (
+          <MaskedValue
+            value={decryptedValue || ''}
+            onRevealToggled={handleRevealToggle}
+            compact
+          />
+        )}
       </div>
 
       {/* Bottom: status + expiry */}

@@ -97,7 +97,8 @@ export async function createSecret(
     expiresOn: formData.expiresOn,
     createdAt: new Date(), 
     updatedAt: new Date(),
-    projectId: formData.projectId || null
+    projectId: formData.projectId || null,
+    remainingCodes: formData.remainingCodes || null
   };
 
   await setDoc(newRef, {
@@ -129,6 +130,7 @@ export async function updateSecret(
     lastRotated: formData.lastRotated,
     expiresOn: formData.expiresOn,
     projectId: formData.projectId || null,
+    remainingCodes: formData.remainingCodes || null,
     updatedAt: serverTimestamp()
   });
 }
@@ -153,7 +155,8 @@ export function subscribeToSecrets(
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
         lastRotated: data.lastRotated?.toDate() || null,
-        expiresOn: data.expiresOn?.toDate() || null
+        expiresOn: data.expiresOn?.toDate() || null,
+        remainingCodes: data.remainingCodes ?? null
       } as StoredSecret;
     });
     callback(secrets);

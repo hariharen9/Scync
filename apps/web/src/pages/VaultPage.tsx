@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
          Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal, SettingsModal, useInactivityLock } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
@@ -9,6 +9,14 @@ export const VaultPage: React.FC = () => {
   const { subscribeToSecrets, lock } = useVaultStore();
   const { subscribeToProjects } = useProjectStore();
   const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret, openAboutModal, openSettingsModal } = useUIStore();
+
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 1024 : false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useInactivityLock();
 
@@ -183,26 +191,43 @@ export const VaultPage: React.FC = () => {
                   className="lg:hidden"
                 />
 
-                {/* Panel — sticky on desktop, fixed on mobile */}
+                {/* Panel — sticky on desktop, bottom sheet on mobile */}
                 <motion.div
                   key="detail"
-                  initial={{ opacity: 0, x: 40 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 40 }}
+                  initial={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, x: 40 }}
+                  animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, x: 0 }}
+                  exit={isMobile ? { opacity: 0, y: '100%' } : { opacity: 0, x: 40 }}
                   transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+                  drag={isMobile ? "y" : false}
+                  dragConstraints={{ top: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(e, info) => {
+                    if (isMobile && (info.offset.y > 100 || info.velocity.y > 500)) {
+                      selectSecret(null);
+                    }
+                  }}
                   style={{
                     borderLeft: '1px solid var(--color-border)',
                     background: 'var(--color-surface)',
-                    overflowY: 'auto',
                     flexShrink: 0,
+                    overflow: 'hidden'
                   }}
-                  className="
-                    fixed right-0 top-0 h-screen w-full max-w-[400px] z-50
-                    lg:sticky lg:top-0 lg:h-[calc(100vh-52px)] lg:w-[380px] lg:max-w-[380px] lg:z-auto
-                  "
+                  className={
+                    isMobile
+                      ? "fixed bottom-0 left-0 right-0 w-full max-h-[85vh] z-50 flex flex-col rounded-t-2xl shadow-2xl border-t border-[var(--color-border)]"
+                      : "fixed right-0 top-0 h-screen w-full max-w-[400px] z-50 lg:sticky lg:top-0 lg:h-[calc(100vh-52px)] lg:w-[380px] lg:max-w-[380px] lg:z-auto flex flex-col"
+                  }
                 >
-                  <SecretDetail />
+                  {isMobile && (
+                    <div style={{ width: '100%', height: 28, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0, cursor: 'grab' }} className="active:cursor-grabbing">
+                      <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--color-border-2)' }} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, overflowY: 'auto' }} onPointerDownCapture={e => isMobile && e.stopPropagation()}>
+                    <SecretDetail />
+                  </div>
                 </motion.div>
+
               </>
             )}
           </AnimatePresence>

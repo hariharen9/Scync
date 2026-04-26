@@ -3,7 +3,8 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { MaskedValue } from './MaskedValue';
-import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw } from 'react-icons/fi';
+import { RecoveryCodeViewer } from './RecoveryCodeViewer';
+import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw, FiArrowLeft } from 'react-icons/fi';
 import type { DecryptedSecret } from '@scync/core';
 import { useServiceStore } from '../stores/serviceStore';
 import { SERVICE_COLORS } from '@scync/core';
@@ -41,14 +42,33 @@ export const SecretDetail: React.FC = () => {
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--color-surface)', borderLeft: '1px solid var(--color-border)' }}>
+      <style>{`
+        .sd-back-btn { display: flex; }
+        .sd-close-btn { display: none; }
+        @media (min-width: 1024px) {
+          .sd-back-btn { display: none !important; }
+          .sd-close-btn { display: grid !important; }
+        }
+      `}</style>
       {/* Header */}
       <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)' }}>Secret Details</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button 
+            onClick={() => selectSecret(null)} 
+            className="sd-back-btn"
+            style={{ minWidth: 28, width: 28, height: 28, alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', borderRadius: 4, cursor: 'pointer' }}
+          >
+            <FiArrowLeft size={14} />
+          </button>
+          <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', whiteSpace: 'nowrap' }}>Secret Details</span>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button onClick={() => openEditModal(secret.id)} title="Edit" style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiEdit2 size={13} /></button>
-          <button onClick={() => selectSecret(null)} title="Close" style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiX size={14} /></button>
+          <button onClick={() => selectSecret(null)} title="Close" className="sd-close-btn" style={{ width: 26, height: 26, placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiX size={14} /></button>
         </div>
       </div>
+
+
 
       <div data-lenis-prevent="true" style={{ flex: 1, overflowY: 'auto', padding: '18px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Identity */}
@@ -58,19 +78,24 @@ export const SecretDetail: React.FC = () => {
               const custom = customServices.find(s => s.name === secret.service);
               const accentColor = custom ? (PROJECT_COLOR_MAP[custom.color] ?? '#10b981') : (SERVICE_COLORS[secret.service as keyof typeof SERVICE_COLORS] || '#10b981');
               return (
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40` }}>{secret.service}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40`, whiteSpace: 'nowrap' }}>{secret.service}</span>
               );
             })()}
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: statusBg, color: statusColor }}>{isExpired ? 'Expired' : secret.status}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: statusBg, color: statusColor, whiteSpace: 'nowrap' }}>{isExpired ? 'Expired' : secret.status}</span>
           </div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em' }}>{secret.name}</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{secret.name}</h2>
         </div>
+
 
         {/* Value */}
         <div>
-          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8 }}>Secret Value</div>
-          <div style={{ border: '1px solid var(--color-border)', background: 'var(--color-bg)', padding: '10px 12px' }}>
-            {decrypted ? <MaskedValue value={decrypted.value} /> : (
+          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8 }}>
+            {secret.type === 'Recovery Codes' ? 'Recovery Codes' : 'Secret Value'}
+          </div>
+          <div style={{ border: secret.type !== 'Recovery Codes' ? '1px solid var(--color-border)' : 'none', background: secret.type !== 'Recovery Codes' ? 'var(--color-bg)' : 'transparent', padding: secret.type !== 'Recovery Codes' ? '10px 12px' : 0 }}>
+            {decrypted ? (
+              secret.type === 'Recovery Codes' ? <RecoveryCodeViewer secret={decrypted} /> : <MaskedValue value={decrypted.value} />
+            ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-3)', fontSize: 12 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-green)', animation: 'spin 0.8s linear infinite' }} />
                 Decrypting...

@@ -23,6 +23,7 @@ export interface StoredSecret {
   createdAt: Date;
   updatedAt: Date;
   projectId: string | null;
+  remainingCodes: number | null;
 }
 
 export interface DecryptedSecret extends Omit<StoredSecret, 'encValue' | 'encNotes'> {
@@ -41,6 +42,7 @@ export interface SecretFormData {
   lastRotated: Date | null;
   expiresOn: Date | null;
   projectId?: string | null;
+  remainingCodes?: number | null;
 }
 
 export type ServiceName = string;

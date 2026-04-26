@@ -112,6 +112,7 @@ export const Dashboard: React.FC = () => {
     score -= Math.min(40, (attention.expired.length / total) * 80);
     score -= Math.min(25, (attention.expiringSoon.length / total) * 50);
     score -= Math.min(20, (attention.rotationOverdue.length / total) * 40);
+    score -= Math.min(25, (attention.recoveryCodesLow.length / total) * 50);
     const revokedOrExpired = storedSecrets.filter(s => s.status === 'Expired' || s.status === 'Revoked').length;
     score -= Math.min(15, (revokedOrExpired / total) * 30);
     return Math.max(0, Math.round(score));
@@ -127,7 +128,7 @@ export const Dashboard: React.FC = () => {
   const greeting = (() => { const h = new Date().getHours(); if (h < 12) return 'Good morning'; if (h < 17) return 'Good afternoon'; return 'Good evening'; })();
   const maxService = serviceBreakdown.length > 0 ? serviceBreakdown[0][1] : 1;
   const maxType = typeBreakdown.length > 0 ? typeBreakdown[0][1] : 1;
-  const hasIssues = attention.expired.length > 0 || attention.expiringSoon.length > 0 || attention.rotationOverdue.length > 0;
+  const hasIssues = attention.expired.length > 0 || attention.expiringSoon.length > 0 || attention.rotationOverdue.length > 0 || attention.recoveryCodesLow.length > 0;
   const scoreColor = vaultScore >= 80 ? 'var(--color-green)' : vaultScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)';
   const scoreLabel = vaultScore >= 80 ? 'ALL CLEAR' : vaultScore >= 50 ? 'NEEDS ATTENTION' : 'CRITICAL';
 
@@ -165,7 +166,7 @@ export const Dashboard: React.FC = () => {
           <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Vault Health Score</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: scoreColor, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{scoreLabel}</div>
           <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', margin: 0, lineHeight: 1.5 }}>
-            {vaultScore >= 80 ? 'All secrets are in good standing. No expired keys or overdue rotations.' : vaultScore >= 50 ? 'Some secrets need attention. Review expiring or stale keys.' : 'Multiple secrets are expired or need urgent rotation.'}
+            {vaultScore >= 80 ? 'All secrets are in good standing. No expired keys or overdue rotations.' : vaultScore >= 50 ? 'Some secrets need attention. Review expiring or stale keys.' : 'Multiple secrets are expired, need urgent rotation, or have low recovery codes.'}
           </p>
         </div>
       </div>
@@ -193,14 +194,24 @@ export const Dashboard: React.FC = () => {
         <div style={{ ...card, marginBottom: 16, borderColor: 'rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.02)' }}>
           <div style={{ ...sTitle, color: 'var(--color-amber)' }}><FiAlertTriangle size={12} /> Needs Attention</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {[...attention.expired, ...attention.expiringSoon, ...attention.rotationOverdue].slice(0, 5).map(s => {
+            {[...attention.expired, ...attention.expiringSoon, ...attention.rotationOverdue, ...attention.recoveryCodesLow].slice(0, 5).map(s => {
               const isExp = attention.expired.includes(s);
               const isSoon = attention.expiringSoon.includes(s);
+              const isLowCodes = attention.recoveryCodesLow.includes(s);
+              
+              let badgeText = 'Rotate';
+              if (isExp) badgeText = 'Expired';
+              else if (isSoon) badgeText = 'Expiring';
+              else if (isLowCodes) badgeText = 'Low Codes';
+              
+              const badgeColor = isExp || isLowCodes ? 'var(--color-red)' : isSoon ? 'var(--color-amber)' : '#f97316';
+              const badgeBg = isExp || isLowCodes ? 'var(--color-red-bg)' : isSoon ? 'var(--color-amber-bg)' : 'rgba(249,115,22,0.08)';
+
               return (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                  <div style={{ width: 5, height: 5, flexShrink: 0, background: isExp ? 'var(--color-red)' : isSoon ? 'var(--color-amber)' : '#f97316' }} />
+                  <div style={{ width: 5, height: 5, flexShrink: 0, background: badgeColor }} />
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: isExp ? 'var(--color-red-bg)' : isSoon ? 'var(--color-amber-bg)' : 'rgba(249,115,22,0.08)', color: isExp ? 'var(--color-red)' : isSoon ? 'var(--color-amber)' : '#f97316' }}>{isExp ? 'Expired' : isSoon ? 'Expiring' : 'Rotate'}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: badgeBg, color: badgeColor }}>{badgeText}</span>
                   <span style={{ fontSize: 10.5, color: 'var(--color-text-3)' }}>{s.service}</span>
                 </div>
               );
@@ -208,6 +219,7 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
 
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 1, background: 'var(--color-border)', border: '1px solid var(--color-border)', marginBottom: 16 }}>

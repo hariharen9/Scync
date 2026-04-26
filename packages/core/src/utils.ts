@@ -22,15 +22,14 @@ export function getAttentionSecrets(secrets: StoredSecret[]): {
     s => s.status === 'Active' && s.lastRotated && s.lastRotated < sixMonthsAgo
   );
 
-  // Without decryption, we can't accurately tell if recovery codes are low if they are encrypted.
-  // The spec says "Note: this requires decrypt — only shown if vault is unlocked", meaning
-  // this util has to be called at the UI level *after* decryption for RecoveryCodes,
-  // OR we store remaining codes count unencrypted. For now we will return empty and let UI handle it,
-  // or we pass decrypted recovery codes as a separate parameter if needed.
+  const recoveryCodesLow = secrets.filter(
+    s => s.type === 'Recovery Codes' && s.remainingCodes !== null && s.remainingCodes !== undefined && s.remainingCodes <= 2
+  );
+
   return {
     expired,
     expiringSoon,
     rotationOverdue,
-    recoveryCodesLow: []
+    recoveryCodesLow
   };
 }
