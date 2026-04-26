@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useAuthStore, useVaultStore } from '@scync/ui';
-import { FiUnlock, FiLogOut } from 'react-icons/fi';
+import { FiUnlock, FiLogOut, FiShield } from 'react-icons/fi';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
-  const { unlock } = useVaultStore();
+  const { unlock, vaultMeta, unlockWithBiometrics } = useVaultStore();
 
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
   const [shake, setShake] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +32,26 @@ export const UnlockPage: React.FC = () => {
       setTimeout(() => setShake(false), 500);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBiometricUnlock = async () => {
+    if (!user) return;
+    try {
+      setBiometricLoading(true);
+      setError(false);
+      const success = await unlockWithBiometrics(user.uid);
+      if (!success) {
+        setError(true);
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+      }
+    } catch (err) {
+      setError(true);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -100,6 +121,33 @@ export const UnlockPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {vaultMeta?.biometric && (
+              <button
+                type="button"
+                onClick={handleBiometricUnlock}
+                disabled={loading || biometricLoading}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  width: '100%', background: 'var(--color-surface-2)', color: 'var(--color-text)',
+                  border: '1px solid var(--color-border)', padding: '10px 16px',
+                  fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 700,
+                  cursor: (loading || biometricLoading) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || biometricLoading) ? 0.5 : 1,
+                  transition: 'all 140ms',
+                  marginBottom: 8
+                }}
+              >
+                {biometricLoading ? (
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--color-green)', animation: 'spin 0.7s linear infinite' }} />
+                ) : (
+                  <>
+                    <FiShield size={14} color="var(--color-green)" />
+                    Unlock with Biometrics
+                  </>
+                )}
+              </button>
+            )}
+
             <div>
               <input
                 type="password"

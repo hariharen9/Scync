@@ -3,10 +3,17 @@ export interface EncryptedField {
   ciphertext: string;
 }
 
+export interface BiometricMeta {
+  credentialId: string;
+  salt: string;
+  encMasterPassword: EncryptedField;
+}
+
 export interface VaultMeta {
   salt: string;
   verifier: EncryptedField;
   createdAt: Date;
+  biometric?: BiometricMeta;
 }
 
 export interface StoredSecret {

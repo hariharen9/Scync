@@ -124,6 +124,39 @@ export const SettingsModal: React.FC = () => {
     setIsSubmitting(false);
   };
 
+  // Biometric state
+  const [isEnablingBiometric, setIsEnablingBiometric] = useState(false);
+  const [biometricPassword, setBiometricPassword] = useState('');
+  const [biometricError, setBiometricError] = useState('');
+  const [showBiometricPass, setShowBiometricPass] = useState(false);
+
+  const { vaultMeta, updateBiometrics } = useVaultStore();
+
+  const handleToggleBiometric = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (!vaultMeta?.biometric) {
+      // Enabling - needs password
+      setIsSubmitting(true);
+      setBiometricError('');
+      const success = await updateBiometrics(user.uid, true, biometricPassword);
+      setIsSubmitting(false);
+      
+      if (success) {
+        setIsEnablingBiometric(false);
+        setBiometricPassword('');
+      } else {
+        setBiometricError('Failed to enable biometrics. Check your password and Passkey support.');
+      }
+    } else {
+      // Disabling
+      setIsSubmitting(true);
+      await updateBiometrics(user.uid, false);
+      setIsSubmitting(false);
+    }
+  };
+
   const handleClose = () => {
     if (isSubmitting) return; // Prevent closing while encrypting
     closeSettingsModal();
@@ -131,14 +164,17 @@ export const SettingsModal: React.FC = () => {
       setActiveTab('security');
       setIsChangingPassword(false);
       setIsExporting(false);
+      setIsEnablingBiometric(false);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setExportPassword('');
+      setBiometricPassword('');
       setPasswordError('');
       setPasswordSuccess('');
       setExportError('');
       setExportSuccess('');
+      setBiometricError('');
     }, 200);
   };
 
@@ -260,6 +296,82 @@ export const SettingsModal: React.FC = () => {
                           }}
                         />
                       </button>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ padding: '16px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 4 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isEnablingBiometric ? 16 : 0 }}>
+                        <div>
+                          <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text)' }}>
+                            <FiShield size={13} /> Biometric Unlock
+                          </h3>
+                          <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0 }}>
+                            Use FaceID, TouchID, or Windows Hello.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            if (vaultMeta?.biometric) {
+                              handleToggleBiometric({ preventDefault: () => {} } as any);
+                            } else {
+                              setIsEnablingBiometric(!isEnablingBiometric);
+                            }
+                          }}
+                          style={{
+                            width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                            background: (vaultMeta?.biometric || isEnablingBiometric) ? 'var(--color-green)' : 'var(--color-border-2)',
+                            position: 'relative', transition: 'background 0.2s', opacity: isSubmitting ? 0.5 : 1
+                          }}
+                        >
+                          <motion.div
+                            animate={{ x: (vaultMeta?.biometric || isEnablingBiometric) ? 22 : 2 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                            style={{
+                              width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                            }}
+                          />
+                        </button>
+                      </div>
+
+                      {isEnablingBiometric && !vaultMeta?.biometric && (
+                        <motion.form 
+                          initial={{ height: 0, opacity: 0 }} 
+                          animate={{ height: 'auto', opacity: 1 }} 
+                          onSubmit={handleToggleBiometric} 
+                          style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 12 }}
+                        >
+                          <div style={{ height: 1, background: 'var(--color-border)', margin: '12px 0 8px 0' }} />
+                          <p style={{ fontSize: 11, color: 'var(--color-text-2)', lineHeight: 1.4, margin: 0 }}>
+                            Enter your master password to securely wrap it with your device's biometric key.
+                          </p>
+                          <div style={{ position: 'relative' }}>
+                            <input
+                              type={showBiometricPass ? 'text' : 'password'}
+                              value={biometricPassword}
+                              onChange={e => setBiometricPassword(e.target.value)}
+                              placeholder="Master Password"
+                              required
+                              disabled={isSubmitting}
+                              style={inputStyle}
+                            />
+                            <button type="button" onClick={() => setShowBiometricPass(!showBiometricPass)} style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                              {showBiometricPass ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                            </button>
+                          </div>
+                          {biometricError && <p style={{ color: 'var(--color-red)', fontSize: 11, margin: 0 }}>{biometricError}</p>}
+                          <button type="submit" disabled={isSubmitting || !biometricPassword} style={{ ...btnPrimaryStyle, padding: '8px 12px', fontSize: 12, marginTop: 4 }}>
+                            {isSubmitting ? (
+                              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} style={{ display: 'flex', alignItems: 'center' }}>
+                                <FiLoader />
+                              </motion.div>
+                            ) : 'Register Biometrics'}
+                          </button>
+                        </motion.form>
+                      )}
                     </div>
                   </div>
                 </motion.div>

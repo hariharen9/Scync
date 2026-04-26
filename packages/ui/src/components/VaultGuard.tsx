@@ -8,10 +8,17 @@ interface VaultGuardProps { children: React.ReactNode; setupFallback: React.Reac
 
 export const VaultGuard: React.FC<VaultGuardProps> = ({ children, setupFallback, unlockFallback }) => {
   const { user } = useAuthStore();
-  const { isLocked } = useVaultStore();
+  const { isLocked, setVaultMeta } = useVaultStore();
   const [hasMeta, setHasMeta] = useState<boolean | null>(null);
 
-  useEffect(() => { if (user && isLocked) { getVaultMeta(user.uid).then(meta => setHasMeta(!!meta)).catch(() => setHasMeta(false)); } }, [user, isLocked]);
+  useEffect(() => { 
+    if (user && isLocked) { 
+      getVaultMeta(user.uid).then(meta => {
+        setHasMeta(!!meta);
+        setVaultMeta(meta);
+      }).catch(() => setHasMeta(false)); 
+    } 
+  }, [user, isLocked, setVaultMeta]);
   if (!user) return null;
 
   if (isLocked) {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { 
-  type StoredSecret, type SecretFormData, type DecryptedSecret,
+  type StoredSecret, type SecretFormData, type DecryptedSecret, type VaultMeta,
   deriveKey, createSecret, updateSecret, deleteSecret,
   decryptSecret as coreDecryptSecret,
   subscribeToSecrets,
@@ -9,16 +9,21 @@ import {
   setupVault,
   generateSalt,
   createVerifier,
-  changeVaultPassword as coreChangeVaultPassword
+  changeVaultPassword as coreChangeVaultPassword,
+  registerBiometrics,
+  unlockWithBiometrics as coreUnlockWithBiometrics,
+  updateVaultBiometrics
 } from '@scync/core';
 
 interface VaultState {
   derivedKey: CryptoKey | null;
   isLocked: boolean;
   storedSecrets: StoredSecret[];
+  vaultMeta: VaultMeta | null;
   
   setDerivedKey: (key: CryptoKey | null) => void;
   setSecrets: (secrets: StoredSecret[]) => void;
+  setVaultMeta: (meta: VaultMeta | null) => void;
   
   unlock: (password: string, uid: string) => Promise<boolean>;
   lock: () => void;
@@ -35,15 +40,19 @@ interface VaultState {
     meta: { salt: string; verifier: any };
     secrets: StoredSecret[];
   } | null>;
+  unlockWithBiometrics: (uid: string) => Promise<boolean>;
+  updateBiometrics: (uid: string, enabled: boolean, password?: string) => Promise<boolean>;
 }
 
 export const useVaultStore = create<VaultState>((set, get) => ({
   derivedKey: null,
   isLocked: true,
   storedSecrets: [],
+  vaultMeta: null,
   
   setDerivedKey: (key) => set({ derivedKey: key, isLocked: !key }),
   setSecrets: (secrets) => set({ storedSecrets: secrets }),
+  setVaultMeta: (meta) => set({ vaultMeta: meta }),
   
   unlock: async (password: string, uid: string) => {
     try {
@@ -51,6 +60,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       if (!meta) {
         throw new Error("Vault not setup");
       }
+      set({ vaultMeta: meta });
       const key = await deriveKey(password, uid, meta.salt);
       const isValid = await checkVerifier(key, meta.verifier);
       
@@ -162,5 +172,55 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       console.error(err);
       return null;
     }
+  },
+
+  unlockWithBiometrics: async (uid: string) => {
+    try {
+      let meta = get().vaultMeta;
+      if (!meta) {
+        meta = await getVaultMeta(uid);
+        if (!meta) throw new Error("Vault not setup");
+        set({ vaultMeta: meta });
+      }
+
+      if (!meta.biometric) return false;
+
+      const password = await coreUnlockWithBiometrics(
+        meta.biometric.credentialId,
+        meta.biometric.salt,
+        meta.biometric.encMasterPassword
+      );
+
+      return get().unlock(password, uid);
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  },
+
+  updateBiometrics: async (uid: string, enabled: boolean, password?: string) => {
+    try {
+      if (enabled) {
+        if (!password) return false;
+        const result = await registerBiometrics(
+          uid,
+          'User',
+          password
+        );
+        await updateVaultBiometrics(uid, result);
+        const meta = await getVaultMeta(uid);
+        set({ vaultMeta: meta });
+        return true;
+      } else {
+        await updateVaultBiometrics(uid, null);
+        const meta = await getVaultMeta(uid);
+        set({ vaultMeta: meta });
+        return true;
+      }
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
   }
 }));
+

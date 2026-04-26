@@ -99,3 +99,42 @@ export async function checkVerifier(key: CryptoKey, verifier: EncryptedField): P
     return false;
   }
 }
+
+// WebAuthn Biometric PRF specific utilities
+export async function importPrfKey(keyMaterial: ArrayBuffer): Promise<CryptoKey> {
+  return crypto.subtle.importKey(
+    "raw",
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false, // non-extractable
+    ["encrypt", "decrypt"]
+  );
+}
+
+// Base64URL encoding for WebAuthn credential IDs
+export function bufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  let str = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    str += String.fromCharCode(bytes[i]);
+  }
+  return btoa(str)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+export function base64UrlToBuffer(base64url: string): ArrayBuffer {
+  // Add padding back if necessary
+  let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
