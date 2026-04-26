@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'; // Re-evaluating imports
-import { AuthGuard, VaultGuard, useUIStore, CommandBar } from '@scync/ui';
+import React, { useEffect } from 'react';
+import { AuthGuard, VaultGuard, useUIStore, CommandBar, ErrorBoundary } from '@scync/ui';
 import { AuthPage } from './pages/AuthPage';
 import { SetupPage } from './pages/SetupPage';
 import { UnlockPage } from './pages/UnlockPage';
@@ -39,17 +39,19 @@ const App: React.FC = () => {
   }, [settings.theme]);
 
   return (
-    <ReactLenis root>
-      <AuthGuard fallback={<AuthPage />}>
-        <VaultGuard 
-          setupFallback={<SetupPage />} 
-          unlockFallback={<UnlockPage />}
-        >
-          <VaultPage />
-          <CommandBar />
-        </VaultGuard>
-      </AuthGuard>
-    </ReactLenis>
+    <ErrorBoundary>
+      <ReactLenis root>
+        <AuthGuard fallback={<AuthPage />}>
+          <VaultGuard 
+            setupFallback={<SetupPage />} 
+            unlockFallback={<UnlockPage />}
+          >
+            <VaultPage />
+            <CommandBar />
+          </VaultGuard>
+        </AuthGuard>
+      </ReactLenis>
+    </ErrorBoundary>
   );
 };
 

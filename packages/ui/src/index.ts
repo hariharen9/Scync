@@ -6,6 +6,7 @@ export * from './stores/projectStore';
 export * from './stores/serviceStore';
 
 export * from './components/AuthGuard';
+export * from './components/ErrorBoundary';
 export * from './components/VaultGuard';
 export * from './components/CommandBar';
 export * from './components/Dropdown';
