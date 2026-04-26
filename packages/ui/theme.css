@@ -6,116 +6,115 @@
   /* ─── Layout ─── */
   --sidebar-w: 216px;
 
-  /* Map Tailwind classes to dynamic CSS variables */
-  --color-bg: var(--color-bg);
-  --color-bg-subtle: var(--color-bg-subtle);
-  --color-surface: var(--color-surface);
-  --color-surface-2: var(--color-surface-2);
-  --color-surface-3: var(--color-surface-3);
-  --color-border: var(--color-border);
-  --color-border-2: var(--color-border-2);
-  --color-border-focus: var(--color-border-focus);
-  --color-text: var(--color-text);
-  --color-text-2: var(--color-text-2);
-  --color-text-3: var(--color-text-3);
-  --color-text-muted: var(--color-text-muted);
-  --color-green: var(--color-green);
-  --color-green-bg: var(--color-green-bg);
-  --color-green-border: var(--color-green-border);
+  /* ─── Static Tailwind Tokens (light mode defaults) ─── */
+  /* These are STATIC values for Tailwind utility class generation.          */
+  /* Runtime light/dark switching is handled via :root and .dark below.      */
+  --color-bg:             #fdfdfd;
+  --color-bg-subtle:      #f4f4f5;
+  --color-surface:        #ffffff;
+  --color-surface-2:      #f4f4f5;
+  --color-surface-3:      #e4e4e7;
+  --color-border:         #d4d4d8;
+  --color-border-2:       #a1a1aa;
+  --color-border-focus:   #71717a;
+  --color-text:           #09090b;
+  --color-text-2:         #3f3f46;
+  --color-text-3:         #71717a;
+  --color-text-muted:     #71717a;
+  --color-green:          #059669;
+  --color-green-bg:       #d1fae5;
+  --color-green-border:   #6ee7b7;
+  --color-amber:          #d97706;
+  --color-red:            #dc2626;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   LIGHT MODE (default)
+   These are live CSS custom properties — they work at runtime.
+   The @theme block above only feeds Tailwind's build-time utility generation.
+───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* LIGHT MODE (BRUTALIST) */
-  --color-bg: #fdfdfd;
-  --color-bg-subtle: #f4f4f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #f4f4f5;
-  --color-surface-3: #e4e4e7;
-  --color-border: #d4d4d8;
-  --color-border-2: #a1a1aa;
-  --color-border-focus: #71717a;
+  --color-bg:             #fdfdfd;
+  --color-bg-subtle:      #f4f4f5;
+  --color-surface:        #ffffff;
+  --color-surface-2:      #f4f4f5;
+  --color-surface-3:      #e4e4e7;
+  --color-border:         #d4d4d8;
+  --color-border-2:       #a1a1aa;
+  --color-border-focus:   #71717a;
 
-  --color-text: #09090b;
-  --color-text-2: #3f3f46;
-  --color-text-3: #71717a;
-  --color-text-primary: #09090b;
+  --color-text:           #09090b;
+  --color-text-2:         #3f3f46;
+  --color-text-3:         #71717a;
+  --color-text-primary:   #09090b;
   --color-text-secondary: #3f3f46;
-  --color-text-muted: #71717a;
+  --color-text-muted:     #71717a;
 
-  --color-border-subtle: #e4e4e7;
+  --color-border-subtle:  #e4e4e7;
   --color-border-default: #d4d4d8;
 
-  --color-green: #059669;
-  --color-green-bg: rgba(16, 185, 129, 0.1);
-  --color-green-border: rgba(16, 185, 129, 0.3);
-  --color-amber: #d97706;
-  --color-amber-bg: rgba(245, 158, 11, 0.1);
-  --color-red: #dc2626;
-  --color-red-bg: rgba(239, 68, 68, 0.1);
+  --color-green:          #059669;
+  --color-green-bg:       rgba(5, 150, 105, 0.1);
+  --color-green-border:   rgba(5, 150, 105, 0.3);
+  --color-amber:          #d97706;
+  --color-amber-bg:       rgba(217, 119, 6, 0.1);
+  --color-red:            #dc2626;
+  --color-red-bg:         rgba(220, 38, 38, 0.1);
 
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
-  --color-info: #3b82f6;
-  --color-accent: #059669;
+  --color-success:        #059669;
+  --color-warning:        #d97706;
+  --color-danger:         #dc2626;
+  --color-info:           #3b82f6;
+  --color-accent:         #059669;
 
-  --color-value-masked: #a1a1aa;
+  --color-value-masked:   #a1a1aa;
   --color-value-revealed: #3f3f46;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   DARK MODE
+   Applied via .dark class on <html> by App.tsx based on user settings.
+───────────────────────────────────────────────────────────────────────────── */
 .dark {
-  /* DARK MODE (CURRENT MVP) */
-  --color-bg: #060606;
-  --color-bg-subtle: #0a0a0a;
-  --color-surface: #0f0f0f;
-  --color-surface-2: #141414;
-  --color-surface-3: #1c1c1c;
-  --color-border: #1e1e1e;
-  --color-border-2: #282828;
-  --color-border-focus: #3a3a3a;
+  --color-bg:             #060606;
+  --color-bg-subtle:      #0a0a0a;
+  --color-surface:        #0f0f0f;
+  --color-surface-2:      #141414;
+  --color-surface-3:      #1c1c1c;
+  --color-border:         #1e1e1e;
+  --color-border-2:       #282828;
+  --color-border-focus:   #3a3a3a;
 
-  --color-text: #ececec;
-  --color-text-2: #888888;
-  --color-text-3: #444444;
-  --color-text-primary: #ececec;
+  --color-text:           #ececec;
+  --color-text-2:         #888888;
+  --color-text-3:         #444444;
+  --color-text-primary:   #ececec;
   --color-text-secondary: #888888;
-  --color-text-muted: #444444;
+  --color-text-muted:     #444444;
 
-  --color-border-subtle: #1e1e1e;
+  --color-border-subtle:  #1e1e1e;
   --color-border-default: #282828;
 
-  --color-green: #10b981;
-  --color-green-bg: rgba(16, 185, 129, 0.08);
-  --color-green-border: rgba(16, 185, 129, 0.2);
-  --color-amber: #f59e0b;
-  --color-amber-bg: rgba(245, 158, 11, 0.08);
-  --color-red: #ef4444;
-  --color-red-bg: rgba(239, 68, 68, 0.08);
+  --color-green:          #10b981;
+  --color-green-bg:       rgba(16, 185, 129, 0.08);
+  --color-green-border:   rgba(16, 185, 129, 0.2);
+  --color-amber:          #f59e0b;
+  --color-amber-bg:       rgba(245, 158, 11, 0.08);
+  --color-red:            #ef4444;
+  --color-red-bg:         rgba(239, 68, 68, 0.08);
 
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #60a5fa;
-  --color-accent: #10b981;
+  --color-success:        #10b981;
+  --color-warning:        #f59e0b;
+  --color-danger:         #ef4444;
+  --color-info:           #60a5fa;
+  --color-accent:         #10b981;
 
-  --color-value-masked: #444444;
+  --color-value-masked:   #444444;
   --color-value-revealed: #888888;
 }
 
 /* Brutalist Scrollbar Utility */
-.brutalist-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-
-.brutalist-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.brutalist-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 0;
-}
-
-.brutalist-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-3);
-}
+.brutalist-scroll::-webkit-scrollbar { width: 4px; }
+.brutalist-scroll::-webkit-scrollbar-track { background: transparent; }
+.brutalist-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 0; }
+.brutalist-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-text-3); }

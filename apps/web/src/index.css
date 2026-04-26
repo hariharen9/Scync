@@ -3,6 +3,11 @@
 @import "tailwindcss";
 @source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
+/* Tell Tailwind v4 to use .dark class on <html> for dark: variants */
+@variant dark (&:where(.dark, .dark *));
+
+
+
 /* ─── Brutalist Base ─── */
 @layer base {
   *, *::before, *::after {
