@@ -17,6 +17,11 @@ const getVersion = () => {
 export default defineConfig({
   base: './',
   envDir: '../../',
+  build: {
+    modulePreload: {
+      polyfill: false
+    }
+  },
   plugins: [
     tailwindcss(),
     react()
