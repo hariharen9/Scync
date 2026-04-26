@@ -89,8 +89,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
 
   changeVaultPassword: async (uid: string, oldPassword: string, newPassword: string) => {
     try {
-      const { storedSecrets } = get();
-      const meta = await getVaultMeta(uid);
+      const { storedSecrets, vaultMeta } = get();
+      const meta = vaultMeta || await getVaultMeta(uid);
       if (!meta) return false;
 
       // Verify old password
@@ -106,8 +106,14 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       // Batch re-encrypt
       await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets);
 
+      // If biometrics was enabled, we MUST clear it because the wrapped password is now wrong
+      if (meta.biometric) {
+        await updateVaultBiometrics(uid, null);
+      }
+
       // Update state
-      set({ derivedKey: newKey });
+      const updatedMeta = await getVaultMeta(uid);
+      set({ derivedKey: newKey, vaultMeta: updatedMeta });
       return true;
     } catch (err) {
       console.error(err);

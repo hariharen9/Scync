@@ -66,14 +66,17 @@ export const SettingsModal: React.FC = () => {
     setIsSubmitting(false);
 
     if (success) {
-      setPasswordSuccess('Master password changed successfully. All secrets have been re-encrypted.');
+      const wasBiometricEnabled = !!vaultMeta?.biometric;
+      setPasswordSuccess(
+        `Master password changed successfully. All secrets have been re-encrypted.${wasBiometricEnabled ? ' Biometric unlock has been disabled for security.' : ''}`
+      );
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => {
         setIsChangingPassword(false);
         setPasswordSuccess('');
-      }, 3000);
+      }, 5000);
     } else {
       setPasswordError('Incorrect current password.');
     }
