@@ -10,3 +10,5 @@ apps/mobile/android
 apps/mobile/ios
 apps/desktop/dist
 apps/desktop/release
+
+*SPEC.md

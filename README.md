@@ -9,8 +9,8 @@
 
 **The open-source, zero-knowledge secrets manager built for developers who are tired of pasting API keys into Notion.**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Status: Pre-development](https://img.shields.io/badge/Status-Pre--development-orange.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status: Initial Release](https://img.shields.io/badge/Status-Initial%20Release-blue.svg)]()
 [![Platforms: Web · Desktop · Mobile](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20Mobile-blue.svg)]()
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-red.svg)]()
 [![Zero Knowledge](https://img.shields.io/badge/Architecture-Zero--Knowledge-purple.svg)]()
@@ -136,6 +136,10 @@ The metadata is intentionally plaintext — it enables fast filtering without de
 ### Vault Password Verification (No Password Storage)
 
 Scync verifies your vault password without storing it or a hash of it. On first setup, a known plaintext (`"Scync_VALID_v1"`) is encrypted with your derived key. On every subsequent unlock, Scync attempts to decrypt it. If the AES-GCM authentication tag passes, the password is correct. If it fails, it throws. No timing attacks. No stored hashes. No password recovery (by design).
+
+### Security Policy
+For more details on our zero-knowledge architecture, cryptographic specification, and vulnerability reporting process, please see [SECURITY.md](SECURITY.md).
+
 
 ---
 
@@ -299,6 +303,8 @@ Scync is MIT licensed and open to contributions. Before opening a PR, check your
 4. Is it already solved well by Bitwarden, Doppler, or Infisical?
 
 If it passes the filter, we want it. Open an issue first for anything significant.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full development setup and workflow guidelines.
 
 ```bash
 # Run the full CI check locally before pushing
