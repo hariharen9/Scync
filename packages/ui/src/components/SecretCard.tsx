@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiMoreVertical, FiEdit2, FiTrash2, FiClock } from 'react-icons/fi';
-import { type StoredSecret, type Project } from '@scync/core';
+import { type StoredSecret, type Project, type CustomService } from '@scync/core';
 import { MaskedValue } from './MaskedValue';
 import { useVaultStore } from '../stores/vaultStore';
 import { useServiceStore } from '../stores/serviceStore';
@@ -16,9 +16,9 @@ interface SecretCardProps {
   project?: Project | null;
 }
 
-const getServiceColor = (service: string, customServices: any[]) => {
+const getServiceColor = (service: string, customServices: CustomService[]) => {
   const custom = customServices.find(s => s.name === service);
-  if (custom) return PROJECT_COLOR_MAP[custom.color as any] ?? '#10b981';
+  if (custom) return PROJECT_COLOR_MAP[custom.color] ?? '#10b981';
   return SERVICE_COLORS[service as keyof typeof SERVICE_COLORS] || '#10b981';
 };
 

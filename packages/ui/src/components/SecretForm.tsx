@@ -51,11 +51,11 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
 
   const projectOptions: DropdownOption[] = [
     { value: '', label: 'Uncategorized' },
-    ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color as any] ?? 'var(--color-text-2)'} /> })),
+    ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color] ?? 'var(--color-text-2)'} /> })),
   ];
   const serviceOptions: DropdownOption[] = [
     ...SERVICES.map(s => ({ value: s, label: s, icon: <ServiceIcon service={s} size={13} className="text-current" /> })),
-    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color as any] ?? 'var(--color-text-2)'} />, description: 'Custom' })),
+    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color] ?? 'var(--color-text-2)'} />, description: 'Custom' })),
   ];
 
   return (

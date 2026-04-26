@@ -48,7 +48,7 @@ export type ServiceName = string;
 export interface CustomService {
   id: string;
   name: string;
-  color: string;
+  color: ProjectColor;
   icon: string;
   createdAt: Date;
   updatedAt: Date;

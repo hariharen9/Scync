@@ -56,7 +56,7 @@ export const SecretDetail: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             {(() => {
               const custom = customServices.find(s => s.name === secret.service);
-              const accentColor = custom ? (PROJECT_COLOR_MAP[custom.color as any] ?? '#10b981') : (SERVICE_COLORS[secret.service as keyof typeof SERVICE_COLORS] || '#10b981');
+              const accentColor = custom ? (PROJECT_COLOR_MAP[custom.color] ?? '#10b981') : (SERVICE_COLORS[secret.service as keyof typeof SERVICE_COLORS] || '#10b981');
               return (
                 <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40` }}>{secret.service}</span>
               );

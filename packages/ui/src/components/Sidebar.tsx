@@ -331,7 +331,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                     {custom
-                      ? <CustomServiceIcon iconKey={custom.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[custom.color as any] ?? 'var(--color-text-2)'} />
+                      ? <CustomServiceIcon iconKey={custom.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[custom.color] ?? 'var(--color-text-2)'} />
                       : <ServiceIcon service={svc} size={13} style={{ opacity: 0.75 }} />
                     }
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{svc}</span>
