@@ -92,6 +92,16 @@ export const EnvImportModal: React.FC = () => {
                     <Dropdown label="Project" labelAction={{ label: '+ New', onClick: openAddProjectModal }} options={projectOptions} value={targetProject} onChange={v => setTargetProject(v)} />
                     <Dropdown label="Environment" options={envOptions} value={targetEnv} onChange={v => setTargetEnv(v as Environment)} />
                   </div>
+                  
+                  {targetProject === '' && (
+                    <div style={{ marginBottom: 16, display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                      <FiAlertCircle size={14} color="var(--color-amber)" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <p style={{ fontSize: 11, color: 'var(--color-amber)', margin: 0, lineHeight: 1.5 }}>
+                        <strong>Not Recommended:</strong> Importing without a project can lead to cluttered organization and key name clashes with other services. We strongly recommend creating a dedicated project for these environment variables.
+                      </p>
+                    </div>
+                  )}
+
                   <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8, marginLeft: 2 }}>Detected {parsedSecrets.length} Keys</div>
                   <div style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)', maxHeight: 180, overflowY: 'auto' }} className="hide-scrollbar">
                     {parsedSecrets.map((s, i) => (
