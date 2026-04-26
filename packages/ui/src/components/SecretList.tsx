@@ -28,6 +28,7 @@ export const SecretList: React.FC = () => {
   const { selectedProjectId, projects } = useProjectStore();
   const { customServices } = useServiceStore();
   const { user } = useAuthStore();
+  const [hasCopied, setHasCopied] = useState(false);
 
   const getProject = (projectId: string | null) =>
     projectId ? (projects.find(p => p.id === projectId) || null) : null;
@@ -94,7 +95,7 @@ export const SecretList: React.FC = () => {
     setShowExportModal(true);
   };
 
-  const confirmExportEnv = async () => {
+  const confirmExportEnv = async (action: 'download' | 'copy') => {
     if (isExporting || !selectedProjectId || !user || !exportPassword) return;
     setIsExporting(true);
     setExportError('');
@@ -117,17 +118,26 @@ export const SecretList: React.FC = () => {
         }
       }
       
-      const blob = new Blob([envContent], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.env`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      setShowExportModal(false);
+      if (action === 'download') {
+        const blob = new Blob([envContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.env`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setShowExportModal(false);
+      } else {
+        await navigator.clipboard.writeText(envContent);
+        setHasCopied(true);
+        setTimeout(() => {
+          setHasCopied(false);
+          navigator.clipboard.writeText("");
+        }, 30000);
+        setTimeout(() => setShowExportModal(false), 2000);
+      }
     } catch (err) {
       console.error('Failed to export env:', err);
       setExportError('Export failed.');
@@ -316,7 +326,7 @@ export const SecretList: React.FC = () => {
                     placeholder="Enter master password"
                     value={exportPassword}
                     onChange={e => { setExportPassword(e.target.value); setExportError(''); }}
-                    onKeyDown={e => { if (e.key === 'Enter') confirmExportEnv(); }}
+                    onKeyDown={e => { if (e.key === 'Enter') confirmExportEnv('download'); }}
                     style={{
                       width: '100%', padding: '10px 12px', background: 'var(--color-bg)', border: '1px solid var(--color-border)',
                       color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-mono)', transition: 'border-color 140ms'
@@ -343,14 +353,28 @@ export const SecretList: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={confirmExportEnv}
-                  disabled={isExporting || !exportPassword}
+                  onClick={() => confirmExportEnv('copy')}
+                  disabled={isExporting || !exportPassword || hasCopied}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 16px', border: '1px solid var(--color-border)',
+                    background: 'var(--color-surface)',
+                    color: hasCopied ? 'var(--color-green)' : 'var(--color-text)',
+                    fontSize: 12, fontWeight: 700, cursor: (isExporting || !exportPassword || hasCopied) ? 'not-allowed' : 'pointer', opacity: (isExporting || !exportPassword) ? 0.5 : 1,
+                    fontFamily: 'var(--font-sans)', transition: 'all 140ms'
+                  }}
+                >
+                  {hasCopied ? 'Copied!' : 'Copy to Clipboard'}
+                </button>
+                <button
+                  onClick={() => confirmExportEnv('download')}
+                  disabled={isExporting || !exportPassword || hasCopied}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '7px 16px', border: '1px solid var(--color-green-border)',
                     background: 'var(--color-green)',
                     color: '#fff',
-                    fontSize: 12, fontWeight: 700, cursor: (isExporting || !exportPassword) ? 'not-allowed' : 'pointer', opacity: (isExporting || !exportPassword) ? 0.5 : 1,
+                    fontSize: 12, fontWeight: 700, cursor: (isExporting || !exportPassword || hasCopied) ? 'not-allowed' : 'pointer', opacity: (isExporting || !exportPassword) ? 0.5 : 1,
                     fontFamily: 'var(--font-sans)', transition: 'opacity 140ms'
                   }}
                 >
