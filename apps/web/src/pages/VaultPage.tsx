@@ -201,7 +201,7 @@ export const VaultPage: React.FC = () => {
                   drag={isMobile ? "y" : false}
                   dragConstraints={{ top: 0 }}
                   dragElastic={0.2}
-                  onDragEnd={(e, info) => {
+                  onDragEnd={(_e, info) => {
                     if (isMobile && (info.offset.y > 100 || info.velocity.y > 500)) {
                       selectSecret(null);
                     }

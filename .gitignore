@@ -9,6 +9,7 @@ build
 apps/mobile/android
 apps/mobile/ios
 apps/desktop/dist
+apps/desktop/dist-electron
 apps/desktop/release
 
 *SPEC.md

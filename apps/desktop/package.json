@@ -2,12 +2,73 @@
   "name": "scync-desktop",
   "version": "1.0.0",
   "private": true,
-  "main": "src/main.ts",
+  "description": "Scync — Zero-Knowledge Secrets Manager for Developers",
+  "author": "Scync Team",
+  "license": "MIT",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "start": "electron ."
+    "dev": "electron .",
+    "build:electron": "tsc -p tsconfig.json",
+    "build:win": "pnpm build:electron && electron-builder --win --publish never",
+    "build:mac": "pnpm build:electron && electron-builder --mac --publish never",
+    "build:all": "pnpm build:electron && electron-builder --win --mac --publish never"
+  },
+  "build": {
+    "appId": "app.scync.desktop",
+    "productName": "Scync",
+    "copyright": "Copyright © 2026 Scync Contributors",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist-electron/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../web/dist",
+        "to": "app",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "Scync-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Scync"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.developer-tools",
+      "artifactName": "Scync-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "Scync",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    }
   },
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.6.4"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.0.0"
   }
 }

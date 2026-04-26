@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { RecoveryCodeSet, StoredSecret, DecryptedSecret } from '@scync/core';
+import type { RecoveryCodeSet, DecryptedSecret } from '@scync/core';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
 import { FiCopy, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -12,7 +12,7 @@ interface RecoveryCodeViewerProps {
 export const RecoveryCodeViewer: React.FC<RecoveryCodeViewerProps> = ({ secret }) => {
   const { user } = useAuthStore();
   const { updateSecret } = useVaultStore();
-  const { copy, hasCopied } = useClipboard();
+  const { copy } = useClipboard();
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const [revealAll, setRevealAll] = useState(false);
