@@ -177,7 +177,7 @@ export const AuthPage: React.FC = () => {
           <div className="trust-sep"></div>
           <div className="trust-item">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
-            Web · Desktop · Mobile
+            Web · Desktop · PWA
           </div>
         </div>
 
@@ -341,7 +341,6 @@ export const AuthPage: React.FC = () => {
         </div>
       </section>
 
-
       <section className="section" id="features">
         <div className="section-inner">
           <div className="section-label reveal">Features</div>
@@ -436,18 +435,18 @@ export const AuthPage: React.FC = () => {
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
               </div>
-              <div className="feat-title">Web · Desktop · Mobile</div>
-              <div className="feat-desc">One React codebase. Three platforms. Web, Electron (Windows), Capacitor (iOS + Android). Identical components, same logic, same encrypted sync.</div>
+              <div className="feat-title">Biometric Passkeys</div>
+              <div className="feat-desc">The first vault to use <strong>Hardware-Backed PRF</strong> in the browser. Unlock with FaceID or Fingerprint using your device's secure hardware enclave. Native speed, zero-knowledge security.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="1" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
               </div>
-              <div className="feat-title">Always masked by default</div>
-              <div className="feat-desc">The primary action is copy — not reveal. Values are hidden until you explicitly toggle them. Your screen is safe in public. One click to copy, no confirmation.</div>
+              <div className="feat-title">Native feel. Zero bloat.</div>
+              <div className="feat-desc">Install Scync as a <strong>PWA</strong> on mobile or use the Desktop app with global hotkeys (<kbd>Ctrl+Shift+S</kbd>). Lightning fast, lightweight, and always in sync.</div>
             </div>
           </div>
         </div>
@@ -469,9 +468,9 @@ export const AuthPage: React.FC = () => {
                 <div className="sec-layer-desc">Handles Google Sign-In. Controls which Firestore documents you can access. <strong style={{ color: "var(--t1)" }}>Does not protect secret content.</strong></div>
               </div>
               <div className="sec-layer sec-layer-2">
-                <div className="sec-layer-label">Layer 2 — Encryption</div>
-                <div className="sec-layer-title">Vault Password + Web Crypto API</div>
-                <div className="sec-layer-desc">Operates 100% on your device. Firebase never participates. <strong style={{ color: "var(--t1)" }}>The only thing that can decrypt your secrets.</strong></div>
+                <div className="sec-layer-label">Layer 2 — Hardware</div>
+                <div className="sec-layer-title">WebAuthn PRF + Web Crypto</div>
+                <div className="sec-layer-desc">Your device's <strong>Secure Enclave</strong> derives encryption keys that never leave the hardware. This "wraps" your Master Password, ensuring even we can't see your biometric link.</div>
               </div>
             </div>
           </div>
@@ -527,6 +526,93 @@ export const AuthPage: React.FC = () => {
                 <div className="fb-row">
                   <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Notes</div>
                   <div className="fb-access enc">Encrypted blob</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <section className="pwa-section">
+        <div className="pwa-glow-field"></div>
+        <div className="section-inner">
+          <div className="pwa-split">
+            <div className="pwa-content">
+              <div className="section-label reveal">Next-Gen Architecture</div>
+              <h2 className="section-h2 reveal reveal-delay-1">Native feel.<br />Lightweight footprint.</h2>
+              <p className="section-sub reveal reveal-delay-2">
+                Scync isn't just a website. It's a high-performance <strong>Progressive Web App</strong> engineered to bridge the gap between web freedom and native power. No App Store gatekeepers, no 200MB binaries—just pure, encrypted performance.
+              </p>
+              
+              <div className="pwa-stats-grid reveal reveal-delay-2">
+                <div className="pwa-stat-box">
+                  <span className="pwa-stat-val">0<small>MB</small></span>
+                  <span className="pwa-stat-label">Install Size</span>
+                </div>
+                <div className="pwa-stat-box">
+                  <span className="pwa-stat-val">{"<"}1<small>s</small></span>
+                  <span className="pwa-stat-label">Cold Start</span>
+                </div>
+                <div className="pwa-stat-box">
+                  <span className="pwa-stat-val">100<small>%</small></span>
+                  <span className="pwa-stat-label">Offline Ready</span>
+                </div>
+              </div>
+
+              <div className="pwa-features reveal reveal-delay-3">
+                <div className="pwa-feat-item">
+                  <div className="pwa-feat-icon">🛡️</div>
+                  <div>
+                    <strong>Secure Enclave Integration</strong>
+                    <p>Directly interfaces with your device's hardware security module for FaceID/TouchID.</p>
+                  </div>
+                </div>
+                <div className="pwa-feat-item">
+                  <div className="pwa-feat-icon">🚀</div>
+                  <div>
+                    <strong>Zero-Lag Interface</strong>
+                    <p>Optimized for 120Hz displays with GPU-accelerated transitions and in-memory search.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pwa-visual reveal reveal-delay-2">
+              <div className="pwa-orb pwa-orb-1"></div>
+              <div className="pwa-orb pwa-orb-2"></div>
+              <div className="phone-mockup">
+                <div className="phone-screen">
+                  <div className="phone-status-bar">
+                    <div className="status-syncing">
+                      <div className="sync-dot"></div>
+                      <span>Syncing Vault...</span>
+                    </div>
+                  </div>
+                  <div className="phone-nav">
+                    <div className="phone-logo">
+                      <img src="/logo.png" alt="" />
+                    </div>
+                    <span>Scync Vault</span>
+                  </div>
+                  <div className="phone-body">
+                    <div className="phone-lock">
+                      <div className="lock-icon">
+                        <div className="lock-glow"></div>
+                        🔒
+                      </div>
+                      <div className="lock-text">Zero-Knowledge Vault</div>
+                      <div className="biometric-prompt">
+                        <div className="bio-floating-key">🔑</div>
+                        <div className="bio-ring">
+                          <div className="bio-fingerprint">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                          </div>
+                        </div>
+                        <div className="bio-text">Confirm Identity</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

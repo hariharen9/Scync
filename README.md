@@ -11,7 +11,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status: Initial Release](https://img.shields.io/badge/Status-Initial%20Release-blue.svg)]()
-[![Platforms: Web · Desktop · Mobile](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20Mobile-blue.svg)]()
+[![Platforms: Web · Desktop · PWA](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20PWA-blue.svg)]()
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-red.svg)]()
 [![Zero Knowledge](https://img.shields.io/badge/Architecture-Zero--Knowledge-purple.svg)]()
 
@@ -81,8 +81,11 @@ Import an entire `.env` file into a project. Export a project back to a `.env` f
 ### ⚡ One-click copy, always masked
 The primary action on every secret is copy. Values are masked by default. Toggle to reveal only when you need to see. Clipboard access is one click, no confirmation dialogs, no "are you sure?"
 
-### 🌐 Web + Desktop + Mobile, same codebase
-One React codebase. Three platforms. The web app, Electron desktop app (Windows), and Capacitor mobile apps (iOS + Android) are identical — same components, same logic, same encrypted sync via Firestore.
+### 🌐 Web + Desktop + PWA, same codebase
+One React codebase. The web app, installable PWA, and Electron desktop app are identical — sharing the same components, logic, and zero-knowledge sync. Access your vault from a browser, a dedicated desktop window, or your mobile home screen.
+
+### 🧬 Biometric Unlock (Passkeys)
+Unlock your vault in milliseconds using FaceID, TouchID, or Windows Hello. Scync uses the modern **WebAuthn PRF extension** to derive encryption keys directly from your device's secure hardware. No more typing long master passwords every time you need a key.
 
 ### 🔍 Instant search and filtering
 Search by name or service. Filter by type, environment, status. All in-memory — no network calls, no loading spinners, just results.
@@ -91,189 +94,65 @@ Search by name or service. Filter by type, environment, status. All in-memory �
 
 ## Security Model
 
-This is the part that matters most. Read it.
+Scync is built on a **Zero-Knowledge Architecture**. This means your secrets are encrypted on your device and stay encrypted everywhere else. 
 
-### Zero-Knowledge Architecture
+- **End-to-End Encryption**: Secrets are encrypted using AES-256-GCM before they ever leave your device.
+- **Hardware-Backed Biometrics**: Modern WebAuthn PRF integration allows hardware-level unlock without compromising zero-knowledge integrity.
+- **Server Blindness**: Firebase only sees encrypted blobs. Even in a total backend breach, your data remains secure.
+- **No Password Storage**: We never store your vault password or its hash. Verification is handled via cryptographic verifiers.
 
-Scync has two completely independent security layers that must never be conflated:
-
-**Layer 1 — Identity (Firebase Auth)**
-- Handles Google Sign-In
-- Controls which Firestore documents you can access
-- *Does not protect secret content*
-
-**Layer 2 — Encryption (Vault Password + Web Crypto API)**
-- Operates 100% on your device
-- Firebase never participates in this layer
-- *The only thing that can decrypt your secrets*
-
-A Firebase breach doesn't expose your secrets. A compromised Google account doesn't expose your secrets. Both must be compromised simultaneously — and an attacker still needs to brute-force a PBKDF2-derived AES-256 key.
-
-### Encryption Specification
-
-```
-Key Derivation:   PBKDF2-SHA256, 310,000 iterations (OWASP 2023)
-Encryption:       AES-256-GCM (authenticated encryption)
-IV:               Fresh 12-byte random IV per encrypt operation
-Key Material:     vaultPassword + uid (cross-account attack prevention)
-Salt:             16-byte random, stored in Firestore (not secret by design)
-Implementation:   Web Crypto API only — no third-party crypto libraries
-Key Storage:      In-memory CryptoKey object (non-extractable) — never persisted
-```
-
-### What Firebase Can (and Cannot) See
-
-| Field | Firebase Sees |
-|---|---|
-| Secret name | ✅ Plaintext (enables server-side search) |
-| Service, type, environment | ✅ Plaintext (enables server-side filtering) |
-| Timestamps | ✅ Plaintext |
-| **Secret value** | ❌ Encrypted blob |
-| **Notes** | ❌ Encrypted blob |
-
-The metadata is intentionally plaintext — it enables fast filtering without decryption round-trips. The content that matters is always encrypted.
-
-### Vault Password Verification (No Password Storage)
-
-Scync verifies your vault password without storing it or a hash of it. On first setup, a known plaintext (`"Scync_VALID_v1"`) is encrypted with your derived key. On every subsequent unlock, Scync attempts to decrypt it. If the AES-GCM authentication tag passes, the password is correct. If it fails, it throws. No timing attacks. No stored hashes. No password recovery (by design).
-
-### Security Policy
-For more details on our zero-knowledge architecture, cryptographic specification, and vulnerability reporting process, please see [SECURITY.md](SECURITY.md).
+For a deep dive into our cryptographic specification, key derivation process, and threat model, see **[SECURITY.md](SECURITY.md)**.
 
 
 ---
 
-## Tech Stack
+## Self-Hosting & Local Development
 
-| Layer | Technology | Why |
-|---|---|---|
-| Language | TypeScript (strict) | Type safety across all packages from day one |
-| Framework | React 18 + Vite | Concurrent features, fast HMR, works in all three runtimes |
-| Styling | Tailwind CSS v3 | Utility-first, design token system, tiny production bundle |
-| State | Zustand | Zero boilerplate, TypeScript-native, no context providers |
-| Backend | Firebase (Auth + Firestore + Hosting) | Real-time sync, Google Sign-In, free personal tier |
-| Cryptography | Web Crypto API | Browser-native, NIST-standardized, zero dependencies |
-| Desktop | Electron v28+ | Bundled Chromium — zero browser inconsistency |
-| Mobile | Capacitor v5 | Same codebase on iOS + Android, no React Native rewrite |
-| Monorepo | pnpm workspaces + Turborepo | Intelligent caching, enforced build order |
-| Testing | Vitest + RTL + Playwright | Unit, component, and E2E coverage |
-| CI/CD | GitHub Actions | Lint, test, preview deploy, and release pipelines |
-
----
-
-## Monorepo Structure
-
-```
-Scync/
-├── apps/
-│   ├── web/               # Vite app → Firebase Hosting
-│   ├── desktop/           # Electron wrapper → .exe installer
-│   └── mobile/            # Capacitor wrapper → iOS + Android
-│
-├── packages/
-│   ├── core/              # Crypto, Firestore ops, TypeScript types
-│   ├── ui/                # Shared React components + design system
-│   └── config/            # Shared ESLint, TypeScript, Tailwind config
-│
-├── turbo.json             # Build pipeline: core → ui → apps
-└── pnpm-workspace.yaml
-```
-
-The rule: platform-specific code lives only in `apps/`. Everything in `packages/` is pure, shared, and testable.
-
----
-
-## Getting Started
+<details>
+<summary><b>View instructions for deploying your own Scync instance</b></summary>
 
 ### Prerequisites
-
 - Node.js 18+
 - pnpm 8+
-- A Firebase project (free Spark plan works)
+- A [Firebase](https://console.firebase.google.com/) project (the free Spark plan is more than enough for personal use).
+
+### Why self-host?
+Scync is designed to be **Zero-Knowledge**, but for the ultimate level of privacy, you can host your own backend. This ensures that the only person with access to your encrypted blobs and authentication logs is you.
 
 ### Setup
+1. **Clone & Install**:
+   ```bash
+   git clone https://github.com/hariharen9/Scync.git
+   cd Scync
+   pnpm install
+   ```
 
-```bash
-# Clone the repo
-git clone https://github.com/hariharen9/Scync.git
-cd Scync
+2. **Configure Firebase**:
+   - Create a project in the Firebase Console.
+   - Enable **Google Auth** and **Firestore**.
+   - Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in your project credentials.
 
-# Install dependencies
-pnpm install
+3. **Deploy or Run Locally**:
+   - **Web**: `pnpm dev --filter web`
+   - **Desktop**: `pnpm build --filter web && pnpm dev --filter desktop`
+   - **Mobile**: `npx cap sync && npx cap open ios`
 
-# Configure Firebase
-cp apps/web/.env.example apps/web/.env.local
-# Fill in your Firebase project credentials
+### Project Structure
+Scync uses a Turborepo-managed monorepo. Platform-specific code lives in `apps/` while the shared core logic (Crypto, Store, UI components) lives in `packages/`.
 
-# Start the web app in development
-pnpm dev --filter web
-```
+### Tech Stack
+| Layer | Technology |
+|---|---|
+| **Language** | TypeScript (strict) |
+| **Framework** | React 18 + Vite |
+| **State** | Zustand |
+| **Backend** | Firebase (Auth + Firestore) |
+| **Crypto** | Web Crypto API |
+| **Desktop** | Electron v28+ |
+| **Mobile** | Capacitor v5 |
+| **MonoRepo** | Turborepo + pnpm |
 
-### Running the desktop app
-
-```bash
-# Build the web app first
-pnpm build --filter web
-
-# Run in Electron
-pnpm dev --filter desktop
-```
-
-### Running on mobile
-
-```bash
-# Build the web app
-pnpm build --filter web
-
-# Sync to native projects
-npx cap sync
-
-# Open in Xcode or Android Studio
-npx cap open ios
-npx cap open android
-```
-
-### Running tests
-
-```bash
-# All tests
-pnpm test
-
-# Unit tests only (crypto, data transforms)
-pnpm test --filter core
-
-# E2E tests (requires Firebase emulator)
-firebase emulators:start &
-pnpm test:e2e
-```
-
----
-
-## Roadmap
-
-### MVP — The Foundation
-- Google Sign-In + vault password (two-layer auth)
-- AES-256-GCM client-side encryption
-- Full CRUD on secrets with rich metadata
-- Project-based organization
-- Search and filter (in-memory, instant)
-- Copy-to-clipboard without reveal
-- Web app (Firebase Hosting)
-- Responsive layout (works on mobile browsers)
-
-### V2 — Native Platforms
-- Electron desktop app (Windows installer)
-- Capacitor mobile apps (iOS + Android)
-- Biometric unlock (Face ID / fingerprint)
-- Recovery code UX (numbered, mark-as-used)
-- Expiry and rotation dashboard
-- `.env` import and export
-
-### V3 — Power Features
-- Browser extension (developer-focused, not autofill)
-- Automatic key rotation (GitHub, AWS, etc.)
-- Self-hosted backend option (replace Firebase)
-- Tauri desktop app (smaller binary)
+</details>
 
 ---
 
@@ -321,7 +200,7 @@ To be explicit about scope (and to prevent well-intentioned PRs that miss the po
 - ❌ Not a team tool — no sharing, no RBAC, no audit logs, no SSO
 - ❌ Not a CI/CD injector — Doppler owns that space; Scync doesn't compete
 - ❌ Not a secrets rotation engine — it tracks rotation dates, it doesn't call APIs to rotate keys
-- ❌ Not a browser extension — no form injection in MVP or V2
+- ❌ Not a browser extension — no form injection
 - ❌ Not a subscription product — free, open source, MIT licensed, forever
 
 ---

@@ -19,14 +19,24 @@ Scync uses the **Web Crypto API**, a native browser standard, to ensure high-per
 |---|---|---|
 | **Key Derivation** | PBKDF2 | SHA-256, 310,000 iterations |
 | **Encryption** | AES-256-GCM | Authenticated encryption with fresh IVs |
+| **Biometrics** | WebAuthn PRF | Hardware-backed symmetric key derivation |
 | **Hashing** | SHA-256 | Used for verifiers and data integrity |
 
 ### Key Derivation Process
-When you unlock your vault:
+When you unlock your vault manually:
 1. We take your **Vault Password** + **User UID**.
 2. We apply **PBKDF2** with a unique, random **Salt** stored in your user profile.
 3. We run **310,000 iterations** of SHA-256.
 4. The resulting 256-bit key is used for AES-GCM operations.
+
+### Biometric Unlock (Hardware-Backed)
+Scync implements the modern **WebAuthn PRF (Pseudo-Random Function) extension** to provide biometric convenience without compromising zero-knowledge principles.
+
+1. **Hardware Derivation**: When you enable biometrics, your device's Secure Enclave (iOS/Android) or TPM (Windows/Mac) generates a deterministic symmetric key based on a local "salt."
+2. **Key Wrapping**: This hardware-derived key never leaves your device. It is used to encrypt (wrap) your Master Password. 
+3. **Storage**: The wrapped (encrypted) Master Password and the WebAuthn `credentialId` are stored in your profile.
+4. **Unlocking**: To unlock, your biometric signature triggers the hardware to re-derive the same symmetric key. This key then decrypts (unwraps) your Master Password into memory.
+5. **Security Boundary**: The "unwrapped" password is never persisted. If you change your Master Password, Scync automatically invalidates and wipes all biometric metadata to prevent key-reuse attacks.
 
 ## ⚠️ Single Point of Failure
 Because Scync is zero-knowledge, **your vault password is the single point of failure.** 
