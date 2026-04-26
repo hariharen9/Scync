@@ -12,17 +12,16 @@
   "dependencies": {
     "@scync/core": "workspace:*",
     "@scync/ui": "workspace:*",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "firebase": "^10.0.0",
     "framer-motion": "^11.0.0",
     "lenis": "^1.0.42",
-    "react-icons": "^5.0.1",
-    "firebase": "^10.0.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^5.0.1"
   },
   "devDependencies": {
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
     "@eslint/js": "^9.39.4",
+    "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^24.12.2",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -31,8 +30,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9"
+    "vite": "^8.0.9",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

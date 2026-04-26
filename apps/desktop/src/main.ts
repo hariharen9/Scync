@@ -38,27 +38,85 @@ function createWindow(): void {
     });
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    // In production, load the bundled web app
-    // Try multiple possible paths to be robust against different packaging layouts
+    // In production, start a local HTTP server
+    // This solves CORS and Firebase Google Auth issues by serving over http://localhost
     const possiblePaths = [
-      path.join(process.resourcesPath, 'app', 'index.html'),
-      path.join(__dirname, '..', 'app', 'index.html'),
-      path.join(app.getAppPath(), '..', 'app', 'index.html')
+      path.join(process.resourcesPath, 'app'),
+      path.join(__dirname, '..', 'app'),
+      path.join(app.getAppPath(), '..', 'app')
     ];
 
-    let loaded = false;
+    let webDir = '';
+    const fs = require('fs');
+    const http = require('http');
+
     for (const p of possiblePaths) {
-      if (require('fs').existsSync(p)) {
-        mainWindow.loadFile(p);
-        loaded = true;
+      if (fs.existsSync(path.join(p, 'index.html'))) {
+        webDir = p;
         break;
       }
     }
 
-    if (!loaded) {
-      // Fallback/Log if something is very wrong
-      console.error('Could not find index.html in any of:', possiblePaths);
+    if (!webDir) {
+      console.error('Could not find app directory in any of:', possiblePaths);
       mainWindow.loadURL('data:text/html,<h1>Could not find app files</h1>');
+    } else {
+      const mimeTypes: Record<string, string> = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.webmanifest': 'application/manifest+json'
+      };
+
+      const server = http.createServer((req: any, res: any) => {
+        let reqPath = req.url?.split('?')[0] || '/';
+        
+        // SPA Routing Fallback
+        if (reqPath === '/' || !reqPath.includes('.')) {
+          reqPath = '/index.html';
+        }
+
+        const filePath = path.join(webDir, reqPath);
+
+        // Security: Prevent directory traversal
+        if (!filePath.startsWith(webDir)) {
+          res.writeHead(403);
+          res.end('Forbidden');
+          return;
+        }
+
+        fs.readFile(filePath, (err: any, data: any) => {
+          if (err) {
+            // Second SPA fallback for client-side routes like /vault
+            fs.readFile(path.join(webDir, 'index.html'), (err2: any, fallbackData: any) => {
+              if (err2) {
+                res.writeHead(404);
+                res.end('Not found');
+                return;
+              }
+              res.writeHead(200, { 'Content-Type': 'text/html' });
+              res.end(fallbackData);
+            });
+            return;
+          }
+
+          const ext = path.extname(filePath).toLowerCase();
+          const contentType = mimeTypes[ext] || 'application/octet-stream';
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(data);
+        });
+      });
+
+      server.listen(0, '127.0.0.1', () => {
+        const address = server.address();
+        const port = address ? (address as any).port : 0;
+        mainWindow?.loadURL(`http://localhost:${port}`);
+      });
     }
   }
 
