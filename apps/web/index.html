@@ -34,12 +34,31 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
   </head>
-  <body style="background-color: #060606; color: white; margin: 0; font-family: sans-serif;">
+  <body style="background-color: #060606; color: white; margin: 0; font-family: sans-serif; overflow: hidden;">
     <div id="root">
-      <div style="display: flex; align-items: center; justify-content: center; height: 100vh;">
-        <p>Initializing Scync...</p>
+      <div id="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 1rem;">
+        <p style="font-size: 1.2rem; font-weight: 500;">Initializing Scync...</p>
+        <div id="error-display" style="color: #ef4444; max-width: 80%; text-align: center; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap;"></div>
       </div>
     </div>
+    
+    <script>
+      // Global error handler to help debug production issues
+      window.onerror = function(msg, url, lineNo, columnNo, error) {
+        const display = document.getElementById('error-display');
+        if (display) {
+          display.innerText = 'Error: ' + msg + '\nAt: ' + url + ':' + lineNo + ':' + columnNo + (error ? '\nStack: ' + error.stack : '');
+        }
+        return false;
+      };
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        const display = document.getElementById('error-display');
+        if (display) {
+          display.innerText = 'Promise Rejection: ' + event.reason + (event.reason && event.reason.stack ? '\nStack: ' + event.reason.stack : '');
+        }
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
