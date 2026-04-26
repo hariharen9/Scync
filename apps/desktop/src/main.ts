@@ -125,8 +125,24 @@ function createWindow(): void {
     mainWindow?.show();
   });
 
-  // Open external links in the default browser
+  // Open external links in the default browser, but allow Firebase auth popups internally
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    // Allow Firebase Auth and Google Accounts to open in an internal popup
+    if (url.includes('firebaseapp.com/__/auth') || url.includes('accounts.google.com')) {
+      return { 
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 500,
+          height: 700,
+          titleBarStyle: 'default', // standard frame for the popup
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+          }
+        }
+      };
+    }
+
     if (url.startsWith('https://') || url.startsWith('http://')) {
       shell.openExternal(url);
     }
@@ -233,11 +249,19 @@ app.on('window-all-closed', () => {
   }
 });
 
-// Security: prevent new window creation
+// Security: prevent new window creation & spoof User Agent for Google Auth
 app.on('web-contents-created', (_, contents) => {
+  // Spoof User Agent to prevent Google Auth from blocking the internal Electron popup
+  // By removing "Electron/xx.x.x" and "Scync/x.x.x" it looks like a standard Chrome browser.
+  const customUserAgent = contents.userAgent
+    .replace(/Electron\/\S*\s/, '')
+    .replace(/Scync\/\S*\s/, '');
+  contents.userAgent = customUserAgent;
+
   contents.on('will-navigate', (event, url) => {
-    // Allow navigation within the app
-    if (!url.startsWith('file://') && !url.startsWith('http://localhost')) {
+    // Allow navigation within the app or Google Auth
+    const isAuth = url.includes('firebaseapp.com') || url.includes('accounts.google.com');
+    if (!url.startsWith('file://') && !url.startsWith('http://localhost') && !isAuth) {
       event.preventDefault();
       shell.openExternal(url);
     }
