@@ -4,7 +4,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey, FiShield } from 'react-icons/fi';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
@@ -13,7 +13,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
   const { activeView, setActiveView, filter, setFilter, clearFilters, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
   const { projects, selectedProjectId, selectProject, deleteProject, updateProject } = useProjectStore();
   const { customServices, deleteService } = useServiceStore();
-  const { storedSecrets, storedSSHKeys } = useVaultStore();
+  const { storedSecrets, storedSSHKeys, storedTOTPs } = useVaultStore();
   const { user } = useAuthStore();
 
   const [hoveredProject, setHoveredProject] = useState<string | null>(null);
@@ -91,6 +91,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     { id: 'dashboard' as const, icon: FiGrid, label: 'Dashboard' },
     { id: 'all' as const, icon: FiList, label: 'All Secrets', count: storedSecrets.length },
     { id: 'ssh' as const, icon: FiKey, label: 'SSH Manager', count: storedSSHKeys.length },
+    { id: 'totp' as const, icon: FiShield, label: 'Authenticator', count: storedTOTPs.length },
   ];
 
   const sidebarStyle: React.CSSProperties = {

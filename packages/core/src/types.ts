@@ -146,3 +146,19 @@ export interface DecryptedSSHKey extends Omit<StoredSSHKey, 'encPrivateKey'> {
   privateKey: string;
 }
 
+export interface StoredTOTP {
+  id: string;
+  issuer: string;
+  label: string;
+  encSecret: EncryptedField;
+  algorithm: 'SHA1' | 'SHA256' | 'SHA512';
+  digits: 6 | 8;
+  period: 30 | 60;
+  icon: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DecryptedTOTP extends Omit<StoredTOTP, 'encSecret'> {
+  secret: string;
+}

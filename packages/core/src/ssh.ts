@@ -88,7 +88,7 @@ export async function generateSSHKeyPair(
 
     // Calculate MD5 Fingerprint for the public key blob
     const md5 = forge.md.md5.create();
-    md5.update(forge.util.binary.raw.encode(forge.util.createBuffer(pubBlob)));
+    md5.update(forge.util.binary.raw.encode(pubBlob));
     const fingerprint = md5.digest().toHex().match(/.{2}/g)?.join(':');
 
     // For simplicity, we export the private key in PKCS8 PEM format

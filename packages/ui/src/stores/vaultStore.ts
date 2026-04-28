@@ -18,7 +18,12 @@ import {
   subscribeToSSHKeys,
   createSSHKey,
   deleteSSHKey,
-  decrypt
+  decrypt,
+  type StoredTOTP,
+  type DecryptedTOTP,
+  subscribeToTOTPs,
+  createTOTP,
+  deleteTOTP
 } from '@scync/core';
 
 interface VaultState {
@@ -26,11 +31,13 @@ interface VaultState {
   isLocked: boolean;
   storedSecrets: StoredSecret[];
   storedSSHKeys: StoredSSHKey[];
+  storedTOTPs: StoredTOTP[];
   vaultMeta: VaultMeta | null;
   
   setDerivedKey: (key: CryptoKey | null) => void;
   setSecrets: (secrets: StoredSecret[]) => void;
   setSSHKeys: (keys: StoredSSHKey[]) => void;
+  setTOTPs: (tokens: StoredTOTP[]) => void;
   setVaultMeta: (meta: VaultMeta | null) => void;
   
   unlock: (password: string, uid: string) => Promise<boolean>;
@@ -47,8 +54,13 @@ interface VaultState {
   deleteSSHKey: (uid: string, id: string) => Promise<void>;
   decryptSSHKey: (keyId: string) => Promise<DecryptedSSHKey | null>;
   
+  createTOTP: (uid: string, data: Omit<StoredTOTP, 'id' | 'createdAt' | 'updatedAt' | 'encSecret'> & { secret: string }) => Promise<void>;
+  deleteTOTP: (uid: string, id: string) => Promise<void>;
+  decryptTOTP: (tokenId: string) => Promise<DecryptedTOTP | null>;
+  
   subscribeToSecrets: (uid: string) => () => void;
   subscribeToSSHKeys: (uid: string) => () => void;
+  subscribeToTOTPs: (uid: string) => () => void;
   exportVault: (uid: string, password: string) => Promise<{
     meta: { salt: string; verifier: any };
     secrets: StoredSecret[];
@@ -62,11 +74,13 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   isLocked: true,
   storedSecrets: [],
   storedSSHKeys: [],
+  storedTOTPs: [],
   vaultMeta: null,
   
   setDerivedKey: (key) => set({ derivedKey: key, isLocked: !key }),
   setSecrets: (secrets) => set({ storedSecrets: secrets }),
   setSSHKeys: (keys) => set({ storedSSHKeys: keys }),
+  setTOTPs: (tokens) => set({ storedTOTPs: tokens }),
   setVaultMeta: (meta) => set({ vaultMeta: meta }),
   
   unlock: async (password: string, uid: string) => {
@@ -119,7 +133,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const newVerifier = await createVerifier(newKey);
 
       // Batch re-encrypt
-      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys);
+      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys, get().storedTOTPs);
 
       // If biometrics was enabled, we MUST clear it because the wrapped password is now wrong
       if (meta.biometric) {
@@ -202,6 +216,35 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     });
   },
 
+  subscribeToTOTPs: (uid: string) => {
+    return subscribeToTOTPs(uid, (tokens) => {
+      set({ storedTOTPs: tokens });
+    });
+  },
+
+  createTOTP: async (uid: string, data) => {
+    const { derivedKey } = get();
+    if (!derivedKey) throw new Error("Vault is locked");
+    await createTOTP(uid, derivedKey, data);
+  },
+
+  deleteTOTP: async (uid: string, id: string) => {
+    await deleteTOTP(uid, id);
+  },
+
+  decryptTOTP: async (tokenId: string) => {
+    const { derivedKey, storedTOTPs } = get();
+    if (!derivedKey) return null;
+    const token = storedTOTPs.find(t => t.id === tokenId);
+    if (!token) return null;
+    try {
+      const secret = await decrypt(derivedKey, token.encSecret);
+      return { ...token, secret };
+    } catch {
+      return null;
+    }
+  },
+
   exportVault: async (uid: string, password: string) => {
     try {
       const { storedSecrets } = get();
@@ -219,7 +262,9 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           salt: meta.salt,
           verifier: meta.verifier
         },
-        secrets: storedSecrets
+        secrets: storedSecrets,
+        sshKeys: get().storedSSHKeys,
+        totpTokens: get().storedTOTPs
       };
     } catch (err) {
       console.error(err);

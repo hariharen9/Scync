@@ -6,7 +6,7 @@ import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
-  Project, EncryptedField, CustomService, StoredSSHKey
+  Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP
 } from './types';
 
 // Vault Meta
@@ -49,7 +49,8 @@ export async function changeVaultPassword(
   newSalt: string,
   newVerifier: EncryptedField,
   secrets: StoredSecret[],
-  sshKeys: StoredSSHKey[] = []
+  sshKeys: StoredSSHKey[] = [],
+  totpTokens: StoredTOTP[] = []
 ): Promise<void> {
   const batch = writeBatch(db);
 
@@ -91,7 +92,18 @@ export async function changeVaultPassword(
     });
   }
 
-  // 4. Commit the batch atomic operation
+  // 4. Re-encrypt all TOTP tokens
+  for (const totp of totpTokens) {
+    const totpRef = doc(db, "users", uid, "totp_tokens", totp.id);
+    const secretPlaintext = await decrypt(oldKey, totp.encSecret);
+    const newEncSecret = await encrypt(newKey, secretPlaintext);
+    batch.update(totpRef, {
+      encSecret: newEncSecret,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // 5. Commit the batch atomic operation
   await batch.commit();
 }
 
@@ -145,6 +157,57 @@ export function subscribeToSSHKeys(uid: string, onUpdate: (keys: StoredSSHKey[])
       });
     });
     onUpdate(keys);
+  });
+}
+
+// TOTP Tokens
+export async function createTOTP(
+  uid: string,
+  key: CryptoKey,
+  data: Omit<StoredTOTP, 'id' | 'createdAt' | 'updatedAt' | 'encSecret'> & { secret: string }
+): Promise<void> {
+  const tokensRef = collection(db, "users", uid, "totp_tokens");
+  const newRef = doc(tokensRef);
+  const encSecret = await encrypt(key, data.secret);
+
+  await setDoc(newRef, {
+    id: newRef.id,
+    issuer: data.issuer,
+    label: data.label,
+    encSecret,
+    algorithm: data.algorithm,
+    digits: data.digits,
+    period: data.period,
+    icon: data.icon,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deleteTOTP(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "totp_tokens", id));
+}
+
+export function subscribeToTOTPs(uid: string, onUpdate: (tokens: StoredTOTP[]) => void) {
+  const q = collection(db, "users", uid, "totp_tokens");
+  return onSnapshot(q, (snapshot) => {
+    const tokens: StoredTOTP[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      tokens.push({
+        id: data.id,
+        issuer: data.issuer,
+        label: data.label,
+        encSecret: data.encSecret,
+        algorithm: data.algorithm || 'SHA1',
+        digits: data.digits || 6,
+        period: data.period || 30,
+        icon: data.icon || '',
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      });
+    });
+    onUpdate(tokens);
   });
 }
 
@@ -382,6 +445,10 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   // 4. Delete all SSH keys
   const sshSnap = await getDocs(collection(db, "users", uid, "ssh_keys"));
   sshSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 5. Delete all TOTP tokens
+  const totpSnap = await getDocs(collection(db, "users", uid, "totp_tokens"));
+  totpSnap.forEach(doc => batch.delete(doc.ref));
 
   // 5. Delete vault meta
   const metaRef = doc(db, "users", uid, "meta", "vault");
