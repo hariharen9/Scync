@@ -1,231 +1,676 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore, useVaultStore } from '@scync/ui';
-import { FiUnlock, FiLogOut, FiShield } from 'react-icons/fi';
+import { Fingerprint } from 'lucide-react';
+import './UnlockPage.css';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { unlock, vaultMeta, unlockWithBiometrics } = useVaultStore();
 
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [errorText, setErrorText] = useState('');
   const [loading, setLoading] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
-  const [shake, setShake] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [clockStr, setClockStr] = useState('');
+  const [dateStr, setDateStr] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password || !user) return;
+  const passElRef = useRef<HTMLInputElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const constellationRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const ubtnRef = useRef<HTMLButtonElement>(null);
+
+  // Store node states for vanilla-js rendering
+  const nodeEls = useRef<{ el: HTMLDivElement; x: number; y: number; active: boolean }[]>([]);
+  const edgesRef = useRef<{ i: number; j: number; d: number; drawn: boolean; lineEl: SVGLineElement | null }[]>([]);
+  const lastNodeCount = useRef(0);
+
+  const NODE_POS = [
+    // Outer Ring
+    [140, 10], [232, 48], [270, 140], [232, 232],
+    [140, 270], [48, 232], [10, 140], [48, 48],
+    // Inner Ring
+    [140, 65], [193, 87], [215, 140], [193, 193],
+    [140, 215], [87, 193], [65, 140], [87, 87]
+  ];
+
+  const MSGS = [
+    'Incorrect password.',
+    'Still wrong. Check caps lock.',
+    'Wrong. Zero-knowledge — no recovery.',
+    'Vault remains locked.',
+    'One more and vault locks out.',
+  ];
+
+  // --- Clock ---
+  useEffect(() => {
+    const pad = (v: number) => String(v).padStart(2, '0');
+    const tick = () => {
+      const n = new Date();
+      setClockStr(`${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`);
+      setDateStr(n.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase());
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // --- Canvas Animation ---
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+
+    let W = 0, H = 0, mx = -999, my = -999;
+
+    const resize = () => {
+      W = cv.width = window.innerWidth;
+      H = cv.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    const handleMM = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
+    window.addEventListener('mousemove', handleMM);
+
+    const HEX = '0123456789abcdef';
+    class Drop {
+      x = 0; y = 0; vy = 0; ch = ''; a = 0; sz = 0; t = 0; ti = 0;
+      constructor(init: boolean) {
+        this.reset();
+        if (init) this.y = Math.random() * window.innerHeight;
+      }
+      reset() {
+        this.x = Math.random() * window.innerWidth;
+        this.y = -12;
+        this.vy = .14 + Math.random() * .18;
+        this.ch = HEX[Math.floor(Math.random() * 16)];
+        this.a = .02 + Math.random() * .035;
+        this.sz = 10 + Math.random() * 1.5;
+        this.t = 0;
+        this.ti = 50 + Math.random() * 90;
+      }
+      tick() {
+        this.y += this.vy; this.t++;
+        if (this.t > this.ti) { this.ch = HEX[Math.floor(Math.random() * 16)]; this.t = 0; }
+        if (this.y > window.innerHeight + 20) this.reset();
+      }
+      draw(ctx: CanvasRenderingContext2D) {
+        const d = Math.hypot(this.x - mx, this.y - my);
+        const b = Math.max(0, 1 - d / 170) * .22;
+        ctx.globalAlpha = this.a + b;
+        ctx.fillStyle = d < 170 ? '#10b981' : '#fff';
+        ctx.font = `${this.sz}px DM Mono,monospace`;
+        ctx.fillText(this.ch, this.x, this.y);
+      }
+    }
+
+    const drops = Array.from({ length: 90 }, () => new Drop(true));
+    let scanY = 0;
+    let animId: number;
+
+    const loop = () => {
+      ctx.clearRect(0, 0, W, H);
+      ctx.globalAlpha = .018;
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 52) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 52) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      drops.forEach(d => { d.tick(); d.draw(ctx); });
+      ctx.globalAlpha = 1;
+
+      scanY = (scanY + .45) % H;
+      const sg = ctx.createLinearGradient(0, scanY - 70, 0, scanY + 70);
+      sg.addColorStop(0, 'transparent');
+      sg.addColorStop(.5, 'rgba(16,185,129,.016)');
+      sg.addColorStop(1, 'transparent');
+      ctx.fillStyle = sg; ctx.fillRect(0, scanY - 70, W, 140);
+
+      const vg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * .72);
+      vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(5,5,5,.95)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+      animId = requestAnimationFrame(loop);
+    };
+    loop();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('mousemove', handleMM);
+    };
+  }, []);
+
+  // --- Constellation Initialization ---
+  useEffect(() => {
+    if (!constellationRef.current || !svgRef.current) return;
+    const constEl = constellationRef.current;
+
+    // Create Nodes
+    nodeEls.current.forEach(n => n.el.remove()); // cleanup old if re-running
+    nodeEls.current = [];
+    NODE_POS.forEach(([x, y], i) => {
+      const el = document.createElement('div');
+      el.className = 'cnode';
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.transition = `background .25s ease ${i * 20}ms, border-color .25s ease, box-shadow .25s ease, transform .25s var(--ease)`;
+      constEl.appendChild(el);
+      nodeEls.current.push({ el, x, y, active: false });
+    });
+
+    // Create Edges array
+    edgesRef.current = [];
+    for (let i = 0; i < NODE_POS.length; i++) {
+      for (let j = i + 1; j < NODE_POS.length; j++) {
+        const dx = NODE_POS[i][0] - NODE_POS[j][0];
+        const dy = NODE_POS[i][1] - NODE_POS[j][1];
+        const d = Math.hypot(dx, dy);
+        if (d < 160) edgesRef.current.push({ i, j, d, drawn: false, lineEl: null });
+      }
+    }
+
+    // Handle initial password (autofill)
+    const target = nodesForLength(password.length);
+    for (let i = 0; i < target; i++) activateNode(i);
+    lastNodeCount.current = target;
+  }, []); // Only on mount
+
+  // --- Constellation Logic ---
+  const drawEdge = useCallback((edge: typeof edgesRef.current[0], bright = false) => {
+    if (edge.lineEl) {
+      if (bright) edge.lineEl.classList.add('bright');
+      return;
+    }
+    const { i, j } = edge;
+    const x1 = NODE_POS[i][0], y1 = NODE_POS[i][1];
+    const x2 = NODE_POS[j][0], y2 = NODE_POS[j][1];
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1));
+    line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2));
+    line.setAttribute('stroke-dasharray', String(edge.d));
+    line.setAttribute('stroke-dashoffset', String(edge.d));
+    line.className.baseVal = 'const-line';
+    svgRef.current?.appendChild(line);
+    edge.lineEl = line;
+    edge.drawn = true;
+    requestAnimationFrame(() => line.classList.add('draw'));
+    if (bright) line.classList.add('bright');
+  }, []);
+
+  const activateNode = useCallback((idx: number) => {
+    const n = nodeEls.current[idx];
+    if (!n || n.active) return;
+    n.active = true;
+    n.el.classList.add('active');
+
+    edgesRef.current.forEach(e => {
+      const other = (e.i === idx) ? e.j : (e.j === idx ? e.i : -1);
+      if (other >= 0 && nodeEls.current[other].active) {
+        setTimeout(() => drawEdge(e), 60);
+      }
+    });
+  }, [drawEdge]);
+
+  const deactivateAll = useCallback((flash = false) => {
+    if (!nodeEls.current.length) return;
+    nodeEls.current.forEach(n => {
+      n.active = false;
+      if (flash) {
+        n.el.style.background = '#ef4444';
+        n.el.style.boxShadow = '0 0 10px rgba(239,68,68,.6)';
+        n.el.style.borderColor = '#ef4444';
+        setTimeout(() => {
+          n.el.style.background = '';
+          n.el.style.boxShadow = '';
+          n.el.style.borderColor = '';
+          n.el.classList.remove('active');
+        }, 500);
+      } else {
+        n.el.classList.remove('active');
+      }
+    });
+    if (svgRef.current) {
+      svgRef.current.querySelectorAll('line').forEach(l => l.remove());
+    }
+    edgesRef.current.forEach(e => { e.lineEl = null; e.drawn = false; });
+  }, []);
+
+  const nodesForLength = (len: number) => Math.min(Math.round((len / 10) * NODE_POS.length), NODE_POS.length);
+
+  // --- Password Effect ---
+  useEffect(() => {
+    if (nodeEls.current.length < NODE_POS.length) return;
+    const len = password.length;
+    const target = nodesForLength(len);
+    if (target > lastNodeCount.current) {
+      for (let i = lastNodeCount.current; i < target; i++) activateNode(i);
+    } else if (target < lastNodeCount.current) {
+      for (let i = target; i < lastNodeCount.current; i++) {
+        nodeEls.current[i].active = false;
+        nodeEls.current[i].el.classList.remove('active');
+      }
+      if (svgRef.current) svgRef.current.querySelectorAll('line').forEach(l => l.remove());
+      edgesRef.current.forEach(e => { e.lineEl = null; e.drawn = false; });
+      for (let i = 0; i < target; i++) activateNode(i);
+    }
+    lastNodeCount.current = target;
+  }, [password, activateNode]);
+
+  // Focus effect
+  useEffect(() => {
+    setTimeout(() => passElRef.current?.focus(), 500);
+    const handleKD = (e: KeyboardEvent) => {
+      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement?.tagName !== 'INPUT') {
+        passElRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKD);
+    return () => document.removeEventListener('keydown', handleKD);
+  }, []);
+
+  const spawnBurst = () => {
+    const avatar = document.getElementById('constAvatar');
+    if (!avatar) return;
+    const rect = avatar.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const colors = ['#10b981', '#34d399', '#6ee7b7', '#fff'];
+
+    for (let i = 0; i < 32; i++) {
+      const p = document.createElement('div');
+      const a = (i / 32) * Math.PI * 2;
+      const d = 60 + Math.random() * 110;
+      const tx = Math.cos(a) * d;
+      const ty = Math.sin(a) * d;
+      const sz = 2 + Math.random() * 5;
+      const col = colors[Math.floor(Math.random() * colors.length)];
+      p.style.cssText = `
+        position:fixed;left:${cx}px;top:${cy}px;z-index:60;
+        width:${sz}px;height:${sz}px;
+        background:${col};border-radius:${Math.random() > .5 ? '50%' : '0'};
+        transform:rotate(${Math.random() * 45}deg);
+        pointer-events:none;
+        box-shadow:0 0 ${sz * 2}px ${col};
+        animation:pBurst .7s var(--ease) ${Math.random() * .1}s both;
+        --tx:${tx}px;--ty:${ty}px;
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+
+    for (let i = 0; i < 2; i++) {
+      const r = document.createElement('div');
+      r.style.cssText = `
+        position:fixed;
+        left:${cx - 38}px;top:${cy - 38}px;
+        width:76px;height:76px;border-radius:50%;
+        border:1px solid #10b981;z-index:59;pointer-events:none;
+        animation:ringExpand .7s var(--ease) ${i * .18}s both;
+      `;
+      document.body.appendChild(r);
+      setTimeout(() => r.remove(), 1000);
+    }
+  };
+
+  const handleSuccessFlow = () => {
+    setIsSuccess(true);
+    const unlit = nodeEls.current.map((n, i) => i).filter(i => !nodeEls.current[i].active);
+    unlit.forEach((idx, i) => {
+      setTimeout(() => activateNode(idx), i * 35);
+    });
+
+    setTimeout(() => {
+      edgesRef.current.forEach(e => { if (e.lineEl) e.lineEl.classList.add('bright'); });
+    }, unlit.length * 35 + 80);
+
+    setTimeout(() => {
+      const badge = document.getElementById('constBadge');
+      if (badge) {
+        badge.style.background = '#10b981';
+        badge.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7c0-2.7 2.1-5 5-5 1.6 0 3 .7 4 1.8" stroke="#fff" stroke-width="2.5" fill="none"/></svg>`;
+      }
+      const vtxt = document.getElementById('vtxt');
+      if (vtxt) vtxt.textContent = 'Unlocking…';
+      const vtag = document.getElementById('vaultTag');
+      if (vtag) vtag.style.color = '#10b981';
+      const vtdot = document.getElementById('vtdot');
+      if (vtdot) {
+        vtdot.style.background = '#10b981';
+        vtdot.style.animation = 'none';
+      }
+    }, unlit.length * 35 + 120);
+
+    setTimeout(() => {
+      const av = document.getElementById('constAvatar');
+      if (av) {
+        av.style.animation = 'avatarUnlock .7s ease forwards';
+        av.style.borderColor = '#10b981';
+      }
+    }, unlit.length * 35 + 160);
+
+    setTimeout(() => {
+      const flash = document.getElementById('flash');
+      if (flash) flash.classList.add('on');
+      spawnBurst();
+    }, unlit.length * 35 + 280);
+
+    setTimeout(() => {
+      nodeEls.current.forEach((n, i) => {
+        const cx = 140, cy = 140;
+        const nx = NODE_POS[i][0], ny = NODE_POS[i][1];
+        const dx = (cx - nx) * 0.4, dy = (cy - ny) * 0.4;
+        n.el.style.transition = `transform .5s var(--ease) ${i * 18}ms, opacity .4s ease ${i * 18}ms`;
+        n.el.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`;
+        n.el.style.opacity = '0';
+      });
+      if (svgRef.current) {
+        svgRef.current.style.transition = 'opacity .4s ease';
+        svgRef.current.style.opacity = '0';
+      }
+    }, unlit.length * 35 + 480);
+
+    setTimeout(() => {
+      const ui = document.getElementById('userInfo');
+      if (ui) { ui.style.transition = 'opacity .4s ease'; ui.style.opacity = '0'; }
+      const ct = document.getElementById('controlsLayer');
+      if (ct) { ct.style.transition = 'opacity .4s ease'; ct.style.opacity = '0'; }
+      const av = document.getElementById('constAvatar');
+      if (av) {
+        av.style.transition = 'transform .5s var(--ease), box-shadow .3s ease';
+        av.style.transform = 'translate(-50%,-50%) scale(1.2)';
+      }
+    }, unlit.length * 35 + 700);
+
+    // After animation finishes, the vault state actually updates, React will unmount this page natively.
+  };
+
+  const handleFailFlow = () => {
+    const nextAttempts = attempts + 1;
+    setAttempts(nextAttempts);
+    setPassword('');
+    setErrorText(MSGS[Math.min(nextAttempts - 1, MSGS.length - 1)]);
+    deactivateAll(true);
+    lastNodeCount.current = 0;
+    passElRef.current?.focus();
+  };
+
+  const doUnlock = async () => {
+    if (!password || !user || loading) return;
+    setLoading(true);
+    setErrorText('');
 
     try {
-      setLoading(true);
-      setError(false);
+      // Let animation run slightly for feel
+      await new Promise(r => setTimeout(r, 600));
+      
       const success = await unlock(password, user.uid);
-      if (!success) {
-        setError(true);
-        setShake(true);
-        setPassword('');
-        setTimeout(() => setShake(false), 500);
+      if (success) {
+        handleSuccessFlow();
+        // State update for routing will happen outside eventually
+      } else {
+        handleFailFlow();
       }
     } catch (err) {
-      setError(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+      handleFailFlow();
     } finally {
-      setLoading(false);
+      if (!isSuccess) {
+        setLoading(false);
+      }
     }
   };
 
-  const handleBiometricUnlock = async () => {
-    if (!user) return;
-    try {
-      setBiometricLoading(true);
-      setError(false);
-      const success = await unlockWithBiometrics(user.uid);
-      if (!success) {
-        setError(true);
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-      }
-    } catch (err) {
-      setError(true);
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
-    } finally {
-      setBiometricLoading(false);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      doUnlock();
     }
   };
+
+  const doBio = async () => {
+    if (!user || biometricLoading || loading) return;
+    setBiometricLoading(true);
+    setErrorText('');
+    try {
+      await new Promise(r => setTimeout(r, 600));
+      const success = await unlockWithBiometrics(user.uid);
+      if (success) {
+        handleSuccessFlow();
+      } else {
+        handleFailFlow();
+      }
+    } catch (err) {
+      handleFailFlow();
+    } finally {
+      if (!isSuccess) {
+        setBiometricLoading(false);
+      }
+    }
+  };
+
+  const handleSignOut = () => {
+    if (window.confirm('Sign out of Scync?')) {
+      signOut();
+    }
+  };
+
+  // UI helpers
+  const passPct = Math.min(password.length / 20, 1);
+  const pbarBg = password.length < 5 ? 'rgba(255,255,255,.08)' : password.length < 12 ? '#10b981' : '#34d399';
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100vh', position: 'relative', overflow: 'hidden', background: 'var(--color-bg)',
-    }}>
-      {/* Grid background */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)',
-        backgroundSize: '52px 52px',
-        maskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
-        opacity: 0.3,
-      }} />
+    <div className="unlock-page-root">
+      <canvas ref={canvasRef} className="bgCanvas" />
+      <div className={`flash ${isSuccess ? 'on' : ''}`} id="flash" />
 
-      <div style={{
-        position: 'relative', zIndex: 1, width: 340,
-        animation: shake ? 'none' : 'fadeUp .5s cubic-bezier(.16,1,.3,1) both',
-        transform: shake ? undefined : undefined,
-      }}>
-        <div
-          style={{
-            background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
-            padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-            animation: shake ? 'shake 0.4s ease-in-out' : undefined,
-          }}
-        >
-          {/* Avatar */}
-          <div style={{ position: 'relative' }}>
+      <div className="logo">
+        <div className="logo-box">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" stroke="#555" strokeWidth="1.5" />
+            <circle cx="10" cy="10" r="2" fill="#10b981" />
+          </svg>
+        </div>
+        Scync
+      </div>
+
+      <div className="clock-wrap">
+        <div className="clock">{clockStr || '00:00:00'}</div>
+        <div className="clock-date">{dateStr || '---'}</div>
+      </div>
+
+      <div className="page">
+        {/* Constellation */}
+        <div className="constellation" ref={constellationRef}>
+          <svg className="const-svg" ref={svgRef} viewBox="0 0 280 280" />
+          <div className="const-glow" />
+          
+          <div className="const-avatar" id="constAvatar">
             {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt="Avatar"
-                style={{ width: 56, height: 56, borderRadius: '50%', border: '2px solid var(--color-border-2)' }}
-              />
+              <img src={user.photoURL} alt="Avatar" />
             ) : (
-              <div style={{
-                width: 56, height: 56, borderRadius: '50%',
-                background: 'var(--color-surface-3)', border: '2px solid var(--color-border-2)',
-                display: 'grid', placeItems: 'center',
-                fontSize: 18, fontWeight: 700, color: 'var(--color-text)',
-              }}>
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
+              <svg viewBox="0 0 76 76" fill="none">
+                <rect width="76" height="76" fill="#141414" />
+                <path d="M38 18c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15z" fill="#222" />
+                <path d="M12 72c0-14.4 11.6-26 26-26s26 11.6 26 26" stroke="#222" strokeWidth="12" strokeLinecap="round" />
+              </svg>
             )}
-            <div style={{
-              position: 'absolute', bottom: -2, right: -2,
-              width: 20, height: 20, borderRadius: '50%',
-              background: 'var(--color-amber)', border: '2px solid var(--color-surface)',
-              display: 'grid', placeItems: 'center',
-            }}>
-              <FiUnlock size={10} color="#080808" />
-            </div>
           </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>
-              {user?.displayName || user?.email}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-3)', marginTop: 4, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Vault is locked
-            </div>
+          <div className="const-badge" id="constBadge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="#060606">
+              <rect x="3" y="11" width="18" height="11" rx="1" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#060606" strokeWidth="2.5" fill="none" />
+            </svg>
           </div>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {vaultMeta?.biometric && (
-              <button
-                type="button"
-                onClick={handleBiometricUnlock}
-                disabled={loading || biometricLoading}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  width: '100%', background: 'var(--color-surface-2)', color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)', padding: '10px 16px',
-                  fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 700,
-                  cursor: (loading || biometricLoading) ? 'not-allowed' : 'pointer',
-                  opacity: (loading || biometricLoading) ? 0.5 : 1,
-                  transition: 'all 140ms',
-                  marginBottom: 8
-                }}
-              >
-                {biometricLoading ? (
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTopColor: 'var(--color-green)', animation: 'spin 0.7s linear infinite' }} />
+        {/* User Info */}
+        <div className="user-info" id="userInfo">
+          <div className="user-name">{user?.displayName || user?.email || 'User'}</div>
+          <div className="vault-tag" id="vaultTag">
+            <div className="vtdot" id="vtdot" />
+            <span id="vtxt">Vault is locked</span>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="controls" id="controlsLayer">
+          <div className={`pf ${errorText ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} onClick={() => passElRef.current?.focus()}>
+            <div className="pf-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="1" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+            
+            <div className="pf-dots">
+              {password.length === 0 && <span className="ph">Enter vault password</span>}
+              {!revealed && password.split('').map((_, i) => (
+                <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
+              ))}
+              {revealed && password.length > 0 && (
+                <span className="rtxt">{password}</span>
+              )}
+            </div>
+
+            <input
+              ref={passElRef}
+              type={revealed ? "text" : "password"}
+              className="pf-real"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setErrorText(''); }}
+              onKeyDown={handleKeyDown}
+              autoComplete="current-password"
+              spellCheck={false}
+            />
+
+            <button 
+              className="pf-eye" 
+              type="button" 
+              tabIndex={-1} 
+              onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {revealed ? (
+                  <>
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 0 1-4.24-4.24" />
+                    <path d="M6.51 6.51A10 10 0 0 0 1 12s4 8 11 8c2.12 0 4.09-.62 5.73-1.66" />
+                  </>
                 ) : (
                   <>
-                    <FiShield size={14} color="var(--color-green)" />
-                    Unlock with Biometrics
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   </>
                 )}
-              </button>
-            )}
-
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={e => { setPassword(e.target.value); setError(false); }}
-                style={{
-                  width: '100%', background: 'var(--color-surface-2)',
-                  border: `1px solid ${error ? 'var(--color-red)' : 'var(--color-border)'}`,
-                  color: 'var(--color-text)', padding: '10px 14px',
-                  fontFamily: 'var(--font-mono)', fontSize: 14,
-                  textAlign: 'center', letterSpacing: '0.08em',
-                  outline: 'none', transition: 'border-color 140ms',
-                }}
-                placeholder="●●●●●●●●"
-                autoFocus
-              />
-              {error && (
-                <p style={{ color: 'var(--color-red)', fontSize: 11, textAlign: 'center', marginTop: 8, fontWeight: 500 }}>
-                  Wrong password. Try again.
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !password}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                width: '100%', background: 'white', color: '#080808',
-                border: 'none', padding: '10px 16px',
-                fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 700,
-                cursor: (loading || !password) ? 'not-allowed' : 'pointer',
-                opacity: (loading || !password) ? 0.5 : 1,
-                transition: 'opacity 140ms',
-              }}
-            >
-              {loading ? (
-                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#080808', animation: 'spin 0.7s linear infinite' }} />
-              ) : (
-                <>
-                  <FiUnlock size={13} />
-                  Unlock Vault
-                </>
-              )}
+              </svg>
             </button>
-            <p style={{ fontSize: 10, color: 'var(--color-text-3)', textAlign: 'center', marginTop: 4 }}>
-              Zero-knowledge vault. Lost passwords <span style={{ color: 'var(--color-amber)' }}>cannot</span> be recovered.
-            </p>
-          </form>
+          </div>
 
-          {/* Sign out */}
-          <button
-            onClick={signOut}
-            style={{
-              background: 'none', border: 'none', color: 'var(--color-text-3)',
-              fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-              transition: 'color 140ms',
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text-2)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+          <div className="pbar">
+            <div className="pbar-inner" style={{ width: `${passPct * 100}%`, background: pbarBg }} />
+          </div>
+
+          <div className={`err ${errorText ? 'show' : ''}`}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{errorText}</span>
+          </div>
+
+          <div className={`pips ${attempts > 0 ? 'show' : ''}`}>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className={`pip ${i < attempts ? 'used' : ''}`} />
+            ))}
+          </div>
+
+          <button 
+            ref={ubtnRef}
+            className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`} 
+            disabled={password.length === 0 || loading || isSuccess}
+            onClick={doUnlock}
+            type="button"
           >
-            <FiLogOut size={11} />
+            {isSuccess ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Vault Unlocked</span>
+              </>
+            ) : (
+              <>
+                <svg className="bico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="3" y="11" width="18" height="11" rx="1" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span className="btxt">Unlock Vault</span>
+                <div className="spin" />
+              </>
+            )}
+          </button>
+
+          {vaultMeta?.biometric && (
+            <>
+              <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
+              <button 
+                className={`bbtn ${biometricLoading ? 'scanning' : ''}`} 
+                onClick={doBio}
+                disabled={biometricLoading || loading || isSuccess}
+                type="button"
+              >
+                <div className="fp">
+                  <div className="fp-scan-line" />
+                  <Fingerprint size={22} strokeWidth={1.6} />
+                </div>
+                <span className="btxt-b">Use Biometrics</span>
+                <div className="bspin" />
+              </button>
+            </>
+          )}
+
+          <div className="zk">Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.</div>
+          
+          <button className="so" onClick={handleSignOut} type="button">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
             Sign out
           </button>
         </div>
       </div>
 
-      {/* Inline keyframe for shake */}
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10% { transform: translateX(-6px); }
-          30% { transform: translateX(6px); }
-          50% { transform: translateX(-4px); }
-          70% { transform: translateX(4px); }
-          90% { transform: translateX(-2px); }
-        }
-      `}</style>
+      {/* Footer */}
+      <div className="foot">
+        <div className="fi">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          AES-256-GCM
+        </div>
+        <div className="fsep" />
+        <div className="fi">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+          </svg>
+          Zero-knowledge
+        </div>
+        <div className="fsep" />
+        <div className="fi">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="1" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+          PBKDF2 · 310k
+        </div>
+      </div>
     </div>
   );
 };
