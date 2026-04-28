@@ -179,10 +179,10 @@ export const EnvImportModal: React.FC = () => {
                   {step === 'conflict' ? <FiAlertTriangle size={14} color="var(--color-amber)" /> : <FiUploadCloud size={14} color="var(--color-green)" />}
                 </div>
                 <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
                     {step === 'review' ? 'Review Secrets' : step === 'paste' ? 'Paste .env Content' : step === 'conflict' ? 'Resolve Conflicts' : 'Import .env File'}
                   </h2>
-                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0' }}>
+                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0', fontFamily: 'var(--font-sans)' }}>
                     {step === 'review' ? `${parsedRows.length} keys detected — ${selectedCount} selected` : step === 'conflict' ? `${conflicts.length} key${conflicts.length !== 1 ? 's' : ''} already exist in this project` : 'Sync your config securely'}
                   </p>
                 </div>
@@ -364,16 +364,16 @@ export const EnvImportModal: React.FC = () => {
                   {step === 'importing' ? (
                     <>
                       <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-green)', animation: 'spin 1s linear infinite', marginBottom: 16 }} />
-                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Encrypting & Syncing</h3>
-                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center' }}>Processing secrets...</p>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Encrypting & Syncing</h3>
+                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center', fontFamily: 'var(--font-sans)' }}>Processing secrets...</p>
                     </>
                   ) : (
                     <>
                       <div style={{ width: 48, height: 48, background: 'var(--color-green-bg)', border: '1px solid var(--color-green-border)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
                         <FiCheck size={24} color="var(--color-green)" />
                       </div>
-                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Import Complete</h3>
-                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center' }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Import Complete</h3>
+                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
                         {importResult.imported} secret{importResult.imported !== 1 ? 's' : ''} imported
                         {importResult.skipped > 0 ? `, ${importResult.skipped} skipped` : ''}
                       </p>

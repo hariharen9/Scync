@@ -30,11 +30,11 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: 20 };
-const sTitle: React.CSSProperties = { fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 };
+const sTitle: React.CSSProperties = { fontSize: 9.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-sans)' };
 
 const HBar: React.FC<{ label: string; count: number; max: number; color: string }> = ({ label, count, max, color }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 24 }}>
-    <span style={{ width: 90, fontSize: 11, color: 'var(--color-text-2)', textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+    <span style={{ width: 90, fontSize: 11, color: 'var(--color-text-2)', textAlign: 'right', flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{label}</span>
     <div style={{ flex: 1, height: 4, background: 'var(--color-surface-2)', overflow: 'hidden' }}>
       <div style={{ height: '100%', width: `${Math.max((count / max) * 100, 3)}%`, background: color, transition: 'width 600ms cubic-bezier(.16,1,.3,1)' }} />
     </div>
@@ -61,7 +61,7 @@ const EnvRing: React.FC<{ data: { label: string; count: number; color: string }[
         {data.map(d => (
           <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 6, height: 6, background: d.color, flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: 'var(--color-text-2)' }}>{d.label}</span>
+            <span style={{ fontSize: 11, color: 'var(--color-text-2)', fontFamily: 'var(--font-sans)' }}>{d.label}</span>
             <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 500, color: 'var(--color-text)', marginLeft: 'auto' }}>{d.count}</span>
           </div>
         ))}
@@ -87,10 +87,10 @@ const TimelineItem: React.FC<{ secret: StoredSecret; isLast: boolean }> = ({ sec
       </div>
       <div style={{ paddingBottom: isLast ? 0 : 14, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{secret.name}</span>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: wasUpdated ? 'var(--color-amber-bg)' : 'var(--color-green-bg)', color: wasUpdated ? 'var(--color-amber)' : 'var(--color-green)' }}>{wasUpdated ? 'Updated' : 'Created'}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{secret.name}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: wasUpdated ? 'var(--color-amber-bg)' : 'var(--color-green-bg)', color: wasUpdated ? 'var(--color-amber)' : 'var(--color-green)', fontFamily: 'var(--font-sans)' }}>{wasUpdated ? 'Updated' : 'Created'}</span>
         </div>
-        <span style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 2, display: 'block' }}>{relative(secret.updatedAt)} · {secret.service}</span>
+        <span style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 2, display: 'block', fontFamily: 'var(--font-sans)' }}>{relative(secret.updatedAt)} · {secret.service}</span>
       </div>
     </div>
   );
@@ -136,7 +136,7 @@ export const Dashboard: React.FC = () => {
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto', animation: 'fadeUp .4s cubic-bezier(.16,1,.3,1) both' }}>
       {/* Hero */}
       <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text)', margin: 0 }}>
+        <h2 style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
           {greeting}. <span style={{ color: 'var(--color-green)' }}>Your vault is unlocked.</span>
         </h2>
         <p style={{ marginTop: 6, fontSize: 12.5, color: 'var(--color-text-2)', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
@@ -163,9 +163,9 @@ export const Dashboard: React.FC = () => {
         </div>
         <div style={{ width: 1, height: 40, background: 'var(--color-border)' }} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>Vault Health Score</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: scoreColor, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>{scoreLabel}</div>
-          <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', margin: 0, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4, fontFamily: 'var(--font-sans)' }}>Vault Health Score</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: scoreColor, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2, fontFamily: 'var(--font-sans)' }}>{scoreLabel}</div>
+          <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', margin: 0, lineHeight: 1.5, fontFamily: 'var(--font-sans)' }}>
             {vaultScore >= 80 ? 'All secrets are in good standing. No expired keys or overdue rotations.' : vaultScore >= 50 ? 'Some secrets need attention. Review expiring or stale keys.' : 'Multiple secrets are expired, need urgent rotation, or have low recovery codes.'}
           </p>
         </div>
@@ -183,7 +183,7 @@ export const Dashboard: React.FC = () => {
             <div style={{ color: stat.color }}>{stat.icon}</div>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 800, color: 'var(--color-text)', lineHeight: 1 }}>{stat.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginTop: 3 }}>{stat.label}</div>
+              <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginTop: 3, fontFamily: 'var(--font-sans)' }}>{stat.label}</div>
             </div>
           </div>
         ))}
@@ -210,9 +210,9 @@ export const Dashboard: React.FC = () => {
               return (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
                   <div style={{ width: 5, height: 5, flexShrink: 0, background: badgeColor }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: badgeBg, color: badgeColor }}>{badgeText}</span>
-                  <span style={{ fontSize: 10.5, color: 'var(--color-text-3)' }}>{s.service}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{s.name}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: badgeBg, color: badgeColor, fontFamily: 'var(--font-sans)' }}>{badgeText}</span>
+                  <span style={{ fontSize: 10.5, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>{s.service}</span>
                 </div>
               );
             })}
@@ -240,8 +240,8 @@ export const Dashboard: React.FC = () => {
               <div key={p.id} onClick={() => { const { selectProject } = useProjectStore.getState(); selectProject(p.id); setActiveView('project'); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background 140ms' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                 <span style={{ fontSize: 14 }}>{p.icon || '📁'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--color-text-3)' }}>{p.secretCount} secret{p.secretCount !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{p.name}</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>{p.secretCount} secret{p.secretCount !== 1 ? 's' : ''}</div>
                 </div>
                 <FiChevronRight size={13} color="var(--color-text-3)" />
               </div>
@@ -250,8 +250,8 @@ export const Dashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px dashed var(--color-border)' }}>
                 <span style={{ fontSize: 14, opacity: 0.4 }}>📂</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--color-text-3)' }}>Uncategorized</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--color-text-3)' }}>{uncategorized} secret{uncategorized !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>Uncategorized</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>{uncategorized} secret{uncategorized !== 1 ? 's' : ''}</div>
                 </div>
               </div>
             )}
@@ -281,8 +281,8 @@ export const Dashboard: React.FC = () => {
       {storedSecrets.length === 0 && (
         <div style={{ border: '1px dashed var(--color-border-2)', background: 'var(--color-surface)', padding: '64px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <div style={{ width: 48, height: 48, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', marginBottom: 16 }}><FiKey size={20} color="var(--color-green)" /></div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>Your vault is empty</h3>
-          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '0 0 20px 0', maxWidth: 300 }}>Add your first secret to get started. Everything is encrypted before it leaves your device.</p>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0', fontFamily: 'var(--font-sans)' }}>Your vault is empty</h3>
+          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '0 0 20px 0', maxWidth: 300, fontFamily: 'var(--font-sans)' }}>Add your first secret to get started. Everything is encrypted before it leaves your device.</p>
           <button onClick={openAddModal} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'white', color: '#080808', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}><FiPlus size={14} /> Add Your First Secret</button>
         </div>
       )}

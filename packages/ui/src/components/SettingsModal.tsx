@@ -239,8 +239,8 @@ export const SettingsModal: React.FC = () => {
                   <FiSettings size={14} color="var(--color-text)" />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Vault Settings</h2>
-                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0' }}>Manage security preferences</p>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Vault Settings</h2>
+                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0', fontFamily: 'var(--font-sans)' }}>Manage security preferences</p>
                 </div>
               </div>
               <button disabled={isSubmitting} onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.5 : 1 }}><FiX size={14} /></button>

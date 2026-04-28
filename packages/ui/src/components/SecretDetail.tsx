@@ -34,8 +34,8 @@ export const SecretDetail: React.FC = () => {
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
       <div style={{ color: 'var(--color-text-3)', flexShrink: 0 }}>{icon}</div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 2, fontFamily: 'var(--font-sans)' }}>{label}</div>
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>{value}</div>
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ export const SecretDetail: React.FC = () => {
           >
             <FiArrowLeft size={14} />
           </button>
-          <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', whiteSpace: 'nowrap' }}>Secret Details</span>
+          <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>Secret Details</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button onClick={() => openEditModal(secret.id)} title="Edit" style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiEdit2 size={13} /></button>
@@ -78,18 +78,18 @@ export const SecretDetail: React.FC = () => {
               const custom = customServices.find(s => s.name === secret.service);
               const accentColor = custom ? (PROJECT_COLOR_MAP[custom.color] ?? '#10b981') : (SERVICE_COLORS[secret.service as keyof typeof SERVICE_COLORS] || '#10b981');
               return (
-                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40`, whiteSpace: 'nowrap' }}>{secret.service}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: `${accentColor}18`, color: accentColor, border: `1px solid ${accentColor}40`, whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>{secret.service}</span>
               );
             })()}
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: statusBg, color: statusColor, whiteSpace: 'nowrap' }}>{isExpired ? 'Expired' : secret.status}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '2px 6px', background: statusBg, color: statusColor, whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>{isExpired ? 'Expired' : secret.status}</span>
           </div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{secret.name}</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em', wordBreak: 'break-word', overflowWrap: 'anywhere', fontFamily: 'var(--font-sans)' }}>{secret.name}</h2>
         </div>
 
 
         {/* Value */}
         <div>
-          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8 }}>
+          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>
             {secret.type === 'Recovery Codes' ? 'Recovery Codes' : 'Secret Value'}
           </div>
           <div style={{ border: secret.type !== 'Recovery Codes' ? '1px solid var(--color-border)' : 'none', background: secret.type !== 'Recovery Codes' ? 'var(--color-bg)' : 'transparent', padding: secret.type !== 'Recovery Codes' ? '10px 12px' : 0 }}>
@@ -106,7 +106,7 @@ export const SecretDetail: React.FC = () => {
 
         {/* Metadata */}
         <div>
-          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8 }}>Metadata</div>
+          <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>Metadata</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <MetaRow icon={<FiTag size={13} />} label="Type" value={secret.type} />
             <MetaRow icon={<FiHash size={13} />} label="Environment" value={secret.environment} />
@@ -119,8 +119,8 @@ export const SecretDetail: React.FC = () => {
         {/* Notes */}
         {decrypted?.notes && (
           <div>
-            <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8 }}>Notes</div>
-            <div style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', padding: '10px 12px', fontSize: 13, color: 'var(--color-text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{decrypted.notes}</div>
+            <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>Notes</div>
+            <div style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', padding: '10px 12px', fontSize: 13, color: 'var(--color-text-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap', fontFamily: 'var(--font-sans)' }}>{decrypted.notes}</div>
           </div>
         )}
 
@@ -128,7 +128,7 @@ export const SecretDetail: React.FC = () => {
         <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {[{ label: 'Created', value: secret.createdAt.toLocaleString() }, { label: 'Last Updated', value: secret.updatedAt.toLocaleString() }].map(r => (
             <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: 'var(--color-text-3)', fontWeight: 500 }}>{r.label}</span>
+              <span style={{ fontSize: 11, color: 'var(--color-text-3)', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>{r.label}</span>
               <span style={{ fontSize: 11, color: 'var(--color-text-2)', fontFamily: 'var(--font-mono)' }}>{r.value}</span>
             </div>
           ))}

@@ -62,7 +62,7 @@ export const VaultPage: React.FC = () => {
             </button>
             <div className="flex md:hidden items-center" style={{ gap: 8 }}>
               <img src="/logo.png" alt="Scync" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>Scync</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>Scync</span>
             </div>
             <button
               onClick={openAboutModal}
@@ -131,6 +131,7 @@ export const VaultPage: React.FC = () => {
                   background: 'var(--color-surface-3)', border: '1px solid var(--color-border-2)',
                   display: 'grid', placeItems: 'center',
                   fontSize: 11, fontWeight: 700, color: 'var(--color-text)',
+                  fontFamily: 'var(--font-sans)'
                 }}>
                   {user?.email?.charAt(0).toUpperCase()}
                 </div>
@@ -240,22 +241,23 @@ export const VaultPage: React.FC = () => {
           padding: '14px 28px',
           borderTop: '1px solid var(--color-border)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
           fontSize: '10px',
           color: 'var(--color-text-3)',
           fontFamily: 'var(--font-mono)',
           background: 'var(--color-bg)',
           flexShrink: 0,
           textTransform: 'uppercase',
-          letterSpacing: '0.05em'
+          letterSpacing: '0.05em',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'stretch' : 'center',
+          gap: isMobile ? 12 : 0,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 20, flexWrap: 'wrap' }}>
             <span>&copy; {new Date().getFullYear()} SCYNC VAULT</span>
-            <span style={{ color: 'var(--color-border)' }}>/</span>
-            <span style={{ opacity: 0.8 }}>"YOUR VAULT. YOUR KEYS. YOUR RULES."</span>
+            {!isMobile && <span style={{ color: 'var(--color-border)' }}>/</span>}
+            <span style={{ opacity: 0.8, fontSize: isMobile ? '9px' : '10px' }}>"YOUR VAULT. YOUR KEYS. YOUR RULES."</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginLeft: isMobile ? '0' : 'auto', justifyContent: isMobile ? 'flex-end' : 'flex-start' }}>
             <span>DISTRIBUTED UNDER MIT LICENSE</span>
           </div>
         </footer>

@@ -140,13 +140,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img src="/logo.png" alt="Scync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
-        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--color-text)' }}>Scync</span>
-        <span style={{
-          fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-          padding: '2px 5px', background: 'var(--color-green-bg)',
-          border: '1px solid var(--color-green-border)', color: 'var(--color-green)',
-          marginLeft: 'auto',
-        }}>BETA</span>
+        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>Scync</span>
       </div>
 
       {/* Search */}
@@ -365,7 +359,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         padding: '14px', borderTop: '1px solid var(--color-border)',
         display: 'flex', flexDirection: 'column', gap: 8,
       }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-2)', letterSpacing: '0.05em' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-2)', letterSpacing: '0.05em', fontFamily: 'var(--font-sans)' }}>
           Scync {__APP_VERSION__}
         </div>
 
@@ -374,16 +368,16 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           letterSpacing: '0.12em', color: 'var(--color-text-3)',
           display: 'flex', alignItems: 'center', gap: 6, margin: '2px 0'
         }}>
-          <span>Created by <span style={{ color: 'var(--color-green)' }}>Hariharen</span></span>
+          <span style={{ fontFamily: 'var(--font-sans)' }}>Created by <span style={{ color: 'var(--color-green)' }}>Hariharen</span></span>
           <div style={{ flex: 1, height: 1, background: 'var(--color-border)' }} />
         </div>
 
         <div style={{ display: 'flex', gap: 12 }}>
           <a href="https://hariharen.site" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
-            <FiGlobe size={11} /> <span style={{ fontSize: 10, fontWeight: 600 }}>Portfolio</span>
+            <FiGlobe size={11} /> <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>Portfolio</span>
           </a>
           <a href="https://github.com/hariharen9/Scync" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
-            <FiGithub size={11} /> <span style={{ fontSize: 10, fontWeight: 600 }}>GitHub</span>
+            <FiGithub size={11} /> <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>GitHub</span>
           </a>
         </div>
       </div>

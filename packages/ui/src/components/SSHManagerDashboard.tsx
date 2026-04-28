@@ -84,7 +84,7 @@ export const SSHManagerDashboard: React.FC = () => {
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 4px 0', fontFamily: 'var(--font-sans)', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <FiTerminal /> SSH Manager
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>Zero-knowledge storage and generation for your SSH keys.</p>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, fontFamily: 'var(--font-sans)' }}>Zero-knowledge storage and generation for your SSH keys.</p>
         </div>
         <button
           onClick={openAddSSHModal}
@@ -148,7 +148,7 @@ export const SSHManagerDashboard: React.FC = () => {
               <div key={key.id} style={{ border: '1px solid var(--color-border)', borderRadius: 6, background: 'var(--color-surface-2)', overflow: 'hidden' }}>
                 <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>{key.name}</h3>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: 15, fontWeight: 600, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>{key.name}</h3>
                     <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
                       <span>{key.type}</span>
                       <span>•</span>

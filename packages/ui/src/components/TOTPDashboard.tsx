@@ -166,7 +166,7 @@ export const TOTPDashboard: React.FC = () => {
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 4px 0', fontFamily: 'var(--font-sans)', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <FiShield /> Authenticator
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>Encrypted 2FA codes synced across your devices.</p>
+          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, fontFamily: 'var(--font-sans)' }}>Encrypted 2FA codes synced across your devices.</p>
         </div>
         <button
           onClick={openAddTOTPModal}
@@ -212,7 +212,7 @@ export const TOTPDashboard: React.FC = () => {
         {isDecrypting && liveCodes.length === 0 ? (
            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 0', color: 'var(--color-text-muted)' }}>
              <div className="animate-spin" style={{ width: 24, height: 24, border: '2px solid var(--color-border)', borderTopColor: 'var(--color-text)', borderRadius: '50%', marginBottom: 12 }} />
-             <p style={{ fontSize: 12 }}>Decrypting authenticators...</p>
+             <p style={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}>Decrypting authenticators...</p>
            </div>
         ) : storedTOTPs.length === 0 ? (
           <div style={{ 
@@ -221,12 +221,12 @@ export const TOTPDashboard: React.FC = () => {
             padding: '100px 0', color: 'var(--color-text-muted)', textAlign: 'center'
           }}>
             <FiShield size={40} style={{ marginBottom: 16, opacity: 0.3 }} />
-            <p style={{ fontSize: 14, margin: '0 0 6px 0', fontWeight: 600, color: 'var(--color-text)' }}>No authenticators in your vault.</p>
-            <p style={{ fontSize: 12, opacity: 0.7 }}>Add your first 2FA code to get started.</p>
+            <p style={{ fontSize: 14, margin: '0 0 6px 0', fontWeight: 600, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>No authenticators in your vault.</p>
+            <p style={{ fontSize: 12, opacity: 0.7, fontFamily: 'var(--font-sans)' }}>Add your first 2FA code to get started.</p>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', color: 'var(--color-text-muted)' }}>
-            <p style={{ fontSize: 13 }}>No results for "{search}"</p>
+            <p style={{ fontSize: 13, fontFamily: 'var(--font-sans)' }}>No results for "{search}"</p>
           </div>
         ) : (
           filtered.map(item => {
@@ -255,7 +255,7 @@ export const TOTPDashboard: React.FC = () => {
                       <ServiceIcon service={item.issuer} size={14} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>
                         {item.issuer || 'Unknown Service'}
                       </div>
                       {item.label && (

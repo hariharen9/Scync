@@ -98,7 +98,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
             fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: accentColor,
+            color: accentColor, fontFamily: 'var(--font-sans)'
           }}>
             {(() => {
               const custom = customServices.find(s => s.name === secret.service);
@@ -108,10 +108,9 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
             {secret.service}
           </div>
           {/* Name */}
-          <h3 style={{
             fontSize: '13.5px', fontWeight: 700, color: 'var(--color-text)',
             margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            letterSpacing: '-0.01em',
+            letterSpacing: '-0.01em', fontFamily: 'var(--font-sans)'
           }} title={secret.name}>
             {secret.name}
           </h3>
@@ -186,7 +185,9 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
             <span style={{ color: 'var(--color-border-2)', fontSize: 10 }}>/</span>
           </>
         )}
-        <span style={{ fontSize: '9.5px', fontWeight: 500, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <span style={{
+          fontSize: '9.5px', fontWeight: 500, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-sans)'
+        }}>
           {secret.type}
         </span>
         <span style={{ color: 'var(--color-border-2)', fontSize: 10 }}>·</span>
@@ -195,6 +196,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           padding: '1px 5px',
           background: envStyle.bg, color: envStyle.color,
           border: `1px solid ${envStyle.color}20`,
+          fontFamily: 'var(--font-sans)'
         }}>
           {secret.environment}
         </span>
@@ -222,12 +224,12 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' }}>
         <span style={{
           fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
-          padding: '2px 6px', background: statusBg, color: statusColor,
+          padding: '2px 6px', background: statusBg, color: statusColor, fontFamily: 'var(--font-sans)'
         }}>
           {statusLabel}
         </span>
         {secret.expiresOn && (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: isExpiringSoon ? 'var(--color-amber)' : 'var(--color-text-3)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, color: isExpiringSoon ? 'var(--color-amber)' : 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>
             <FiClock size={10} />
             {secret.expiresOn.toLocaleDateString()}
           </span>

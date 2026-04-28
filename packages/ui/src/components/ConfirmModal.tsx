@@ -39,8 +39,8 @@ export const ConfirmModal: React.FC = () => {
                 <FiAlertTriangle size={16} color={danger ? 'var(--color-red)' : 'var(--color-text)'} />
               </div>
               <div style={{ flex: 1, paddingTop: 2 }}>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>{title}</h3>
-                <p style={{ margin: '8px 0 0 0', fontSize: 13, color: 'var(--color-text-2)', lineHeight: 1.5 }}>{message}</p>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.01em', fontFamily: 'var(--font-sans)' }}>{title}</h3>
+                <p style={{ margin: '8px 0 0 0', fontSize: 13, color: 'var(--color-text-2)', lineHeight: 1.5, fontFamily: 'var(--font-sans)' }}>{message}</p>
               </div>
             </div>
           </div>
