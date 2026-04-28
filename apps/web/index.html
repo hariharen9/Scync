@@ -36,9 +36,63 @@
   </head>
   <body style="background-color: #060606; color: white; margin: 0; font-family: sans-serif; overflow: hidden;">
     <div id="root">
-      <div id="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 1rem;">
-        <p style="font-size: 1.2rem; font-weight: 500;">Initializing Scync...</p>
-        <div id="error-display" style="color: #ef4444; max-width: 80%; text-align: center; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap;"></div>
+      <div id="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #060606;">
+        <style>
+          .brutalist-spinner {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #222;
+            border-top-color: #fff;
+            animation: b-spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+            margin-bottom: 32px;
+          }
+          @keyframes b-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .b-text {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            color: #fff;
+            margin: 0;
+            line-height: 1;
+          }
+          .b-sub {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: #666;
+            margin-top: 12px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+          }
+          .b-blink {
+            animation: b-blink 1s step-end infinite;
+          }
+          @keyframes b-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+          #error-display {
+            color: #ef4444; 
+            max-width: 80%; 
+            text-align: center; 
+            font-family: 'DM Mono', monospace; 
+            font-size: 12px; 
+            white-space: pre-wrap; 
+            margin-top: 32px; 
+            border: 1px solid rgba(239, 68, 68, 0.2); 
+            padding: 16px; 
+            background: rgba(239, 68, 68, 0.05); 
+            display: none;
+          }
+        </style>
+        <div class="brutalist-spinner"></div>
+        <h1 class="b-text">SCYNC</h1>
+        <div class="b-sub">Establishing Zero-Knowledge Void<span class="b-blink">_</span></div>
+        <div id="error-display"></div>
       </div>
     </div>
     
@@ -47,6 +101,7 @@
       window.onerror = function(msg, url, lineNo, columnNo, error) {
         const display = document.getElementById('error-display');
         if (display) {
+          display.style.display = 'block';
           display.innerText = 'Error: ' + msg + '\nAt: ' + url + ':' + lineNo + ':' + columnNo + (error ? '\nStack: ' + error.stack : '');
         }
         return false;
@@ -55,6 +110,7 @@
       window.addEventListener('unhandledrejection', function(event) {
         const display = document.getElementById('error-display');
         if (display) {
+          display.style.display = 'block';
           display.innerText = 'Promise Rejection: ' + event.reason + (event.reason && event.reason.stack ? '\nStack: ' + event.reason.stack : '');
         }
       });
