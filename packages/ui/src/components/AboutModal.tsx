@@ -18,7 +18,7 @@ export const AboutModal: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            style={{ position: 'relative', width: '100%', maxWidth: 600, background: 'var(--color-surface)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 32px)' }}
+            style={{ position: 'relative', width: '100%', maxWidth: 600, background: 'var(--color-surface)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 32px)', fontFamily: 'var(--font-sans)' }}
           >
             {/* Header */}
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--color-bg)' }}>
@@ -99,7 +99,7 @@ export const AboutModal: React.FC = () => {
                   </div>
                   <div style={{ background: 'var(--color-surface-2)', padding: 12, border: '1px solid var(--color-border)' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>Open & Auditable</div>
-                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>MIT Licensed. No proprietary crypto. You own your data entirely.</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4, fontFamily: 'var(--font-sans)' }}>MIT Licensed. No proprietary crypto. You own your data entirely.</div>
                   </div>
                 </div>
               </div>

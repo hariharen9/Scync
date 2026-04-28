@@ -10,7 +10,7 @@ import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
 
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
-  const { activeView, setActiveView, filter, setFilter, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
+  const { activeView, setActiveView, filter, setFilter, clearFilters, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
   const { projects, selectedProjectId, selectProject, deleteProject, updateProject } = useProjectStore();
   const { customServices, deleteService } = useServiceStore();
   const { storedSecrets } = useVaultStore();
@@ -23,20 +23,20 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
 
   const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
-    if (view === 'all') {
-      setFilter({ service: '', search: '', type: '', environment: '', status: '' });
-    }
+    clearFilters();
     closeMobileMenu();
   };
 
   const handleProjectNav = (id: string | null) => {
     setActiveView('project');
     selectProject(id);
+    clearFilters();
     closeMobileMenu();
   };
 
   const handleServiceNav = (name: string) => {
     setActiveView('all');
+    clearFilters();
     setFilter({ service: name });
     closeMobileMenu();
   };
