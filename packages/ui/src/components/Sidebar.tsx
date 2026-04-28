@@ -9,6 +9,28 @@ import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
 
+const SystemClock: React.FC = () => {
+  const [time, setTime] = React.useState(new Date());
+  React.useEffect(() => {
+    const iv = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  return (
+    <div className="desktop-only" style={{ 
+      marginTop: 4, padding: '8px 10px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font-mono)'
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-green)', letterSpacing: '0.05em' }}>
+        {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+      </div>
+      <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase' }}>
+        {time.toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+      </div>
+    </div>
+  );
+};
+
 export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { activeView, setActiveView, filter, setFilter, clearFilters, closeMobileMenu, openAddProjectModal, openAddServiceModal, openConfirmModal } = useUIStore();
   const { projects, selectedProjectId, selectProject, deleteProject, updateProject } = useProjectStore();
@@ -362,6 +384,8 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-2)', letterSpacing: '0.05em', fontFamily: 'var(--font-sans)' }}>
           Scync {__APP_VERSION__}
         </div>
+
+        <SystemClock />
 
         <div style={{ 
           fontSize: '8.5px', fontWeight: 800, textTransform: 'uppercase', 

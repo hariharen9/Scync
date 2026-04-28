@@ -108,6 +108,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
             {secret.service}
           </div>
           {/* Name */}
+          <h3 style={{
             fontSize: '13.5px', fontWeight: 700, color: 'var(--color-text)',
             margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
             letterSpacing: '-0.01em', fontFamily: 'var(--font-sans)'

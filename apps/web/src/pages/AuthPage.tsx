@@ -15,10 +15,11 @@ const marqueeItems = [
   'AES-256-GCM', 'Zero-Knowledge Architecture', 'PBKDF2-SHA256 \u00b7 310,000 iterations',
   'Web Crypto API', 'In-Memory Decryption', 'MIT Licensed', 'Open Source',
   'No Password Storage', 'Fresh IV Per Encrypt', 'Real-Time Sync',
-  'Cross-Platform', 'Non-Extractable Keys', 'Firebase-Backed', 'Free Forever',
+  '2FA Authenticator', 'SSH Key Manager', 'Cross-Platform', 'Non-Extractable Keys',
+  'Firebase-Backed', 'Free Forever',
 ];
 
-const words = ['API keys', 'secrets', 'tokens', 'credentials', 'OAuth secrets'];
+const words = ['API keys', 'secrets', '2FA codes', 'SSH keys', 'tokens', 'credentials', 'OAuth secrets'];
 
 export const AuthPage: React.FC = () => {
   const { signIn } = useAuthStore();
@@ -335,7 +336,11 @@ export const AuthPage: React.FC = () => {
               <div><span className="t-comment">// Server only ever sees this:</span></div>
               <div><span className="t-dim">{"{"} value: </span><span className="t-val">"Uv8xQz3mK9pL2nR7..."</span><span className="t-dim"> {"}"} </span><span className="t-comment">// ← encrypted blob. useless.</span></div>
               <div>{" "}</div>
-              <div><span className="t-key">await</span> navigator.clipboard.<span className="t-fn">writeText</span>(key.value); <span className="t-comment">// done.</span><span className="t-cursor-inline"></span></div>
+              <div><span className="t-key">await</span> navigator.clipboard.<span className="t-fn">writeText</span>(key.value); <span className="t-comment">// done.</span></div>
+              <div>{" "}</div>
+              <div><span className="t-comment">// New: Access your 2FA and SSH keys just as fast</span></div>
+              <div><span className="t-key">const</span> code = vault.<span className="t-fn">get2FA</span>(<span className="t-str">"github"</span>); <span className="t-comment">// → "482 910"</span></div>
+              <div><span className="t-key">const</span> ssh = vault.<span className="t-fn">getSSH</span>(<span className="t-str">"prod-server"</span>); <span className="t-comment">// → decrypted private key</span><span className="t-cursor-inline"></span></div>
             </div>
           </div>
         </div>
@@ -443,10 +448,85 @@ export const AuthPage: React.FC = () => {
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              </div>
+              <div className="feat-title">2FA Authenticator</div>
+              <div className="feat-desc">Move your 2FA out of siloed apps. Zero-knowledge sync for your authenticator codes with QR drag-and-drop support.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></svg>
+              </div>
+              <div className="feat-title">SSH Key Manager</div>
+              <div className="feat-desc">Generate RSA/Ed25519 pairs locally. Map to hosts and auto-generate your <code style={{ color: 'var(--green)', fontSize: '11px' }}>~/.ssh/config</code>.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
               </div>
               <div className="feat-title">Native feel. Zero bloat.</div>
-              <div className="feat-desc">Install Scync as a <strong>PWA</strong> on mobile or use the Desktop app with global hotkeys (<kbd>Ctrl+Shift+S</kbd>). Lightning fast, lightweight, and always in sync.</div>
+              <div className="feat-desc">Install Scync as a <strong>PWA</strong> on mobile or use the Desktop app with global hotkeys (<kbd>Ctrl+Shift+S</kbd>). Lightning fast and always in sync.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="beyond-section" id="beyond">
+        <div className="section-inner">
+          <div className="section-label reveal">Advanced Modules</div>
+          <h2 className="section-h2 reveal reveal-delay-1">Beyond Secrets.</h2>
+          <p className="section-sub reveal reveal-delay-2">The engineering toolbox you've been missing. Fully integrated, zero-knowledge, and built for speed.</p>
+
+          <div className="beyond-grid reveal">
+            <div className="beyond-item">
+              <div className="beyond-visual">
+                <div className="ssh-mockup">
+                  <div style={{ color: '#8b949e', marginBottom: '4px' }}># SCYNC SSH CONFIG</div>
+                  <div><span style={{ color: '#ff7b72' }}>Host</span> prod-server</div>
+                  <div>{"  "}<span style={{ color: '#79c0ff' }}>IdentityFile</span> ~/.ssh/scync-prod</div>
+                  <div style={{ marginTop: '8px', color: '#8b949e' }}># Generating new key...</div>
+                  <div style={{ color: '#d2a8ff' }}>$ ssh-keygen -t ed25519 -C "scync"</div>
+                  <div style={{ color: 'var(--green)' }}>[✓] Keypair generated locally</div>
+                  <span className="ssh-cursor"></span>
+                </div>
+              </div>
+              <div className="beyond-text">
+                <h3 className="beyond-title">SSH Key Manager</h3>
+                <p className="beyond-desc">
+                  Generate RSA/Ed25519 pairs locally. Map them to hosts and auto-generate your <code style={{ color: 'var(--green)', fontSize: '12px' }}>~/.ssh/config</code>. Your most sensitive keys, vaulted with hardware-backed security.
+                </p>
+              </div>
+            </div>
+
+            <div className="beyond-item">
+              <div className="beyond-visual">
+                <div className="tfa-mockup">
+                  <div className="tfa-card">
+                    <div>
+                      <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: '2px' }}>GitHub</div>
+                      <div className="tfa-code">482 910</div>
+                    </div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid var(--b2)', borderTopColor: 'var(--green)', animation: 'spin 2s linear infinite' }}></div>
+                  </div>
+                  <div className="tfa-card" style={{ opacity: 0.6 }}>
+                    <div>
+                      <div style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--t3)', marginBottom: '2px' }}>AWS Production</div>
+                      <div className="tfa-code">104 382</div>
+                    </div>
+                  </div>
+                  <div className="tfa-timer">
+                    <div className="tfa-progress"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="beyond-text">
+                <h3 className="beyond-title">2FA Authenticator</h3>
+                <p className="beyond-desc">
+                  Move your second factors out of siloed apps. Zero-knowledge sync for all your authenticator codes with seamless QR drag-and-drop and real-time countdowns.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -690,6 +770,22 @@ export const AuthPage: React.FC = () => {
                 <div className="compare-cell"><span className="c-no">✗</span></div>
                 <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">Integrated 2FA Authenticator</div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
+                <div className="compare-cell">SSH Key Management</div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell"><span className="c-no">✗</span></div>
                 <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
               </div>

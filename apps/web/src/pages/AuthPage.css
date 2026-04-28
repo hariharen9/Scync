@@ -625,6 +625,141 @@
 .scync-landing .mini-card.copying { animation: copyFlash .6s ease; }
 
 /* ═══════════════════════════════════════════
+   BEYOND SECRETS SECTION
+═══════════════════════════════════════════ */
+.scync-landing .beyond-section {
+  padding: 120px 24px;
+  background: var(--bg);
+  position: relative; z-index: 1;
+}
+
+.scync-landing .beyond-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--b1);
+  margin-top: 64px;
+  border: 1px solid var(--b1);
+}
+
+.scync-landing .beyond-item {
+  background: var(--s1);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.scync-landing .beyond-item:hover {
+  background: var(--s2);
+}
+
+.scync-landing .beyond-text {
+  max-width: 400px;
+}
+
+.scync-landing .beyond-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--t1);
+  margin-bottom: 12px;
+  font-family: var(--font);
+}
+
+.scync-landing .beyond-desc {
+  font-size: 15px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+
+/* SSH Visual */
+.scync-landing .beyond-visual {
+  height: 240px;
+  background: var(--bg);
+  border: 1px solid var(--b2);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scync-landing .ssh-mockup {
+  width: 90%;
+  height: 80%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 12px;
+  position: relative;
+}
+
+.scync-landing .ssh-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 12px;
+  background: var(--green);
+  margin-left: 4px;
+  animation: blink 1s step-end infinite;
+}
+
+/* 2FA Visual */
+.scync-landing .tfa-mockup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 20px;
+}
+
+.scync-landing .tfa-card {
+  background: var(--s2);
+  border: 1px solid var(--b2);
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideIn .5s var(--ease) both;
+}
+
+.scync-landing .tfa-code {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  font-family: var(--mono);
+}
+
+.scync-landing .tfa-timer {
+  width: 100%;
+  height: 2px;
+  background: var(--b1);
+  margin-top: 8px;
+  position: relative;
+}
+
+.scync-landing .tfa-progress {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--green);
+  animation: timerProgress 30s linear infinite;
+}
+
+@keyframes timerProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@media (max-width: 1024px) {
+  .scync-landing .beyond-grid { grid-template-columns: 1fr; }
+  .scync-landing .beyond-item { padding: 32px 24px; }
+}
+
+/* ═══════════════════════════════════════════
    SECURITY SECTION
 ═══════════════════════════════════════════ */
 .scync-landing .security-section {

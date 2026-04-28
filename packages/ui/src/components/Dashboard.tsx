@@ -8,8 +8,11 @@ import type { StoredSecret } from '@scync/core';
 import {
   FiAlertTriangle, FiRefreshCw, FiPlus, FiKey,
   FiUploadCloud, FiFolder, FiChevronRight,
-  FiActivity, FiLayers, FiGlobe, FiLock
+  FiActivity, FiLayers, FiGlobe, FiLock, FiTerminal, FiShield, FiCopy, FiCheck
 } from 'react-icons/fi';
+import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
+import { generateTOTPCode, getRemainingSeconds } from '@scync/core';
+import { ServiceIcon } from './ServiceIcon';
 
 const SERVICE_COLORS: Record<string, string> = {
   'AWS': '#f59e0b', 'GitHub': '#f0f6fc', 'Google': '#4285f4', 'Stripe': '#635bff',
@@ -91,6 +94,112 @@ const TimelineItem: React.FC<{ secret: StoredSecret; isLast: boolean }> = ({ sec
           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '1px 5px', background: wasUpdated ? 'var(--color-amber-bg)' : 'var(--color-green-bg)', color: wasUpdated ? 'var(--color-amber)' : 'var(--color-green)', fontFamily: 'var(--font-sans)' }}>{wasUpdated ? 'Updated' : 'Created'}</span>
         </div>
         <span style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 2, display: 'block', fontFamily: 'var(--font-sans)' }}>{relative(secret.updatedAt)} · {secret.service}</span>
+      </div>
+    </div>
+  );
+};
+
+const Quick2FA: React.FC = () => {
+  const { storedTOTPs, decryptTOTP } = useVaultStore();
+  const { setActiveView } = useUIStore();
+  const [liveCodes, setLiveCodes] = React.useState<any[]>([]);
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const cache = React.useRef<Map<string, any>>(new Map());
+
+  React.useEffect(() => {
+    const decrypt = async () => {
+      for (const t of storedTOTPs.slice(0, 2)) {
+        if (!cache.current.has(t.id)) {
+          const dec = await decryptTOTP(t.id);
+          if (dec) cache.current.set(t.id, dec);
+        }
+      }
+    };
+    decrypt();
+  }, [storedTOTPs, decryptTOTP]);
+
+  React.useEffect(() => {
+    const tick = () => {
+      const codes: any[] = [];
+      cache.current.forEach((dec) => {
+        try {
+          const code = generateTOTPCode(dec);
+          const remaining = getRemainingSeconds(dec.period);
+          codes.push({ id: dec.id, code, remaining, issuer: dec.issuer });
+        } catch (e) {}
+      });
+      setLiveCodes(codes);
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const handleCopy = (code: string, id: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  return (
+    <div style={{ ...card, border: 'none' }}>
+      <div style={{ ...sTitle, justifyContent: 'space-between' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiShield size={11} /> 2FA Quick Access</span>
+        <button onClick={() => setActiveView('totp')} style={{ background: 'none', border: 'none', color: 'var(--color-green)', fontSize: 9.5, fontWeight: 700, cursor: 'pointer' }}>VIEW ALL</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {liveCodes.map(c => (
+          <div key={c.id} onClick={() => handleCopy(c.code, c.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', cursor: 'pointer' }}>
+            <ServiceIcon service={c.issuer} size={14} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: 'var(--color-text-3)', textTransform: 'uppercase', marginBottom: 2 }}>{c.issuer}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, fontFamily: 'var(--font-mono)', color: c.remaining <= 5 ? 'var(--color-red)' : 'var(--color-green)', letterSpacing: '0.05em' }}>
+                {c.code.slice(0, 3)} {c.code.slice(3)}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {copiedId === c.id ? <FiCheck size={12} color="var(--color-green)" /> : <FiCopy size={12} color="var(--color-text-3)" />}
+              <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--color-text-3)', width: 12 }}>{c.remaining}</span>
+            </div>
+          </div>
+        ))}
+        {storedTOTPs.length === 0 && <p style={{ fontSize: 11, color: 'var(--color-text-3)', textAlign: 'center', padding: '10px 0' }}>No 2FA keys found.</p>}
+      </div>
+    </div>
+  );
+};
+
+const QuickSSH: React.FC = () => {
+  const { storedSSHKeys } = useVaultStore();
+  const { setActiveView } = useUIStore();
+  const [copiedId, setCopiedId] = React.useState<string | null>(null);
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  return (
+    <div style={{ ...card, border: 'none' }}>
+      <div style={{ ...sTitle, justifyContent: 'space-between' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FiTerminal size={11} /> SSH Quick Access</span>
+        <button onClick={() => setActiveView('ssh')} style={{ background: 'none', border: 'none', color: 'var(--color-green)', fontSize: 9.5, fontWeight: 700, cursor: 'pointer' }}>VIEW ALL</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {storedSSHKeys.slice(0, 2).map(k => (
+          <div key={k.id} onClick={() => handleCopy(k.publicKey, k.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', cursor: 'pointer' }}>
+            <div style={{ width: 24, height: 24, background: 'var(--color-bg)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center' }}>
+              <FiKey size={12} color="var(--color-text-3)" />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{k.name}</div>
+              <div style={{ fontSize: 9, color: 'var(--color-text-3)', fontFamily: 'var(--font-mono)' }}>{k.type} · {k.fingerprint.slice(0, 12)}...</div>
+            </div>
+            {copiedId === k.id ? <FiCheck size={12} color="var(--color-green)" /> : <FiCopy size={12} color="var(--color-text-3)" />}
+          </div>
+        ))}
+        {storedSSHKeys.length === 0 && <p style={{ fontSize: 11, color: 'var(--color-text-3)', textAlign: 'center', padding: '10px 0' }}>No SSH keys found.</p>}
       </div>
     </div>
   );
@@ -228,6 +337,12 @@ export const Dashboard: React.FC = () => {
         {typeBreakdown.length > 0 && <div style={{ ...card, border: 'none' }}><div style={sTitle}><FiLock size={11} /> Secret Types</div><div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>{typeBreakdown.slice(0, 8).map(([type, count]) => <HBar key={type} label={type} count={count} max={maxType} color={TYPE_COLORS[type] || '#64748b'} />)}</div></div>}
       </div>
 
+      {/* Quick Access Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1, background: 'var(--color-border)', border: '1px solid var(--color-border)', marginBottom: 16 }}>
+        <Quick2FA />
+        <QuickSSH />
+      </div>
+
       {/* Projects + Recent Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 1, background: 'var(--color-border)', border: '1px solid var(--color-border)', marginBottom: 16 }}>
         <div style={{ ...card, border: 'none' }}>
@@ -238,7 +353,9 @@ export const Dashboard: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {projectStats.map(p => (
               <div key={p.id} onClick={() => { const { selectProject } = useProjectStore.getState(); selectProject(p.id); setActiveView('project'); }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background 140ms' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <span style={{ fontSize: 14 }}>{p.icon || '📁'}</span>
+                <div style={{ width: 28, height: 28, background: 'var(--color-bg)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center' }}>
+                  <ProjectIcon iconKey={p.icon} size={13} color={PROJECT_COLOR_MAP[p.color]} />
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>{p.name}</div>
                   <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>{p.secretCount} secret{p.secretCount !== 1 ? 's' : ''}</div>
@@ -248,7 +365,9 @@ export const Dashboard: React.FC = () => {
             ))}
             {uncategorized > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: '1px dashed var(--color-border)' }}>
-                <span style={{ fontSize: 14, opacity: 0.4 }}>📂</span>
+                <div style={{ width: 28, height: 28, background: 'none', display: 'grid', placeItems: 'center', opacity: 0.4 }}>
+                  <FiFolder size={13} color="var(--color-text-3)" />
+                </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>Uncategorized</div>
                   <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)' }}>{uncategorized} secret{uncategorized !== 1 ? 's' : ''}</div>

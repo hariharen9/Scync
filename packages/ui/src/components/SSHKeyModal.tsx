@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiCheck, FiKey, FiTerminal, FiDatabase, FiPlus, FiDownload } from 'react-icons/fi';
+import { FiX, FiTerminal, FiDatabase, FiPlus, FiDownload } from 'react-icons/fi';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';

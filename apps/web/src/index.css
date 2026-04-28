@@ -191,7 +191,7 @@
   transition: all 140ms cubic-bezier(.4,0,.2,1);
 }
 
-@utility input-field {
+.input-field {
   width: 100%;
   border: 1px solid var(--color-border);
   background-color: var(--color-surface-2);
@@ -200,4 +200,9 @@
   color: var(--color-text);
   outline: none;
   transition: border-color 140ms cubic-bezier(.4,0,.2,1);
+}
+
+.desktop-only { display: block; }
+@media (max-width: 1024px) {
+  .desktop-only { display: none !important; }
 }

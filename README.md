@@ -23,9 +23,9 @@
 
 You have 47 API keys. You know where exactly zero of them are.
 
-One lives in a `.env` file you're scared to delete. Another is in a Slack DM from 2022. A third is a screenshot buried in your camera roll. Your AWS credentials are in a Notion page titled *"stuff"* — right next to your Netflix password and a grocery list.
+One lives in a `.env` file you're scared to delete. Another is in a Slack DM from 2022. A third is a screenshot buried in your camera roll. Your AWS credentials are in a Notion page titled *"stuff"* — right next to your Netflix password and a grocery list. Your SSH keys are scattered across three different machines, and your 2FA codes are trapped in a siloed app on a phone you're about to trade in.
 
-When you need your OpenAI key, you either find it in 3 seconds or spend 45 minutes regenerating it and updating 6 projects. There's no in-between.
+When you need to log in to a new server or find your OpenAI key, you either find it in 3 seconds or spend 45 minutes regenerating it and updating 6 projects. There's no in-between.
 
 This is not a workflow problem. This is a **missing tool** problem. And the existing tools don't actually solve it:
 
@@ -57,38 +57,74 @@ The server never sees your plaintext data. Your vault password never leaves your
 Unlock vault  →  Find secret  →  Copy value
 ```
 
-That's it. Everything else exists to make that loop faster and the secrets inside it more trustworthy.
+That's it. Everything else exists to make that loop faster and the secrets inside it more trustworthy and safe to use.
 
 ---
 
 ## Features
 
-### 🔑 Secrets, not passwords
-Scync is purpose-built for what developers actually store: API keys, Personal Access Tokens, OAuth client secrets, webhook signing secrets, recovery/backup codes, SSH passphrases, database connection strings, service account credentials. Each type has its own UX.
-
-### 📁 Project-based organization
-Secrets live in projects, not a flat list. Your `Stripe` project holds all Stripe keys across environments. Your `Side Project Alpha` holds everything for that app. Organized the way you actually think about your work.
-
-### 🧮 Recovery code UX that actually works
-Recovery codes aren't just a text field. They're numbered. You mark them as used. The remaining count is always visible. When you're locked out of GitHub at 2am, you'll know exactly which code to use and whether you have any left.
-
-### ⏰ Expiry and rotation dashboard
-Secrets have lifecycles. Scync surfaces them. See what's expiring in the next 30 days. See what hasn't been rotated in over a year. A quick scan of your dashboard tells you the health of your entire credential ecosystem.
-
-### 📄 `.env` workflow integration
-Import an entire `.env` file into a project. Export a project back to a `.env` file. The gap between "local secrets" and "stored secrets" is one drag-and-drop away.
-
-### ⚡ One-click copy, always masked
-The primary action on every secret is copy. Values are masked by default. Toggle to reveal only when you need to see. Clipboard access is one click, no confirmation dialogs, no "are you sure?"
-
-### 🌐 Web + Desktop + PWA, same codebase
-One React codebase. The web app, installable PWA, and Electron desktop app are identical — sharing the same components, logic, and zero-knowledge sync. Access your vault from a browser, a dedicated desktop window, or your mobile home screen.
-
-### 🧬 Biometric Unlock (Passkeys)
-Unlock your vault in milliseconds using FaceID, TouchID, or Windows Hello. Scync uses the modern **WebAuthn PRF extension** to derive encryption keys directly from your device's secure hardware. No more typing long master passwords every time you need a key.
-
-### 🔍 Instant search and filtering
-Search by name or service. Filter by type, environment, status. All in-memory — no network calls, no loading spinners, just results.
+<table width="100%">
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🔑 Secrets, not passwords</h3>
+      <p>Purpose-built for API keys, PATs, OAuth secrets, recovery codes, SSH passphrases, and more. Each type has its own UX.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>📁 Project-based organization</h3>
+      <p>Secrets live in projects, not a flat list. Organized the way you actually think about your work.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🧮 Recovery code UX</h3>
+      <p>Numbered codes, usage tracking, and remaining counts. Know exactly which code to use and whether you have any left.</p>
+    </td>
+    <td valign="top">
+      <h3>⏰ Expiry & rotation dashboard</h3>
+      <p>Secrets have lifecycles. See what's expiring in 30 days or what hasn't rotated in over a year.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>📄 .env workflow integration</h3>
+      <p>Drag-and-drop .env import and export. The gap between "local secrets" and "stored secrets" is one drop away.</p>
+    </td>
+    <td valign="top">
+      <h3>🔐 2FA Authenticator</h3>
+      <p>Zero-knowledge sync for all your 2FA codes with seamless QR drag-and-drop and real-time countdowns.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>💻 SSH Key Manager</h3>
+      <p>Generate RSA/Ed25519 pairs locally. Map to hosts and auto-generate your <code>~/.ssh/config</code> templates.</p>
+    </td>
+    <td valign="top">
+      <h3>⚡ One-click copy, always masked</h3>
+      <p>Primary action is copy. Values masked by default. One click to clipboard, no confirmation dialogs.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🧬 Biometric Unlock</h3>
+      <p>Unlock with FaceID/TouchID using <b>Hardware-Backed PRF</b>. Native speed, zero-knowledge security.</p>
+    </td>
+    <td valign="top">
+      <h3>🌐 Native feel. Zero bloat.</h3>
+      <p>Installable PWA for mobile/desktop. Lightning fast, lightweight, and always in sync across devices.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🔍 Instant search & filtering</h3>
+      <p>Search by name or service. Filter by type, environment, or status. All in-memory — no network calls.</p>
+    </td>
+    <td valign="top">
+      <h3>🛡️ Zero-Knowledge architecture</h3>
+      <p>Enforced by math. Your plaintext data never leaves your device. Not "we promise," architecturally impossible.</p>
+    </td>
+  </tr>
+</table>
 
 ---
 
