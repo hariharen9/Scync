@@ -319,7 +319,7 @@ export const UnlockPage: React.FC = () => {
 
   const handleSuccessFlow = () => {
     setIsSuccess(true);
-    const unlit = nodeEls.current.map((n, i) => i).filter(i => !nodeEls.current[i].active);
+    const unlit = nodeEls.current.map((_, i) => i).filter(i => !nodeEls.current[i].active);
     unlit.forEach((idx, i) => {
       setTimeout(() => activateNode(idx), i * 35);
     });

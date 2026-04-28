@@ -1,209 +1,416 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore, useVaultStore } from '@scync/ui';
-import { FiLock, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiShield, FiLock, FiCheck, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import './SetupPage.css';
 
 export const SetupPage: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, signOut } = useAuthStore();
   const { initializeVault } = useVaultStore();
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [revealed, setRevealed] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [confirmedOnce, setConfirmedOnce] = useState(false);
 
-  const strength = (() => {
-    if (!password) return 0;
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const constellationRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const passElRef = useRef<HTMLInputElement>(null);
+
+  const nodeEls = useRef<{ el: HTMLDivElement; x: number; y: number; active: boolean }[]>([]);
+  const edgesRef = useRef<{ i: number; j: number; d: number; drawn: boolean; lineEl: SVGLineElement | null }[]>([]);
+  const lastCount = useRef(0);
+
+  const NODE_POS = [
+    [58, 42], [140, 20], [222, 38], [260, 110], [252, 190],
+    [195, 252], [120, 265], [48, 248], [18, 168], [22, 82],
+    [88, 88], [200, 96], [210, 200], [78, 205],
+  ];
+
+  const N = NODE_POS.length;
+  const RING_CIRC = 2 * Math.PI * 140;
+  const RING_COLORS: Record<string, string> = { w: '#ef4444', f: '#f59e0b', g: '#60a5fa', s: '#10b981' };
+  const STRENGTH_LABELS: Record<string, string> = { w: 'Weak', f: 'Fair', g: 'Good', s: 'Strong' };
+
+  // --- Strength Logic ---
+  const calcStrength = (v: string) => {
+    if (!v) return { score: 0, key: '' };
     let s = 0;
-    if (password.length >= 8) s++;
-    if (password.length >= 12) s++;
-    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) s++;
-    if (/[0-9]/.test(password)) s++;
-    if (/[^A-Za-z0-9]/.test(password)) s++;
-    return Math.min(s, 5);
-  })();
+    if (v.length >= 8) s++;
+    if (v.length >= 14) s++;
+    if (/[A-Z]/.test(v)) s++;
+    if (/[0-9]/.test(v)) s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    if (s <= 1) return { score: s, key: 'w' };
+    if (s === 2) return { score: s, key: 'f' };
+    if (s === 3) return { score: s, key: 'g' };
+    return { score: s, key: 's' };
+  };
 
-  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent'][strength];
-  const strengthColor = ['', '#ef4444', '#f59e0b', '#eab308', '#10b981', '#10b981'][strength];
+  const { score, key } = calcStrength(password);
+  const isMatch = password && confirm && password === confirm;
+  const isMismatch = confirmedOnce && confirm && password !== confirm;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password || password.length < 8) {
-      setError('Password must be at least 8 characters.');
+  // --- Canvas Animation ---
+  useEffect(() => {
+    const cv = canvasRef.current;
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    if (!ctx) return;
+
+    let W = 0, H = 0, mx = -999, my = -999;
+    const resize = () => { W = cv.width = window.innerWidth; H = cv.height = window.innerHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+    const handleMM = (e: MouseEvent) => { mx = e.clientX; my = e.clientY; };
+    window.addEventListener('mousemove', handleMM);
+
+    const HEX = '0123456789abcdef';
+    class Drop {
+      x = 0; y = 0; vy = 0; ch = ''; a = 0; sz = 0; t = 0; ti = 0;
+      constructor(init: boolean) { this.reset(); if (init) this.y = Math.random() * window.innerHeight; }
+      reset() { this.x = Math.random() * window.innerWidth; this.y = -12; this.vy = .14 + Math.random() * .18; this.ch = HEX[Math.floor(Math.random() * 16)]; this.a = .02 + Math.random() * .035; this.sz = 10 + Math.random() * 1.5; this.t = 0; this.ti = 50 + Math.random() * 90; }
+      tick() { this.y += this.vy; this.t++; if (this.t > this.ti) { this.ch = HEX[Math.floor(Math.random() * 16)]; this.t = 0; } if (this.y > window.innerHeight + 20) this.reset(); }
+      draw(ctx: CanvasRenderingContext2D) {
+        const d = Math.hypot(this.x - mx, this.y - my), b = Math.max(0, 1 - d / 170) * .22;
+        ctx.globalAlpha = this.a + b; ctx.fillStyle = d < 170 ? '#10b981' : '#fff'; ctx.font = `${this.sz}px DM Mono,monospace`; ctx.fillText(this.ch, this.x, this.y);
+      }
+    }
+    const drops = Array.from({ length: 90 }, () => new Drop(true));
+    let scanY = 0, animId: number;
+    const loop = () => {
+      ctx.clearRect(0, 0, W, H); ctx.globalAlpha = .018; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+      for (let x = 0; x < W; x += 52) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 52) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      drops.forEach(d => { d.tick(); d.draw(ctx); });
+      ctx.globalAlpha = 1; scanY = (scanY + .45) % H;
+      const sg = ctx.createLinearGradient(0, scanY - 70, 0, scanY + 70); sg.addColorStop(0, 'transparent'); sg.addColorStop(.5, 'rgba(16,185,129,.016)'); sg.addColorStop(1, 'transparent');
+      ctx.fillStyle = sg; ctx.fillRect(0, scanY - 70, W, 140);
+      const vg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * .72); vg.addColorStop(0, 'transparent'); vg.addColorStop(1, 'rgba(5,5,5,.95)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      animId = requestAnimationFrame(loop);
+    };
+    loop();
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); window.removeEventListener('mousemove', handleMM); };
+  }, []);
+
+  // --- Constellation Optimization ---
+  const drawEdge = useCallback((edge: typeof edgesRef.current[0], cls = '') => {
+    if (edge.lineEl) {
+      if (cls) edge.lineEl.className.baseVal = 'const-line draw ' + cls;
       return;
     }
-    if (password !== confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (!user) return;
+    const { i, j } = edge;
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', String(NODE_POS[i][0])); l.setAttribute('y1', String(NODE_POS[i][1]));
+    l.setAttribute('x2', String(NODE_POS[j][0])); l.setAttribute('y2', String(NODE_POS[j][1]));
+    l.setAttribute('stroke-dasharray', String(edge.d)); l.setAttribute('stroke-dashoffset', String(edge.d));
+    l.className.baseVal = 'const-line';
+    svgRef.current?.appendChild(l); edge.lineEl = l; edge.drawn = true;
+    requestAnimationFrame(() => l.classList.add('draw', cls));
+  }, []);
 
+  const activateNode = useCallback((idx: number, cls = '') => {
+    const n = nodeEls.current[idx];
+    if (!n || n.active) return;
+    n.active = true;
+    n.el.className = 'cnode active' + (cls ? ' ' + cls : '');
+    edgesRef.current.forEach(e => {
+      const other = e.i === idx ? e.j : e.j === idx ? e.i : -1;
+      if (other >= 0 && nodeEls.current[other].active) setTimeout(() => drawEdge(e, cls), 60);
+    });
+  }, [drawEdge]);
+
+  // --- Initialization ---
+  useEffect(() => {
+    if (!constellationRef.current || !svgRef.current) return;
+    const constEl = constellationRef.current;
+    nodeEls.current.forEach(n => n.el.remove());
+    nodeEls.current = [];
+    NODE_POS.forEach(([x, y]) => {
+      const el = document.createElement('div');
+      el.className = 'cnode'; el.style.left = x + 'px'; el.style.top = y + 'px';
+      constEl.appendChild(el);
+      nodeEls.current.push({ el, x, y, active: false });
+    });
+    // Create Edges array
+    edgesRef.current = [];
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const d = Math.hypot(NODE_POS[i][0] - NODE_POS[j][0], NODE_POS[i][1] - NODE_POS[j][1]);
+        if (d < 135) edgesRef.current.push({ i, j, d, drawn: false, lineEl: null });
+      }
+    }
+  }, []);
+
+  // --- Animation Effects ---
+  const flashMismatch = useCallback(() => {
+    nodeEls.current.forEach(n => {
+      if (!n.active) return;
+      n.el.classList.add('mismatch-flash');
+      setTimeout(() => n.el.classList.remove('mismatch-flash'), 500);
+    });
+    edgesRef.current.forEach(e => {
+      if (e.lineEl) { e.lineEl.classList.add('mismatch'); setTimeout(() => e.lineEl?.classList.remove('mismatch'), 500); }
+    });
+  }, []);
+
+  const nodesForLen = (len: number) => Math.min(Math.round((len / 20) * N), N);
+
+  useEffect(() => {
+    if (nodeEls.current.length < N) return;
+    const target = nodesForLen(password.length);
+    if (target > lastCount.current) {
+      for (let i = lastCount.current; i < target; i++) activateNode(i);
+    } else if (target < lastCount.current) {
+      for (let i = target; i < lastCount.current; i++) {
+        nodeEls.current[i].active = false;
+        nodeEls.current[i].el.className = 'cnode';
+      }
+      if (svgRef.current) svgRef.current.querySelectorAll('line').forEach(l => l.remove());
+      edgesRef.current.forEach(e => { e.lineEl = null; e.drawn = false; });
+      for (let i = 0; i < target; i++) activateNode(i);
+    }
+    lastCount.current = target;
+  }, [password, activateNode]);
+
+  useEffect(() => {
+    if (isMatch) {
+      const unlit = nodeEls.current.map((_, i) => i).filter(i => !nodeEls.current[i].active);
+      unlit.forEach((idx, i) => setTimeout(() => activateNode(idx, 'confirmed'), i * 25));
+      setTimeout(() => {
+        edgesRef.current.forEach(e => { if (e.lineEl) e.lineEl.classList.add('confirm'); });
+        nodeEls.current.forEach(n => n.el.classList.add('confirmed'));
+      }, unlit.length * 25 + 100);
+    } else {
+      nodeEls.current.forEach(n => n.el.classList.remove('confirmed'));
+      edgesRef.current.forEach(e => { if (e.lineEl) e.lineEl.classList.remove('confirm', 'mismatch'); });
+      if (isMismatch) flashMismatch();
+    }
+  }, [isMatch, isMismatch, activateNode, flashMismatch]);
+
+  // --- Form Logic ---
+  const spawnBurst = (cx: number, cy: number) => {
+    const colors = ['#10b981', '#34d399', '#6ee7b7', '#fff'];
+    for (let i = 0; i < 28; i++) {
+      const p = document.createElement('div');
+      const a = (i / 28) * Math.PI * 2, d = 50 + Math.random() * 100;
+      const sz = 2 + Math.random() * 5, col = colors[Math.floor(Math.random() * colors.length)];
+      p.style.cssText = `position:fixed;left:${cx}px;top:${cy}px;z-index:60;width:${sz}px;height:${sz}px;background:${col};border-radius:${Math.random() > .5 ? '50%' : '0'};pointer-events:none;box-shadow:0 0 ${sz * 2}px ${col};animation:pBurst .7s var(--ease) ${Math.random() * .1}s both;--tx:${Math.cos(a) * d}px;--ty:${Math.sin(a) * d}px`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 900);
+    }
+    for (let i = 0; i < 2; i++) {
+      const r = document.createElement('div');
+      r.style.cssText = `position:fixed;left:${cx - 38}px;top:${cy - 38}px;width:76px;height:76px;border-radius:50%;border:1px solid #10b981;z-index:59;pointer-events:none;animation:ringExpand .7s var(--ease) ${i * .2}s both`;
+      document.body.appendChild(r);
+      setTimeout(() => r.remove(), 1000);
+    }
+  };
+
+  const doCreate = async () => {
+    if (!user || loading) return;
+    setLoading(true);
     try {
-      setLoading(true);
-      setError('');
       await initializeVault(password, user.uid);
+      setIsSuccess(true);
+      const r = document.getElementById('constAvatar')?.getBoundingClientRect();
+      if (r) spawnBurst(r.left + r.width / 2, r.top + r.height / 2);
+
+      // Final transitions
+      setTimeout(() => {
+        nodeEls.current.forEach((n, i) => {
+          const cx = 140, cy = 140, nx = NODE_POS[i][0], ny = NODE_POS[i][1];
+          const dx = (cx - nx) * .45, dy = (cy - ny) * .45;
+          n.el.style.transition = `transform .5s var(--ease) ${i * 16}ms,opacity .4s ease ${i * 16}ms`;
+          n.el.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0)`;
+          n.el.style.opacity = '0';
+        });
+        if (svgRef.current) svgRef.current.style.opacity = '0';
+      }, 350);
     } catch (err) {
-      setError('Failed to setup vault. Please try again.');
       setLoading(false);
     }
   };
 
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100vh', position: 'relative', overflow: 'hidden', background: 'var(--color-bg)',
-    }}>
-      {/* Grid background */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(var(--color-border) 1px, transparent 1px), linear-gradient(90deg, var(--color-border) 1px, transparent 1px)',
-        backgroundSize: '52px 52px',
-        maskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
-        WebkitMaskImage: 'radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%)',
-        opacity: 0.3,
-      }} />
+  const allRequirementsMet = password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && isMatch;
 
-      <div style={{
-        position: 'relative', zIndex: 1, width: 400,
-        animation: 'fadeUp .5s cubic-bezier(.16,1,.3,1) both',
-      }}>
-        <div style={{
-          background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
-          padding: 28,
-        }}>
-          {/* Header */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
-            <div style={{ width: 56, height: 56, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+  return (
+    <div className="setup-page-root">
+      <canvas ref={canvasRef} className="bgCanvas" />
+
+      <a href="/" className="logo">
+        <div className="logo-box">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" stroke="#555" strokeWidth="1.5" />
+            <circle cx="10" cy="10" r="2" fill="#10b981" />
+          </svg>
+        </div>
+        Scync
+      </a>
+
+      <div className="steps">
+        <div className="step done">
+          <div className="step-num"><FiCheck size={9} strokeWidth={3} /></div>
+          <span>Sign in</span>
+        </div>
+        <div className="step-div" />
+        <div className="step active">
+          <div className="step-num">2</div>
+          <span>Vault password</span>
+        </div>
+        <div className="step-div" />
+        <div className="step">
+          <div className="step-num">3</div>
+          <span>Done</span>
+        </div>
+      </div>
+
+      <div className="page" id="page">
+        {/* Constellation */}
+        <div className="constellation" ref={constellationRef}>
+          <svg className="const-svg" ref={svgRef} viewBox="0 0 280 280">
+            <circle
+              className="strength-ring"
+              cx="140"
+              cy="140"
+              r="140"
+              stroke={password ? (RING_COLORS[key] || '#333') : 'transparent'}
+              strokeDashoffset={RING_CIRC * (1 - Math.min(score / 5, 1) * 0.9)}
+              transform="rotate(-90 140 140)"
+            />
+          </svg>
+
+          <div className={`strength-label ${password ? 'show' : ''}`} style={{ color: RING_COLORS[key] }}>
+            {STRENGTH_LABELS[key]}
+          </div>
+          <div className="const-glow" style={{ opacity: isSuccess ? 0 : 1 }} />
+
+          <div className="const-avatar" id="constAvatar" style={{ borderColor: isSuccess ? 'var(--green)' : '' }}>
+            {isSuccess ? (
+              <FiShield size={28} color="var(--green)" />
+            ) : (
+              <img src="/logo.png" alt="Scync Logo" style={{ width: '140%', height: '140%', objectFit: 'contain' }} />
+            )}
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="header-info" style={{ opacity: isSuccess ? 0 : 1 }}>
+          <div className="header-title">Create your vault password</div>
+          <div className="header-sub">This is the only key. It never leaves your device.</div>
+        </div>
+
+        {/* Controls */}
+        <div className="controls" style={{ opacity: isSuccess ? 0 : 1 }}>
+          <div className={`pf ${password ? 'has-val' : ''}`} onClick={() => passElRef.current?.focus()}>
+            <div className="pf-icon">
+              <FiLock size={13} strokeWidth={2} />
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text)', margin: 0, letterSpacing: '-0.03em' }}>
-              Create Vault Password
-            </h2>
-            <p style={{ fontSize: 12.5, color: 'var(--color-text-2)', marginTop: 8, textAlign: 'center', lineHeight: 1.5 }}>
-              This password encrypts your secrets locally using AES-256-GCM.
-            </p>
-            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: 4, display: 'flex', gap: 10, alignItems: 'center' }}>
-              <FiAlertCircle size={14} color="var(--color-amber)" style={{ flexShrink: 0 }} />
-              <p style={{ fontSize: 11, color: 'var(--color-amber)', margin: 0, fontWeight: 500, lineHeight: 1.4 }}>
-                This password MUST be remembered. There is NO recovery if forgotten.
-              </p>
+            <div className="pf-dots">
+              {!password && <span className="ph">New vault password</span>}
+              {!revealed && password.split('').map((_, i) => (
+                <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
+              ))}
+              {revealed && password && <span className="rtxt">{password}</span>}
+            </div>
+            <input
+              ref={passElRef}
+              type={revealed ? "text" : "password"}
+              className="pf-real"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              autoComplete="new-password"
+              spellCheck={false}
+              autoFocus
+            />
+            <button className="pf-eye" onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }} tabIndex={-1}>
+              {revealed ? <FiEyeOff size={13} /> : <FiEye size={13} />}
+            </button>
+          </div>
+
+          {/* Strength Bar Row */}
+          <div className="strength-row" style={{ opacity: password ? 1 : 0 }}>
+            <div className="strength-bars">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className={`sbar ${i <= score ? key : ''}`} />
+              ))}
+            </div>
+            <div className={`strength-txt ${key}`}>{STRENGTH_LABELS[key]}</div>
+          </div>
+
+          {/* Requirements */}
+          <div className="reqs">
+            <div className={`req ${password.length >= 8 ? 'met' : ''}`}>
+              <div className="req-dot" /> 8+ characters
+            </div>
+            <div className={`req ${/[A-Z]/.test(password) ? 'met' : ''}`}>
+              <div className="req-dot" /> Uppercase letter
+            </div>
+            <div className={`req ${/[0-9]/.test(password) ? 'met' : ''}`}>
+              <div className="req-dot" /> Number
+            </div>
+            <div className={`req ${/[^A-Za-z0-9]/.test(password) ? 'met' : ''}`}>
+              <div className="req-dot" /> Symbol
             </div>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'var(--color-red-bg)', border: '1px solid rgba(239,68,68,0.2)',
-              padding: '10px 12px', marginBottom: 16, fontSize: 12, color: 'var(--color-red)',
-            }}>
-              <FiAlertCircle size={14} style={{ flexShrink: 0 }} />
-              <p style={{ margin: 0 }}>{error}</p>
+          {/* Confirm Field */}
+          <div className={`pf ${isMatch ? 'match' : isMismatch ? 'mismatch' : ''}`} style={{ marginTop: 4 }} onClick={() => document.getElementById('p2')?.focus()}>
+            <div className="pf-icon">
+              <FiCheck size={13} strokeWidth={2.5} />
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Password */}
-            <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 6 }}>
-                Vault Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  style={{
-                    width: '100%', background: 'var(--color-surface-2)',
-                    border: '1px solid var(--color-border)', color: 'var(--color-text)',
-                    padding: '9px 36px 9px 12px', fontSize: 13,
-                    fontFamily: 'var(--font-sans)', outline: 'none',
-                    transition: 'border-color 140ms',
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
-                  onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
-                  placeholder="Min 8 characters"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', color: 'var(--color-text-3)',
-                    cursor: 'pointer', display: 'flex', padding: 0,
-                  }}
-                >
-                  {showPassword ? <FiEyeOff size={14} /> : <FiEye size={14} />}
-                </button>
-              </div>
-
-              {/* Strength meter */}
-              {password && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', gap: 3 }}>
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <div
-                        key={i}
-                        style={{
-                          height: 3, flex: 1,
-                          background: i <= strength ? strengthColor : 'var(--color-border)',
-                          transition: 'background 200ms',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <p style={{ fontSize: 10, marginTop: 4, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</p>
-                </div>
-              )}
+            <div className="pf-dots">
+              {!confirm && <span className="ph">Confirm vault password</span>}
+              {confirm.split('').map((_, i) => (
+                <div key={i} className={`pd ${i === confirm.length - 1 ? 'last' : ''} ${isMatch ? 'match-col' : ''}`} />
+              ))}
             </div>
-
-            {/* Confirm */}
-            <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-3)', marginBottom: 6 }}>
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                style={{
-                  width: '100%', background: 'var(--color-surface-2)',
-                  border: '1px solid var(--color-border)', color: 'var(--color-text)',
-                  padding: '9px 12px', fontSize: 13,
-                  fontFamily: 'var(--font-sans)', outline: 'none',
-                  transition: 'border-color 140ms',
-                }}
-                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
-                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
-                placeholder="Confirm password"
-              />
+            <input
+              id="p2"
+              type="password"
+              className="pf-real"
+              value={confirm}
+              onChange={e => { setConfirm(e.target.value); setConfirmedOnce(true); }}
+              autoComplete="new-password"
+              spellCheck={false}
+            />
+            <div className={`pf-status ${confirm ? 'show' : ''}`}>
+              {isMatch && <FiCheck size={13} strokeWidth={2.5} color="var(--green)" />}
+              {isMismatch && <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 800 }}>×</div>}
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                width: '100%', background: 'white', color: '#080808',
-                border: 'none', padding: '10px 16px', marginTop: 4,
-                fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 700,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.5 : 1,
-                transition: 'opacity 140ms',
-              }}
-            >
-              {loading ? (
-                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(0,0,0,0.2)', borderTopColor: '#080808', animation: 'spin 0.7s linear infinite' }} />
-              ) : (
-                <>
-                  <FiLock size={13} />
-                  Create Vault
-                </>
-              )}
-            </button>
-          </form>
+          <div className={`confirm-status ${isMatch || isMismatch ? 'show' : ''} ${isMatch ? 'ok' : 'bad'}`}>
+            {isMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+          </div>
+
+          <button className={`cbtn ${allRequirementsMet ? 'ready' : ''} ${loading ? 'loading' : ''} ${isSuccess ? 'done' : ''}`} onClick={doCreate} disabled={!allRequirementsMet || loading}>
+            {isSuccess ? (
+              <><FiCheck size={14} strokeWidth={2.5} /><span>Vault Created</span></>
+            ) : (
+              <>
+                <FiShield className="bico" size={13} strokeWidth={2.5} />
+                <span className="btxt">Create Vault</span>
+                <div className="spin" />
+              </>
+            )}
+          </button>
+
+          <div className="zk">
+            <b>There is no password recovery.</b> Write it down somewhere safe.<br />
+            <a onClick={signOut}>← Back to sign in</a>
+          </div>
         </div>
+      </div>
+
+      <div className="foot">
+        <div className="fi"><FiShield size={10} />AES-256-GCM</div>
+        <div className="fsep" />
+        <div className="fi"><FiAlertCircle size={10} />Zero-knowledge</div>
+        <div className="fsep" />
+        <div className="fi"><FiLock size={10} />PBKDF2 · 310k</div>
       </div>
     </div>
   );
