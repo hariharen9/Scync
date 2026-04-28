@@ -1,6 +1,6 @@
 import { 
   collection, doc, setDoc, updateDoc, deleteDoc, 
-  onSnapshot, serverTimestamp, getDoc, writeBatch
+  onSnapshot, serverTimestamp, getDoc, writeBatch, getDocs
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
@@ -296,4 +296,34 @@ export function subscribeToServices(
     });
     callback(services);
   });
+}
+
+// Account Deletion
+export async function deleteUserAccountData(uid: string): Promise<void> {
+  const batch = writeBatch(db);
+
+  // 1. Delete all secrets
+  const secretsSnap = await getDocs(collection(db, "users", uid, "secrets"));
+  secretsSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 2. Delete all projects
+  const projectsSnap = await getDocs(collection(db, "users", uid, "projects"));
+  projectsSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 3. Delete all services
+  const servicesSnap = await getDocs(collection(db, "users", uid, "services"));
+  servicesSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 4. Delete vault meta
+  const metaRef = doc(db, "users", uid, "meta", "vault");
+  batch.delete(metaRef);
+
+  // Note: A Firestore batch can hold up to 500 operations.
+  // We assume a user has less than 500 combined documents for this MVP.
+  // Otherwise, we would need chunking.
+  await batch.commit();
+
+  // 5. Delete main user document (cannot be in the same batch if it causes issues, but usually fine.
+  // Actually, let's delete it directly after the batch to be safe).
+  await deleteDoc(doc(db, "users", uid));
 }

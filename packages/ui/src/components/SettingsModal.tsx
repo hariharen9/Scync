@@ -19,7 +19,7 @@ export const SettingsModal: React.FC = () => {
   const { changeVaultPassword, exportVault } = useVaultStore();
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
-  const { user } = useAuthStore();
+  const { user, deleteUserAccount } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState<'security' | 'vault'>('security');
   
@@ -40,6 +40,13 @@ export const SettingsModal: React.FC = () => {
   const [exportError, setExportError] = useState('');
   const [exportSuccess, setExportSuccess] = useState('');
   const [showExportPass, setShowExportPass] = useState(false);
+
+  // Delete account state
+  const [deleteStep, setDeleteStep] = useState(0); // 0 = not deleting, 1 = warning/type, 2 = password
+  const [obliterateText, setObliterateText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [showDeletePass, setShowDeletePass] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +134,32 @@ export const SettingsModal: React.FC = () => {
     setIsSubmitting(false);
   };
 
+  const { unlock } = useVaultStore();
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteError('');
+    
+    if (!user) return;
+    setIsSubmitting(true);
+
+    const isValid = await unlock(deletePassword, user.uid);
+    if (!isValid) {
+      setDeleteError('Incorrect master password.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      await deleteUserAccount();
+      closeSettingsModal();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Failed to delete account. Please try again.');
+    }
+    
+    setIsSubmitting(false);
+  };
+
   // Biometric state
   const [isEnablingBiometric, setIsEnablingBiometric] = useState(false);
   const [biometricPassword, setBiometricPassword] = useState('');
@@ -168,6 +201,7 @@ export const SettingsModal: React.FC = () => {
       setIsChangingPassword(false);
       setIsExporting(false);
       setIsEnablingBiometric(false);
+      setDeleteStep(0);
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -178,6 +212,9 @@ export const SettingsModal: React.FC = () => {
       setExportError('');
       setExportSuccess('');
       setBiometricError('');
+      setDeletePassword('');
+      setDeleteError('');
+      setObliterateText('');
     }, 200);
   };
 
@@ -383,7 +420,7 @@ export const SettingsModal: React.FC = () => {
               {/* Vault Tab */}
               {activeTab === 'vault' && (
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  {(!isChangingPassword && !isExporting) ? (
+                  {(!isChangingPassword && !isExporting && deleteStep === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)' }}>
                         <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>Change Master Password</h3>
@@ -414,6 +451,21 @@ export const SettingsModal: React.FC = () => {
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
                           Generate HTML Vault
+                        </button>
+                      </div>
+
+                      <div style={{ padding: 16, border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 4, background: 'rgba(239, 68, 68, 0.05)' }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: 'var(--color-red)' }}>Danger Zone</h3>
+                        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                          Permanently delete your Scync account, vault, projects, custom services, and all encrypted secrets. This action is immediate and absolutely irrecoverable.
+                        </p>
+                        <button 
+                          style={{ ...btnOutlineStyle, borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--color-red)' }} 
+                          onClick={() => setDeleteStep(1)}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-red)'; e.currentTarget.style.color = '#fff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-red)'; }}
+                        >
+                          Delete Account
                         </button>
                       </div>
                     </div>
@@ -501,7 +553,7 @@ export const SettingsModal: React.FC = () => {
                         ) : 'Confirm Password Change'}
                       </button>
                     </form>
-                  ) : (
+                  ) : isExporting ? (
                     <form onSubmit={handleExport} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>Export Portable Vault</h3>
@@ -557,7 +609,100 @@ export const SettingsModal: React.FC = () => {
                         )}
                       </button>
                     </form>
-                  )}
+                  ) : deleteStep > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, color: 'var(--color-red)' }}>Obliterate Account</h3>
+                        {!isSubmitting && (
+                          <button type="button" onClick={() => { setDeleteStep(0); setObliterateText(''); setDeleteError(''); }} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+
+                      {deleteStep === 1 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          <div style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '16px', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 4 }}>
+                            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--color-text)', margin: '0 0 12px 0', fontWeight: 600 }}>This is a destructive action.</p>
+                            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.6 }}>
+                              If you proceed, your Firebase Authentication profile and the entire Firestore document tree (including all secrets, projects, and services) will be immediately and permanently destroyed. <strong style={{ color: 'var(--color-red)' }}>There are no backups.</strong>
+                            </p>
+                          </div>
+                          
+                          <button 
+                            type="button"
+                            onClick={() => setDeleteStep(2)} 
+                            style={{ ...btnPrimaryStyle, background: 'var(--color-red)', color: '#fff' }}
+                          >
+                            Yes, I understand
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {deleteStep === 2 && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          <div style={{ position: 'relative' }}>
+                            <label style={{ ...labelStyle, color: 'var(--color-red)' }}>Type "OBLITERATE" to continue</label>
+                            <input 
+                              value={obliterateText}
+                              onChange={e => setObliterateText(e.target.value)}
+                              style={{ ...inputStyle, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', background: 'rgba(239, 68, 68, 0.05)', borderColor: obliterateText === 'OBLITERATE' ? 'var(--color-red)' : 'var(--color-border)' }}
+                              placeholder="OBLITERATE"
+                              autoFocus
+                            />
+                          </div>
+
+                          <button 
+                            type="button"
+                            disabled={obliterateText !== 'OBLITERATE'}
+                            onClick={() => setDeleteStep(3)} 
+                            style={{ ...btnPrimaryStyle, background: 'var(--color-red)', color: '#fff', opacity: obliterateText === 'OBLITERATE' ? 1 : 0.5 }}
+                          >
+                            Proceed
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {deleteStep === 3 && (
+                        <motion.form initial={{ opacity: 0 }} animate={{ opacity: 1 }} onSubmit={handleDeleteAccount} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                          {deleteError && (
+                            <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '10px 12px', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 4, fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <FiAlertTriangle size={14} /> {deleteError}
+                            </div>
+                          )}
+
+                          <div style={{ position: 'relative' }}>
+                            <label style={labelStyle}>Authorize with Master Password</label>
+                            <input
+                              type={showDeletePass ? 'text' : 'password'}
+                              value={deletePassword}
+                              onChange={e => setDeletePassword(e.target.value)}
+                              required
+                              disabled={isSubmitting}
+                              style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }}
+                              autoFocus
+                              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-red)'} 
+                              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                            />
+                            <button type="button" onClick={() => setShowDeletePass(!showDeletePass)} style={{ position: 'absolute', right: 10, top: 28, background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                              {showDeletePass ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+                            </button>
+                          </div>
+
+                          <button type="submit" disabled={isSubmitting} style={{ ...btnPrimaryStyle, background: 'var(--color-red)', color: '#fff', opacity: isSubmitting ? 0.7 : 1 }}>
+                            {isSubmitting ? (
+                              <>
+                                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                                  <FiLoader />
+                                </motion.div>
+                                Obliterating Data...
+                              </>
+                            ) : 'Permanently Delete Account'}
+                          </button>
+                        </motion.form>
+                      )}
+                    </div>
+                  ) : null}
                 </motion.div>
               )}
             </div>
