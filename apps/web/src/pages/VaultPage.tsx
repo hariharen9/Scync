@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal, SettingsModal, useInactivityLock } from '@scync/ui';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const VaultPage: React.FC = () => {
   const { user } = useAuthStore();
-  const { subscribeToSecrets, lock } = useVaultStore();
+  const { subscribeToSecrets, subscribeToSSHKeys, lock } = useVaultStore();
   const { subscribeToProjects } = useProjectStore();
   const { activeView, selectedSecretId, openAddModal, openEnvImportModal, toggleMobileMenu, isMobileMenuOpen, selectSecret, openAboutModal, openSettingsModal } = useUIStore();
 
@@ -23,10 +23,11 @@ export const VaultPage: React.FC = () => {
   useEffect(() => {
     if (!user) return;
     const unsubSecrets = subscribeToSecrets(user.uid);
+    const unsubSSHKeys = subscribeToSSHKeys(user.uid);
     const unsubProjects = subscribeToProjects(user.uid);
     const unsubServices = useServiceStore.getState().subscribeToServices(user.uid);
-    return () => { unsubSecrets(); unsubProjects(); unsubServices(); };
-  }, [user, subscribeToSecrets, subscribeToProjects]);
+    return () => { unsubSecrets(); unsubSSHKeys(); unsubProjects(); unsubServices(); };
+  }, [user, subscribeToSecrets, subscribeToSSHKeys, subscribeToProjects]);
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
@@ -176,7 +177,7 @@ export const VaultPage: React.FC = () => {
               overflowY: 'auto',
             }}
           >
-            {activeView === 'dashboard' ? <Dashboard /> : <SecretList />}
+            {activeView === 'dashboard' ? <Dashboard /> : activeView === 'ssh' ? <SSHManagerDashboard /> : <SecretList />}
           </div>
 
           {/* Detail panel */}
@@ -289,6 +290,7 @@ export const VaultPage: React.FC = () => {
       <AboutModal />
       <SettingsModal />
       <ConfirmModal />
+      <SSHKeyModal />
     </div>
   );
 };

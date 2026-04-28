@@ -6,7 +6,7 @@ import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
-  Project, EncryptedField, CustomService
+  Project, EncryptedField, CustomService, StoredSSHKey
 } from './types';
 
 // Vault Meta
@@ -48,7 +48,8 @@ export async function changeVaultPassword(
   newKey: CryptoKey,
   newSalt: string,
   newVerifier: EncryptedField,
-  secrets: StoredSecret[]
+  secrets: StoredSecret[],
+  sshKeys: StoredSSHKey[] = []
 ): Promise<void> {
   const batch = writeBatch(db);
 
@@ -79,8 +80,72 @@ export async function changeVaultPassword(
     });
   }
 
-  // 3. Commit the batch atomic operation
+  // 3. Re-encrypt all SSH keys
+  for (const key of sshKeys) {
+    const keyRef = doc(db, "users", uid, "ssh_keys", key.id);
+    const pkPlaintext = await decrypt(oldKey, key.encPrivateKey);
+    const newEncPrivateKey = await encrypt(newKey, pkPlaintext);
+    batch.update(keyRef, {
+      encPrivateKey: newEncPrivateKey,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  // 4. Commit the batch atomic operation
   await batch.commit();
+}
+
+// SSH Keys
+export async function createSSHKey(
+  uid: string,
+  key: CryptoKey,
+  data: Omit<StoredSSHKey, 'id' | 'createdAt' | 'updatedAt' | 'encPrivateKey'> & { privateKey: string }
+): Promise<void> {
+  const keysRef = collection(db, "users", uid, "ssh_keys");
+  const newRef = doc(keysRef);
+  
+  const encPrivateKey = await encrypt(key, data.privateKey);
+
+  const storedKey: StoredSSHKey = {
+    ...data,
+    id: newRef.id,
+    encPrivateKey,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  await setDoc(newRef, {
+    ...storedKey,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deleteSSHKey(uid: string, keyId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "ssh_keys", keyId));
+}
+
+export function subscribeToSSHKeys(uid: string, onUpdate: (keys: StoredSSHKey[]) => void) {
+  const q = collection(db, "users", uid, "ssh_keys");
+  return onSnapshot(q, (snapshot) => {
+    const keys: StoredSSHKey[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      keys.push({
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        publicKey: data.publicKey,
+        fingerprint: data.fingerprint,
+        encPrivateKey: data.encPrivateKey,
+        hosts: data.hosts || [],
+        rotationDate: data.rotationDate?.toDate() || null,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      });
+    });
+    onUpdate(keys);
+  });
 }
 
 // Secrets
@@ -314,7 +379,11 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   const servicesSnap = await getDocs(collection(db, "users", uid, "services"));
   servicesSnap.forEach(doc => batch.delete(doc.ref));
 
-  // 4. Delete vault meta
+  // 4. Delete all SSH keys
+  const sshSnap = await getDocs(collection(db, "users", uid, "ssh_keys"));
+  sshSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 5. Delete vault meta
   const metaRef = doc(db, "users", uid, "meta", "vault");
   batch.delete(metaRef);
 

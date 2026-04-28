@@ -29,3 +29,5 @@ export * from './components/AboutModal';
 export * from './components/ConfirmModal';
 export * from './hooks/useInactivityLock';
 export * from './components/SettingsModal';
+export * from './components/SSHManagerDashboard';
+export * from './components/SSHKeyModal';

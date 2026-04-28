@@ -31,7 +31,7 @@ const getStoredSettings = (): SettingsConfig => {
 
 export interface UIState {
   // Navigation
-  activeView: 'dashboard' | 'project' | 'all';
+  activeView: 'dashboard' | 'project' | 'all' | 'ssh';
   setActiveView: (view: UIState['activeView']) => void;
 
   // View state
@@ -41,6 +41,7 @@ export interface UIState {
   isEnvImportModalOpen: boolean;
   isAddProjectModalOpen: boolean;
   isAddServiceModalOpen: boolean;
+  isAddSSHModalOpen: boolean;
   isAboutModalOpen: boolean;
   isSettingsModalOpen: boolean;
   isCommandBarOpen: boolean;
@@ -64,6 +65,8 @@ export interface UIState {
   closeAddProjectModal: () => void;
   openAddServiceModal: () => void;
   closeAddServiceModal: () => void;
+  openAddSSHModal: () => void;
+  closeAddSSHModal: () => void;
   openAboutModal: () => void;
   closeAboutModal: () => void;
   openSettingsModal: () => void;
@@ -103,6 +106,7 @@ export const useUIStore = create<UIState>((set) => ({
   isEnvImportModalOpen: false,
   isAddProjectModalOpen: false,
   isAddServiceModalOpen: false,
+  isAddSSHModalOpen: false,
   isAboutModalOpen: false,
   isSettingsModalOpen: false,
   isCommandBarOpen: false,
@@ -126,6 +130,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeAddProjectModal: () => set({ isAddProjectModalOpen: false }),
   openAddServiceModal: () => set({ isAddServiceModalOpen: true }),
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
+  openAddSSHModal: () => set({ isAddSSHModalOpen: true }),
+  closeAddSSHModal: () => set({ isAddSSHModalOpen: false }),
   openAboutModal: () => set({ isAboutModalOpen: true }),
   closeAboutModal: () => set({ isAboutModalOpen: false }),
   openSettingsModal: () => set({ isSettingsModalOpen: true, isMobileMenuOpen: false }),

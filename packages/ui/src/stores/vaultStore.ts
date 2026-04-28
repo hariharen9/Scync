@@ -12,17 +12,25 @@ import {
   changeVaultPassword as coreChangeVaultPassword,
   registerBiometrics,
   unlockWithBiometrics as coreUnlockWithBiometrics,
-  updateVaultBiometrics
+  updateVaultBiometrics,
+  type StoredSSHKey,
+  type DecryptedSSHKey,
+  subscribeToSSHKeys,
+  createSSHKey,
+  deleteSSHKey,
+  decrypt
 } from '@scync/core';
 
 interface VaultState {
   derivedKey: CryptoKey | null;
   isLocked: boolean;
   storedSecrets: StoredSecret[];
+  storedSSHKeys: StoredSSHKey[];
   vaultMeta: VaultMeta | null;
   
   setDerivedKey: (key: CryptoKey | null) => void;
   setSecrets: (secrets: StoredSecret[]) => void;
+  setSSHKeys: (keys: StoredSSHKey[]) => void;
   setVaultMeta: (meta: VaultMeta | null) => void;
   
   unlock: (password: string, uid: string) => Promise<boolean>;
@@ -35,7 +43,12 @@ interface VaultState {
   deleteSecret: (uid: string, id: string) => Promise<void>;
   decryptValue: (secretId: string) => Promise<DecryptedSecret | null>;
   
+  createSSHKey: (uid: string, data: Omit<StoredSSHKey, 'id' | 'createdAt' | 'updatedAt' | 'encPrivateKey'> & { privateKey: string }) => Promise<void>;
+  deleteSSHKey: (uid: string, id: string) => Promise<void>;
+  decryptSSHKey: (keyId: string) => Promise<DecryptedSSHKey | null>;
+  
   subscribeToSecrets: (uid: string) => () => void;
+  subscribeToSSHKeys: (uid: string) => () => void;
   exportVault: (uid: string, password: string) => Promise<{
     meta: { salt: string; verifier: any };
     secrets: StoredSecret[];
@@ -48,10 +61,12 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   derivedKey: null,
   isLocked: true,
   storedSecrets: [],
+  storedSSHKeys: [],
   vaultMeta: null,
   
   setDerivedKey: (key) => set({ derivedKey: key, isLocked: !key }),
   setSecrets: (secrets) => set({ storedSecrets: secrets }),
+  setSSHKeys: (keys) => set({ storedSSHKeys: keys }),
   setVaultMeta: (meta) => set({ vaultMeta: meta }),
   
   unlock: async (password: string, uid: string) => {
@@ -89,7 +104,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
 
   changeVaultPassword: async (uid: string, oldPassword: string, newPassword: string) => {
     try {
-      const { storedSecrets, vaultMeta } = get();
+      const { storedSecrets, storedSSHKeys, vaultMeta } = get();
       const meta = vaultMeta || await getVaultMeta(uid);
       if (!meta) return false;
 
@@ -104,7 +119,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const newVerifier = await createVerifier(newKey);
 
       // Batch re-encrypt
-      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets);
+      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys);
 
       // If biometrics was enabled, we MUST clear it because the wrapped password is now wrong
       if (meta.biometric) {
@@ -149,9 +164,41 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     }
   },
   
+  createSSHKey: async (uid: string, data) => {
+    const { derivedKey } = get();
+    if (!derivedKey) throw new Error("Vault is locked");
+    await createSSHKey(uid, derivedKey, data);
+  },
+
+  deleteSSHKey: async (uid: string, id: string) => {
+    await deleteSSHKey(uid, id);
+  },
+
+  decryptSSHKey: async (keyId: string) => {
+    const { derivedKey, storedSSHKeys } = get();
+    if (!derivedKey) return null;
+    const sshKey = storedSSHKeys.find(s => s.id === keyId);
+    if (!sshKey) return null;
+    try {
+      const privateKey = await decrypt(derivedKey, sshKey.encPrivateKey);
+      return {
+        ...sshKey,
+        privateKey
+      };
+    } catch {
+      return null;
+    }
+  },
+
   subscribeToSecrets: (uid: string) => {
     return subscribeToSecrets(uid, (secrets) => {
       set({ storedSecrets: secrets });
+    });
+  },
+
+  subscribeToSSHKeys: (uid: string) => {
+    return subscribeToSSHKeys(uid, (keys) => {
+      set({ storedSSHKeys: keys });
     });
   },
 

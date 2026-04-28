@@ -128,3 +128,21 @@ export interface RecoveryCode {
 export interface RecoveryCodeSet {
   codes: RecoveryCode[];
 }
+
+export interface StoredSSHKey {
+  id: string;
+  name: string;
+  type: string;
+  publicKey: string;
+  fingerprint: string;
+  encPrivateKey: EncryptedField;
+  hosts: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  rotationDate: Date | null;
+}
+
+export interface DecryptedSSHKey extends Omit<StoredSSHKey, 'encPrivateKey'> {
+  privateKey: string;
+}
+
