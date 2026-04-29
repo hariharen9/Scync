@@ -32,7 +32,7 @@ const getVersion = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  base: '/',
   envDir: '../../',
   build: {
     modulePreload: {

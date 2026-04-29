@@ -22,10 +22,15 @@ export const ShareConsumePage: React.FC<ShareConsumePageProps> = ({ shareId, key
 
   useEffect(() => {
     const loadShare = async () => {
+      console.log('[ShareConsumePage] Loading share:', { shareId, keyFragment: keyFragment.substring(0, 10) + '...' });
+      
       try {
         const result = await consumeShare(shareId, keyFragment);
+        console.log('[ShareConsumePage] Share loaded successfully');
         setShare(result);
       } catch (err: any) {
+        console.error('[ShareConsumePage] Error loading share:', err);
+        
         if (err.message === 'SHARE_NOT_FOUND') {
           setError('This share link does not exist or has been revoked.');
         } else if (err.message === 'SHARE_EXPIRED') {

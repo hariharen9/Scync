@@ -1,0 +1,29 @@
+# Netlify redirects file
+# Serve static files directly (don't redirect to index.html)
+
+# Service Worker and PWA files
+/sw.js                 /sw.js                 200
+/workbox-*.js          /workbox-:splat.js     200
+/registerSW.js         /registerSW.js         200
+/manifest.webmanifest  /manifest.webmanifest  200
+
+# Assets directory
+/assets/*              /assets/:splat         200
+
+# Static file extensions
+/*.js                  /:splat.js             200
+/*.css                 /:splat.css            200
+/*.png                 /:splat.png            200
+/*.jpg                 /:splat.jpg            200
+/*.jpeg                /:splat.jpeg           200
+/*.svg                 /:splat.svg            200
+/*.ico                 /:splat.ico            200
+/*.json                /:splat.json           200
+/*.woff                /:splat.woff           200
+/*.woff2               /:splat.woff2          200
+/*.ttf                 /:splat.ttf            200
+/*.eot                 /:splat.eot            200
+/*.webp                /:splat.webp           200
+
+# SPA fallback - MUST BE LAST
+/*                     /index.html            200
