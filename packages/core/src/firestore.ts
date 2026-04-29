@@ -632,3 +632,84 @@ export async function consumeShare(shareId: string, keyFragment: string): Promis
     expiresAt
   };
 }
+
+// ────────────────────────────────────────────────────
+// BATCH IMPORT
+// ────────────────────────────────────────────────────
+
+/**
+ * Write multiple secrets to Firestore in a single batch operation.
+ * Firestore batch writes are atomic: all succeed or all fail.
+ * Maximum 500 documents per batch — this function handles chunking automatically.
+ *
+ * @param uid - Firebase user ID
+ * @param key - Derived vault CryptoKey (from vaultStore)
+ * @param candidates - ImportCandidate[] filtered to selected === true
+ * @param onProgress - Optional callback for progress reporting (0.0 to 1.0)
+ */
+export async function batchCreateSecrets(
+  uid: string,
+  key: CryptoKey,
+  candidates: import('./types').ImportCandidate[],
+  onProgress?: (progress: number) => void
+): Promise<import('./types').ImportResult> {
+  const BATCH_SIZE = 400; // Stay under 500 limit with margin
+  const results: import('./types').ImportResult = { imported: 0, failed: 0, errors: [] };
+
+  const chunks = chunkArray(candidates, BATCH_SIZE);
+
+  for (let chunkIdx = 0; chunkIdx < chunks.length; chunkIdx++) {
+    const chunk = chunks[chunkIdx];
+    if (!chunk) continue;
+    const batch = writeBatch(db);
+
+    for (const candidate of chunk) {
+      try {
+        const ref = doc(collection(db, 'users', uid, 'secrets'));
+        const encValue = await encrypt(key, candidate.value);
+        const encNotes = candidate.notes
+          ? await encrypt(key, candidate.notes)
+          : null;
+
+        const storedSecret = {
+          name: candidate.name,
+          service: candidate.service,
+          type: candidate.type,
+          environment: candidate.environment,
+          status: candidate.status,
+          encValue,
+          encNotes,
+          projectId: candidate.projectId,
+          lastRotated: null,
+          expiresOn: null,
+          remainingCodes: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        batch.set(ref, storedSecret);
+        results.imported++;
+      } catch (err) {
+        results.failed++;
+        results.errors.push(
+          `Failed to encrypt "${candidate.name}": ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }
+
+    await batch.commit();
+
+    const progress = (chunkIdx + 1) / chunks.length;
+    onProgress?.(progress);
+  }
+
+  return results;
+}
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}

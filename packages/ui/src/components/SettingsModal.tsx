@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiShield, FiLock, FiDownload, FiCheck, FiAlertTriangle, FiEye, FiEyeOff, FiLoader, FiSettings } from 'react-icons/fi';
+import { FiX, FiShield, FiLock, FiDownload, FiCheck, FiAlertTriangle, FiEye, FiEyeOff, FiLoader, FiSettings, FiUpload } from 'react-icons/fi';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
@@ -15,7 +15,7 @@ const btnPrimaryStyle: React.CSSProperties = { width: '100%', padding: '10px 16p
 const btnOutlineStyle: React.CSSProperties = { padding: '8px 12px', background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 0.2s' };
 
 export const SettingsModal: React.FC = () => {
-  const { isSettingsModalOpen, closeSettingsModal, settings, updateSettings } = useUIStore();
+  const { isSettingsModalOpen, closeSettingsModal, settings, updateSettings, openImportWizard } = useUIStore();
   const { changeVaultPassword, exportVault } = useVaultStore();
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
@@ -422,6 +422,39 @@ export const SettingsModal: React.FC = () => {
                 <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                   {(!isChangingPassword && !isExporting && deleteStep === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)' }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text)' }}>
+                          <FiUpload /> Import Secrets
+                        </h3>
+                        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                          Migrate your secrets from Bitwarden or 1Password. All parsing happens in your browser — files never leave your device.
+                        </p>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button 
+                            style={{ ...btnOutlineStyle, flex: 1 }} 
+                            onClick={() => {
+                              closeSettingsModal();
+                              setTimeout(() => openImportWizard('bitwarden'), 200);
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            Import from Bitwarden
+                          </button>
+                          <button 
+                            style={{ ...btnOutlineStyle, flex: 1 }} 
+                            onClick={() => {
+                              closeSettingsModal();
+                              setTimeout(() => openImportWizard('onepassword'), 200);
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            Import from 1Password
+                          </button>
+                        </div>
+                      </div>
+
                       <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)' }}>
                         <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--color-text)' }}>Change Master Password</h3>
                         <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.5 }}>

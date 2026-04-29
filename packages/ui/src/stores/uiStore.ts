@@ -48,6 +48,10 @@ export interface UIState {
   isCommandBarOpen: boolean;
   confirmConfig: ConfirmConfig | null;
   
+  // Import wizard state
+  isImportWizardOpen: boolean;
+  importSource: 'bitwarden' | 'onepassword' | null;
+  
   settings: SettingsConfig;
   
   filter: VaultFilter;
@@ -78,6 +82,8 @@ export interface UIState {
   closeCommandBar: () => void;
   openConfirmModal: (config: ConfirmConfig) => void;
   closeConfirmModal: () => void;
+  openImportWizard: (source: 'bitwarden' | 'onepassword') => void;
+  closeImportWizard: () => void;
   updateSettings: (partial: Partial<SettingsConfig>) => void;
   
   setFilter: (filter: Partial<VaultFilter>) => void;
@@ -117,6 +123,9 @@ export const useUIStore = create<UIState>((set) => ({
   confirmConfig: null,
   isMobileMenuOpen: false,
   
+  isImportWizardOpen: false,
+  importSource: null,
+  
   settings: getStoredSettings(),
   
   filter: defaultFilter,
@@ -146,6 +155,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeCommandBar: () => set({ isCommandBarOpen: false }),
   openConfirmModal: (config) => set({ confirmConfig: config }),
   closeConfirmModal: () => set({ confirmConfig: null }),
+  openImportWizard: (source) => set({ isImportWizardOpen: true, importSource: source }),
+  closeImportWizard: () => set({ isImportWizardOpen: false, importSource: null }),
   
   updateSettings: (partial) => set((state) => {
     const newSettings = { ...state.settings, ...partial };

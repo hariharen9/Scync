@@ -12,6 +12,7 @@
     "firebase": "^10.0.0",
     "framer-motion": "^11.0.0",
     "jsqr": "^1.4.0",
+    "jszip": "^3.10.1",
     "lenis": "^1.0.42",
     "lucide-react": "^0.368.0",
     "node-forge": "^1.4.0",

@@ -200,3 +200,55 @@ export interface DecryptedShare {
   viewsRemaining: number | null;
   expiresAt: Date;
 }
+
+// ────────────────────────────────────────────────────
+// IMPORT TYPES
+// ────────────────────────────────────────────────────
+
+/** A secret candidate parsed from an external import file, before encryption */
+export interface ImportCandidate {
+  /** Stable ID for UI selection state (generated locally, not stored) */
+  localId: string;
+  /** The secret name as parsed from the source file */
+  name: string;
+  /** Inferred Scync ServiceName — may be 'Other' if no match found */
+  service: ServiceName;
+  /** Inferred Scync SecretType */
+  type: SecretType;
+  /** Always 'Personal' for imported secrets — user can change after import */
+  environment: Environment;
+  /** Always 'Active' — user can change after import */
+  status: SecretStatus;
+  /** The plaintext secret value — encrypted immediately on import */
+  value: string;
+  /** Any notes from the source entry */
+  notes: string;
+  /** Whether this item is selected for import (default: true) */
+  selected: boolean;
+  /** Reason this item was excluded or flagged — shown in UI */
+  warning?: string;
+  /** The raw source type string for display (e.g. "Bitwarden Secure Note") */
+  sourceType: string;
+  /** Which project to assign this secret to (null = uncategorized) */
+  projectId: string | null;
+}
+
+/** Result of parsing an import file */
+export interface ImportParseResult {
+  candidates: ImportCandidate[];
+  /** Total items in source file, including skipped ones */
+  totalItems: number;
+  /** Items that were skipped (e.g. credit cards, identities — not developer secrets) */
+  skippedItems: number;
+  /** Warnings about items that were partially parsed */
+  warnings: string[];
+  /** The source format that was detected */
+  sourceFormat: 'bitwarden-json' | 'onepassword-csv' | 'onepassword-1pux';
+}
+
+/** Result of completing a batch import */
+export interface ImportResult {
+  imported: number;
+  failed: number;
+  errors: string[];
+}

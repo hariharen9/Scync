@@ -41,3 +41,6 @@ export { TOTPAddModal } from './components/TOTPAddModal';
 export { ShareModal } from './components/ShareModal';
 export { ActiveSharesModal } from './components/ActiveSharesModal';
 export { ShareConsumePage } from './components/ShareConsumePage';
+
+// Import Wizard
+export { ImportWizard } from './components/ImportWizard';
