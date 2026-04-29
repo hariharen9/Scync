@@ -138,3 +138,38 @@ export function base64UrlToBuffer(base64url: string): ArrayBuffer {
   return bytes.buffer;
 }
 
+// Zero-Knowledge Secret Sharing Functions
+
+/**
+ * Generate a fresh AES-256-GCM key for share encryption
+ * This key is completely independent of the user's vault key
+ */
+export async function generateShareKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true, // extractable - we need to export it for the URL fragment
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Export a share key to base64url format for URL fragment
+ */
+export async function exportShareKey(key: CryptoKey): Promise<string> {
+  const rawKey = await crypto.subtle.exportKey("raw", key);
+  return bufferToBase64Url(rawKey);
+}
+
+/**
+ * Import a share key from base64url format (from URL fragment)
+ */
+export async function importShareKey(base64urlKey: string): Promise<CryptoKey> {
+  const rawKey = base64UrlToBuffer(base64urlKey);
+  return crypto.subtle.importKey(
+    "raw",
+    rawKey,
+    { name: "AES-GCM", length: 256 },
+    false, // non-extractable after import
+    ["decrypt"]
+  );
+}

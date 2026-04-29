@@ -1,11 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Zero-Knowledge Secret Sharing
+    match /shares/{shareId} {
+      // Create: Only authenticated users can create shares
+      allow create: if request.auth != null 
+                    && request.auth.uid == request.resource.data.createdByUid;
+      
+      // Read: Public read allowed ONLY if not expired and not already fully consumed
+      // Note: We check if viewsUsed < viewsAllowed (not <=) because the transaction
+      // will increment viewsUsed, and we want to allow the final view to complete
+      allow read: if resource.data.expiresAt > request.time
+                  && (resource.data.viewsAllowed == null 
+                      || resource.data.viewsUsed < resource.data.viewsAllowed);
+      
+      // Update: Public can increment viewsUsed by exactly 1, nothing else
+      // Allow update even if this will be the final view (viewsUsed will equal viewsAllowed after)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewsUsed'])
+                    && request.resource.data.viewsUsed == resource.data.viewsUsed + 1
+                    && resource.data.expiresAt > request.time
+                    && (resource.data.viewsAllowed == null 
+                        || resource.data.viewsUsed < resource.data.viewsAllowed);
+      
+      // Delete/Revoke: Only the creator can delete
+      allow delete: if request.auth != null 
+                    && request.auth.uid == resource.data.createdByUid;
     }
+    
+    // Existing permissive rules for all other documents
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiMoreVertical, FiEdit2, FiTrash2, FiClock } from 'react-icons/fi';
+import { FiMoreVertical, FiEdit2, FiTrash2, FiClock, FiShare2 } from 'react-icons/fi';
 import { type StoredSecret, type Project, type CustomService } from '@scync/core';
 import { MaskedValue } from './MaskedValue';
 import { useVaultStore } from '../stores/vaultStore';
@@ -10,6 +10,7 @@ import { SERVICE_COLORS } from '@scync/core';
 import { ServiceIcon } from './ServiceIcon';
 import { PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
+import { ShareModal } from './ShareModal';
 
 interface SecretCardProps {
   secret: StoredSecret;
@@ -34,6 +35,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const { decryptValue } = useVaultStore();
   const { customServices } = useServiceStore();
   const { openEditModal, selectSecret, openConfirmModal } = useUIStore();
@@ -117,58 +119,77 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           </h3>
         </div>
 
-        {/* 3-dot menu (visible on hover) */}
-        <div style={{ position: 'relative', flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 140ms' }}>
+        {/* Share & 3-dot menu (visible on hover) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 140ms' }}>
+          {/* Share button */}
           <button
-            onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            onClick={e => { e.stopPropagation(); setShareModalOpen(true); }}
             style={{
               width: 26, height: 26, display: 'grid', placeItems: 'center',
               background: 'none', border: 'none',
               color: 'var(--color-text-3)', cursor: 'pointer',
               transition: 'color 140ms',
             }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+            title="Share secret"
           >
-            <FiMoreVertical size={14} />
+            <FiShare2 size={13} />
           </button>
 
-          {menuOpen && (
-            <div style={{
-              position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
-              width: 120, background: 'var(--color-surface-2)',
-              border: '1px solid var(--color-border-2)',
-              boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
-            }}>
-              <button
-                onClick={e => { e.stopPropagation(); setMenuOpen(false); openEditModal(secret.id); }}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
-                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
-              >
-                <FiEdit2 size={12} /> Edit
-              </button>
-              <div style={{ height: 1, background: 'var(--color-border)' }} />
-              <button
-                onClick={handleDelete}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
-                  padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
-                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                  fontFamily: 'var(--font-sans)', transition: 'background 100ms',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >
-                <FiTrash2 size={12} /> Delete
-              </button>
-            </div>
-          )}
+          {/* 3-dot menu */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                width: 26, height: 26, display: 'grid', placeItems: 'center',
+                background: 'none', border: 'none',
+                color: 'var(--color-text-3)', cursor: 'pointer',
+                transition: 'color 140ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+            >
+              <FiMoreVertical size={14} />
+            </button>
+
+            {menuOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
+                width: 120, background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border-2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
+              }}>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(false); openEditModal(secret.id); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+                >
+                  <FiEdit2 size={12} /> Edit
+                </button>
+                <div style={{ height: 1, background: 'var(--color-border)' }} />
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-sans)', transition: 'background 100ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <FiTrash2 size={12} /> Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -236,6 +257,13 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           </span>
         )}
       </div>
+
+      {/* Share Modal */}
+      <ShareModal 
+        isOpen={shareModalOpen} 
+        onClose={() => setShareModalOpen(false)} 
+        secret={secret} 
+      />
     </div>
   );
 };

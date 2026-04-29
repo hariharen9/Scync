@@ -100,8 +100,18 @@ That's it. Everything else exists to make that loop faster and the secrets insid
       <p>Generate RSA/Ed25519 pairs locally. Map to hosts and auto-generate your <code>~/.ssh/config</code> templates.</p>
     </td>
     <td valign="top">
+      <h3>🔗 Zero-Knowledge Secret Sharing</h3>
+      <p>Share secrets securely via encrypted links. Decryption key in URL fragment never reaches the server. Set expiry and view limits.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
       <h3>⚡ One-click copy, always masked</h3>
       <p>Primary action is copy. Values masked by default. One click to clipboard, no confirmation dialogs.</p>
+    </td>
+    <td valign="top">
+      <h3>📊 Active Share Management</h3>
+      <p>Track all your shared links in one place. See usage stats, expiry times, and revoke access instantly.</p>
     </td>
   </tr>
   <tr>

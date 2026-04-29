@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuthStore, useVaultStore } from '@scync/ui';
+import { useAuthStore, useVaultStore, useUIStore } from '@scync/ui';
 import { Fingerprint } from 'lucide-react';
 import './UnlockPage.css';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
   const { unlock, vaultMeta, unlockWithBiometrics } = useVaultStore();
+  const { openConfirmModal } = useUIStore();
 
   const [password, setPassword] = useState('');
   const [errorText, setErrorText] = useState('');
@@ -453,9 +454,15 @@ export const UnlockPage: React.FC = () => {
   };
 
   const handleSignOut = () => {
-    if (window.confirm('Sign out of Scync?')) {
-      signOut();
-    }
+    openConfirmModal({
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of Scync? Your vault will be locked.',
+      confirmText: 'Sign Out',
+      danger: false,
+      onConfirm: async () => {
+        signOut();
+      }
+    });
   };
 
   // UI helpers

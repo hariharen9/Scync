@@ -4,6 +4,7 @@ export * from './stores/vaultStore';
 export * from './stores/uiStore';
 export * from './stores/projectStore';
 export * from './stores/serviceStore';
+export * from './stores/shareStore';
 
 export * from './components/AuthGuard';
 export * from './components/ErrorBoundary';
@@ -35,3 +36,8 @@ export { SSHKeyModal } from './components/SSHKeyModal';
 // TOTP Authenticator Components
 export { TOTPDashboard } from './components/TOTPDashboard';
 export { TOTPAddModal } from './components/TOTPAddModal';
+
+// Zero-Knowledge Secret Sharing
+export { ShareModal } from './components/ShareModal';
+export { ActiveSharesModal } from './components/ActiveSharesModal';
+export { ShareConsumePage } from './components/ShareConsumePage';

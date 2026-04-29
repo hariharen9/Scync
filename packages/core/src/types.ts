@@ -162,3 +162,41 @@ export interface StoredTOTP {
 export interface DecryptedTOTP extends Omit<StoredTOTP, 'encSecret'> {
   secret: string;
 }
+
+// Zero-Knowledge Secret Sharing
+export interface ShareDocument {
+  id: string;
+  encValue: EncryptedField;
+  // Plaintext metadata
+  secretName: string;
+  service: ServiceName;
+  type: SecretType;
+  // Lifecycle
+  expiresAt: Date;
+  viewsAllowed: number | null;
+  viewsUsed: number;
+  // Relational
+  createdByUid: string;
+  projectId: string | null;
+  createdAt: Date;
+}
+
+export interface ShareConfig {
+  secretId: string;
+  secretName: string;
+  service: ServiceName;
+  type: SecretType;
+  value: string;
+  expiryHours: number;
+  viewsAllowed: number | null;
+  projectId: string | null;
+}
+
+export interface DecryptedShare {
+  secretName: string;
+  service: ServiceName;
+  type: SecretType;
+  value: string;
+  viewsRemaining: number | null;
+  expiresAt: Date;
+}

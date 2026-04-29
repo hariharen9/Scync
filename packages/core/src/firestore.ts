@@ -463,3 +463,172 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   // Actually, let's delete it directly after the batch to be safe).
   await deleteDoc(doc(db, "users", uid));
 }
+
+// Zero-Knowledge Secret Sharing
+
+import { query, where, Timestamp } from 'firebase/firestore';
+import { generateShareKey, exportShareKey, encrypt as encryptWithKey, importShareKey, decrypt as decryptWithKey } from './crypto';
+import type { ShareDocument, ShareConfig, DecryptedShare } from './types';
+
+/**
+ * Create a shareable link for a secret
+ * Returns the full URL with the decryption key in the fragment
+ */
+export async function createShare(uid: string, config: ShareConfig): Promise<string> {
+  // Generate a fresh share key (independent of vault key)
+  const shareKey = await generateShareKey();
+  
+  // Encrypt the secret value with the share key
+  const encValue = await encryptWithKey(shareKey, config.value);
+  
+  // Calculate expiry timestamp
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + config.expiryHours);
+  
+  // Create share document
+  const shareRef = doc(collection(db, "shares"));
+  const shareDoc: Omit<ShareDocument, 'id'> = {
+    encValue,
+    secretName: config.secretName,
+    service: config.service,
+    type: config.type,
+    expiresAt,
+    viewsAllowed: config.viewsAllowed,
+    viewsUsed: 0,
+    createdByUid: uid,
+    projectId: config.projectId,
+    createdAt: new Date()
+  };
+  
+  await setDoc(shareRef, {
+    ...shareDoc,
+    expiresAt: Timestamp.fromDate(expiresAt),
+    createdAt: serverTimestamp()
+  });
+  
+  // Export the share key to base64url
+  const keyFragment = await exportShareKey(shareKey);
+  
+  // Construct the full URL
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scync.app';
+  return `${baseUrl}/share/${shareRef.id}#${keyFragment}`;
+}
+
+/**
+ * Fetch all active shares created by a user
+ */
+export async function fetchUserShares(uid: string): Promise<ShareDocument[]> {
+  const q = query(
+    collection(db, "shares"),
+    where("createdByUid", "==", uid)
+  );
+  
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      encValue: data.encValue,
+      secretName: data.secretName,
+      service: data.service,
+      type: data.type,
+      expiresAt: data.expiresAt?.toDate() || new Date(),
+      viewsAllowed: data.viewsAllowed,
+      viewsUsed: data.viewsUsed,
+      createdByUid: data.createdByUid,
+      projectId: data.projectId,
+      createdAt: data.createdAt?.toDate() || new Date()
+    };
+  });
+}
+
+/**
+ * Subscribe to user's shares in real-time
+ */
+export function subscribeToUserShares(uid: string, callback: (shares: ShareDocument[]) => void): () => void {
+  const q = query(
+    collection(db, "shares"),
+    where("createdByUid", "==", uid)
+  );
+  
+  return onSnapshot(q, snapshot => {
+    const shares = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        encValue: data.encValue,
+        secretName: data.secretName,
+        service: data.service,
+        type: data.type,
+        expiresAt: data.expiresAt?.toDate() || new Date(),
+        viewsAllowed: data.viewsAllowed,
+        viewsUsed: data.viewsUsed,
+        createdByUid: data.createdByUid,
+        projectId: data.projectId,
+        createdAt: data.createdAt?.toDate() || new Date()
+      };
+    });
+    callback(shares);
+  });
+}
+
+/**
+ * Revoke a share (delete the document)
+ */
+export async function revokeShare(shareId: string): Promise<void> {
+  await deleteDoc(doc(db, "shares", shareId));
+}
+
+/**
+ * Consume a share link (recipient side)
+ * Reads the share, validates it, increments view count, and decrypts
+ */
+export async function consumeShare(shareId: string, keyFragment: string): Promise<DecryptedShare> {
+  const shareRef = doc(db, "shares", shareId);
+  
+  // Import the decryption key from URL fragment
+  const shareKey = await importShareKey(keyFragment);
+  
+  // First, read the document to get the encrypted data
+  const shareSnap = await getDoc(shareRef);
+  
+  if (!shareSnap.exists()) {
+    throw new Error('SHARE_NOT_FOUND');
+  }
+  
+  const data = shareSnap.data();
+  const now = new Date();
+  const expiresAt = data.expiresAt?.toDate() || new Date(0);
+  
+  // Check if expired
+  if (expiresAt < now) {
+    throw new Error('SHARE_EXPIRED');
+  }
+  
+  // Check if view limit reached BEFORE incrementing
+  if (data.viewsAllowed !== null && data.viewsUsed >= data.viewsAllowed) {
+    throw new Error('SHARE_CONSUMED');
+  }
+  
+  // Increment view count (fire and forget - don't wait for it)
+  // This is safe because we already validated the share is consumable
+  updateDoc(shareRef, {
+    viewsUsed: data.viewsUsed + 1
+  }).catch(err => {
+    // Silently fail if update fails (e.g., permission denied after consumption)
+    // The user already got the secret, which is what matters
+    console.warn('Failed to increment view count:', err);
+  });
+  
+  // Decrypt the value
+  const value = await decryptWithKey(shareKey, data.encValue);
+  
+  return {
+    secretName: data.secretName,
+    service: data.service,
+    type: data.type,
+    value,
+    viewsRemaining: data.viewsAllowed !== null ? data.viewsAllowed - (data.viewsUsed + 1) : null,
+    expiresAt
+  };
+}

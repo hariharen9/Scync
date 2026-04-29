@@ -4,10 +4,11 @@ import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey, FiShield } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey, FiShield, FiLink } from 'react-icons/fi';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
+import { ActiveSharesModal } from './ActiveSharesModal';
 
 const SystemClock: React.FC = () => {
   const [time, setTime] = React.useState(new Date());
@@ -42,6 +43,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
   const [hoveredService, setHoveredService] = useState<string | null>(null);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingProjectName, setEditingProjectName] = useState('');
+  const [isActiveSharesOpen, setIsActiveSharesOpen] = useState(false);
 
   const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
@@ -116,6 +118,10 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
     { id: 'totp' as const, icon: FiShield, label: 'Authenticator', count: storedTOTPs.length },
   ];
 
+  const utilityItems = [
+    { id: 'shares' as const, icon: FiLink, label: 'Active Shares', action: () => setIsActiveSharesOpen(true) }
+  ];
+
   const sidebarStyle: React.CSSProperties = {
     width: 216, minWidth: 216, height: '100%',
     borderRight: '1px solid var(--color-border)',
@@ -156,6 +162,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
   });
 
   return (
+    <>
     <div style={sidebarStyle} className={className}>
       {/* Logo */}
       <div style={{ padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--color-border)' }}>
@@ -209,6 +216,24 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
               </button>
             );
           })}
+        </div>
+
+        {/* Utility Items */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 16 }}>
+          {utilityItems.map(item => (
+            <button
+              key={item.id}
+              onClick={item.action}
+              style={navBtnStyle(false)}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <item.icon size={14} />
+                <span>{item.label}</span>
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* ── Projects ── */}
@@ -406,5 +431,9 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
         </div>
       </div>
     </div>
+    
+    {/* Active Shares Modal */}
+    <ActiveSharesModal isOpen={isActiveSharesOpen} onClose={() => setIsActiveSharesOpen(false)} />
+    </>
   );
 };

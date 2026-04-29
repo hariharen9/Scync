@@ -34,6 +34,7 @@
    The @theme block above only feeds Tailwind's build-time utility generation.
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
+  --color-base:           #fafafa;
   --color-bg:             #fdfdfd;
   --color-bg-subtle:      #f4f4f5;
   --color-surface:        #ffffff;
@@ -55,6 +56,7 @@
 
   --color-green:          #059669;
   --color-green-bg:       rgba(5, 150, 105, 0.1);
+  --color-green-dim:      rgba(5, 150, 105, 0.1);
   --color-green-border:   rgba(5, 150, 105, 0.3);
   --color-amber:          #d97706;
   --color-amber-bg:       rgba(217, 119, 6, 0.1);
@@ -76,6 +78,7 @@
    Applied via .dark class on <html> by App.tsx based on user settings.
 ───────────────────────────────────────────────────────────────────────────── */
 .dark {
+  --color-base:           #000000;
   --color-bg:             #060606;
   --color-bg-subtle:      #0a0a0a;
   --color-surface:        #0f0f0f;
@@ -97,6 +100,7 @@
 
   --color-green:          #10b981;
   --color-green-bg:       rgba(16, 185, 129, 0.08);
+  --color-green-dim:      rgba(16, 185, 129, 0.1);
   --color-green-border:   rgba(16, 185, 129, 0.2);
   --color-amber:          #f59e0b;
   --color-amber-bg:       rgba(245, 158, 11, 0.08);

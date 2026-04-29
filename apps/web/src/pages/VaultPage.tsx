@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, ConfirmModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal } from '@scync/ui';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -292,7 +292,6 @@ export const VaultPage: React.FC = () => {
       <AddServiceModal />
       <AboutModal />
       <SettingsModal />
-      <ConfirmModal />
       <SSHKeyModal />
       <TOTPAddModal />
     </div>

@@ -4,7 +4,8 @@ import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { MaskedValue } from './MaskedValue';
 import { RecoveryCodeViewer } from './RecoveryCodeViewer';
-import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw, FiArrowLeft } from 'react-icons/fi';
+import { ShareModal } from './ShareModal';
+import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw, FiArrowLeft, FiShare2 } from 'react-icons/fi';
 import type { DecryptedSecret } from '@scync/core';
 import { useServiceStore } from '../stores/serviceStore';
 import { SERVICE_COLORS } from '@scync/core';
@@ -16,6 +17,7 @@ export const SecretDetail: React.FC = () => {
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
   const [decrypted, setDecrypted] = useState<DecryptedSecret | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const secret = storedSecrets.find(s => s.id === selectedSecretId);
 
   useEffect(() => { if (selectedSecretId) { setDecrypted(null); decryptValue(selectedSecretId).then(setDecrypted); } else { setDecrypted(null); } }, [selectedSecretId, decryptValue]);
@@ -63,6 +65,7 @@ export const SecretDetail: React.FC = () => {
           <span style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', whiteSpace: 'nowrap', fontFamily: 'var(--font-sans)' }}>Secret Details</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <button onClick={() => setIsShareModalOpen(true)} title="Share" style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiShare2 size={13} /></button>
           <button onClick={() => openEditModal(secret.id)} title="Edit" style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiEdit2 size={13} /></button>
           <button onClick={() => selectSecret(null)} title="Close" className="sd-close-btn" style={{ width: 26, height: 26, placeItems: 'center', border: 'none', background: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}><FiX size={14} /></button>
         </div>
@@ -134,6 +137,9 @@ export const SecretDetail: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      {/* Share Modal */}
+      <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} secret={secret} />
     </div>
   );
 };
