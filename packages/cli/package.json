@@ -1,0 +1,47 @@
+{
+  "name": "scync-cli",
+  "version": "1.0.0",
+  "description": "Terminal access to your Scync zero-knowledge secrets vault",
+  "type": "module",
+  "bin": {
+    "scync": "./bin/scync.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "open": "^10.0.3",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.1",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2",
+    "@types/node": "^20.11.5",
+    "@types/prompts": "^2.4.9"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "secrets",
+    "vault",
+    "cli",
+    "zero-knowledge",
+    "encryption",
+    "password-manager",
+    "api-keys"
+  ],
+  "author": "Hariharen",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hariharen9/Scync.git",
+    "directory": "packages/cli"
+  }
+}
