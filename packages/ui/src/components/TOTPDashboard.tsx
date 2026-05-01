@@ -216,13 +216,30 @@ export const TOTPDashboard: React.FC = () => {
            </div>
         ) : storedTOTPs.length === 0 ? (
           <div style={{ 
-            gridColumn: '1 / -1', 
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: '100px 0', color: 'var(--color-text-muted)', textAlign: 'center'
+            gridColumn: '1 / -1',
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+            padding: '60px 20px', color: 'var(--color-text-muted)', textAlign: 'center'
           }}>
-            <FiShield size={40} style={{ marginBottom: 16, opacity: 0.3 }} />
-            <p style={{ fontSize: 14, margin: '0 0 6px 0', fontWeight: 600, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>No authenticators in your vault.</p>
-            <p style={{ fontSize: 12, opacity: 0.7, fontFamily: 'var(--font-sans)' }}>Add your first 2FA code to get started.</p>
+            <div style={{ 
+              width: 80, height: 80, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+              display: 'grid', placeItems: 'center', marginBottom: 20, borderRadius: '50%'
+            }}>
+              <FiShield size={36} style={{ opacity: 0.4, color: 'var(--color-green)' }} />
+            </div>
+            <p style={{ margin: '0 0 6px 0', fontSize: 16, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>No authenticators in your vault.</p>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-3)', maxWidth: 300, lineHeight: 1.5 }}>
+              Add TOTP 2FA codes to sync them securely across all your devices.
+            </p>
+            <button
+              onClick={openAddTOTPModal}
+              style={{
+                marginTop: 24, padding: '8px 20px', background: 'var(--color-surface-3)', 
+                border: '1px solid var(--color-border)', color: 'var(--color-text)',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)'
+              }}
+            >
+              Add your first authenticator
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', color: 'var(--color-text-muted)' }}>

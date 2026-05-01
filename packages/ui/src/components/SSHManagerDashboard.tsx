@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
-import { FiKey, FiCopy, FiEye, FiEyeOff, FiTrash2, FiTerminal, FiDownload, FiCheck, FiPlus } from 'react-icons/fi';
+import { FiCopy, FiEye, FiEyeOff, FiTrash2, FiTerminal, FiDownload, FiCheck, FiPlus } from 'react-icons/fi';
 import type { StoredSSHKey } from '@scync/core';
 
 export const SSHManagerDashboard: React.FC = () => {
@@ -139,9 +139,31 @@ export const SSHManagerDashboard: React.FC = () => {
           alignContent: 'start'
         }}>
           {storedSSHKeys.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-muted)' }}>
-              <FiKey size={32} style={{ marginBottom: 12, opacity: 0.5 }} />
-              <p>No SSH keys found in your vault.</p>
+            <div style={{ 
+              gridColumn: '1 / -1',
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+              padding: '60px 20px', color: 'var(--color-text-muted)', textAlign: 'center'
+            }}>
+              <div style={{ 
+                width: 80, height: 80, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                display: 'grid', placeItems: 'center', marginBottom: 20, borderRadius: '50%'
+              }}>
+                <FiTerminal size={36} style={{ opacity: 0.4, color: 'var(--color-green)' }} />
+              </div>
+              <p style={{ margin: '0 0 6px 0', fontSize: 16, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>No SSH keys in your vault.</p>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-3)', maxWidth: 300, lineHeight: 1.5 }}>
+                Generate RSA-4096 or Ed25519 keys with zero-knowledge encryption.
+              </p>
+              <button
+                onClick={openAddSSHModal}
+                style={{
+                  marginTop: 24, padding: '8px 20px', background: 'var(--color-surface-3)', 
+                  border: '1px solid var(--color-border)', color: 'var(--color-text)',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)'
+                }}
+              >
+                Generate your first SSH key
+              </button>
             </div>
           ) : (
             storedSSHKeys.map(key => (
