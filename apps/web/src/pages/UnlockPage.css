@@ -421,22 +421,31 @@
 }
 
 .unlock-page-root .err {
-  height: 0;
+  max-height: 0;
   overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 10px;
   font-family: var(--mono);
   color: var(--red);
   letter-spacing: .02em;
-  transition: height .2s ease, opacity .2s ease;
+  transition: max-height .3s var(--ease), opacity .3s ease;
   opacity: 0;
+  text-align: center;
+  width: 100%;
+  padding: 0 20px;
+  line-height: 1.4;
+}
+.unlock-page-root .err svg {
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 .unlock-page-root .err.show {
-  height: 17px;
+  max-height: 80px;
   opacity: 1;
+  padding: 10px 20px;
 }
 
 .unlock-page-root .pips {

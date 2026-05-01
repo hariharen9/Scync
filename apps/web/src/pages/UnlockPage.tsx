@@ -5,7 +5,7 @@ import './UnlockPage.css';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
-  const { unlock, vaultMeta, unlockWithBiometrics } = useVaultStore();
+  const { unlock, vaultMeta, unlockWithBiometrics, verifyPassword, verifyBiometrics, setDerivedKey } = useVaultStore();
   const { openConfirmModal } = useUIStore();
 
   const [password, setPassword] = useState('');
@@ -17,6 +17,7 @@ export const UnlockPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [clockStr, setClockStr] = useState('');
   const [dateStr, setDateStr] = useState('');
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   const passElRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,6 +46,15 @@ export const UnlockPage: React.FC = () => {
     'Vault remains locked.',
     'One more and vault locks out.',
   ];
+
+  // --- Lockout Countdown ---
+  useEffect(() => {
+    if (lockoutTimer <= 0) return;
+    const interval = setInterval(() => {
+      setLockoutTimer(p => p - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutTimer]);
 
   // --- Clock ---
   useEffect(() => {
@@ -189,7 +199,7 @@ export const UnlockPage: React.FC = () => {
     const { i, j } = edge;
     const x1 = NODE_POS[i][0], y1 = NODE_POS[i][1];
     const x2 = NODE_POS[j][0], y2 = NODE_POS[j][1];
-    
+
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', String(x1)); line.setAttribute('y1', String(y1));
     line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2));
@@ -318,7 +328,7 @@ export const UnlockPage: React.FC = () => {
     }
   };
 
-  const handleSuccessFlow = () => {
+  const handleSuccessFlow = (derivedKey: CryptoKey) => {
     setIsSuccess(true);
     const unlit = nodeEls.current.map((_, i) => i).filter(i => !nodeEls.current[i].active);
     unlit.forEach((idx, i) => {
@@ -387,32 +397,46 @@ export const UnlockPage: React.FC = () => {
       }
     }, unlit.length * 35 + 700);
 
-    // After animation finishes, the vault state actually updates, React will unmount this page natively.
+    // After all animations finish, perform the final state transition
+    setTimeout(() => {
+      setDerivedKey(derivedKey);
+    }, unlit.length * 35 + 1100);
   };
 
   const handleFailFlow = () => {
     const nextAttempts = attempts + 1;
     setAttempts(nextAttempts);
     setPassword('');
-    setErrorText(MSGS[Math.min(nextAttempts - 1, MSGS.length - 1)]);
     deactivateAll(true);
     lastNodeCount.current = 0;
+
+    if (nextAttempts >= 5) {
+      setErrorText("IDENTITY THEFT IS NOT A JOKE, Dipshit! KICKING YOU OUT BEFORE YOU HURT YOURSELF...");
+      setTimeout(() => {
+        signOut();
+      }, 4000);
+      return;
+    }
+
+    if (nextAttempts === 3) {
+      setLockoutTimer(60);
+      setErrorText("SECURITY LOCKOUT: TAKE A 60S BREAK AND THINK ABOUT YOUR LIFE CHOICES.");
+    } else {
+      setErrorText(MSGS[Math.min(nextAttempts - 1, MSGS.length - 1)]);
+    }
+
     passElRef.current?.focus();
   };
 
   const doUnlock = async () => {
-    if (!password || !user || loading) return;
+    if (!password || !user || loading || isSuccess || lockoutTimer > 0) return;
     setLoading(true);
     setErrorText('');
 
     try {
-      // Let animation run slightly for feel
-      await new Promise(r => setTimeout(r, 600));
-      
-      const success = await unlock(password, user.uid);
-      if (success) {
-        handleSuccessFlow();
-        // State update for routing will happen outside eventually
+      const key = await verifyPassword(password, user.uid);
+      if (key) {
+        handleSuccessFlow(key);
       } else {
         handleFailFlow();
       }
@@ -433,14 +457,13 @@ export const UnlockPage: React.FC = () => {
   };
 
   const doBio = async () => {
-    if (!user || biometricLoading || loading) return;
+    if (!user || biometricLoading || loading || isSuccess || lockoutTimer > 0) return;
     setBiometricLoading(true);
     setErrorText('');
     try {
-      await new Promise(r => setTimeout(r, 600));
-      const success = await unlockWithBiometrics(user.uid);
-      if (success) {
-        handleSuccessFlow();
+      const key = await verifyBiometrics(user.uid);
+      if (key) {
+        handleSuccessFlow(key);
       } else {
         handleFailFlow();
       }
@@ -494,7 +517,7 @@ export const UnlockPage: React.FC = () => {
         <div className="constellation" ref={constellationRef}>
           <svg className="const-svg" ref={svgRef} viewBox="0 0 280 280" />
           <div className="const-glow" />
-          
+
           <div className="const-avatar" id="constAvatar">
             {user?.photoURL ? (
               <img src={user.photoURL} alt="Avatar" />
@@ -532,7 +555,7 @@ export const UnlockPage: React.FC = () => {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </div>
-            
+
             <div className="pf-dots">
               {password.length === 0 && <span className="ph">Enter vault password</span>}
               {!revealed && password.split('').map((_, i) => (
@@ -554,10 +577,10 @@ export const UnlockPage: React.FC = () => {
               spellCheck={false}
             />
 
-            <button 
-              className="pf-eye" 
-              type="button" 
-              tabIndex={-1} 
+            <button
+              className="pf-eye"
+              type="button"
+              tabIndex={-1}
               onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -595,10 +618,10 @@ export const UnlockPage: React.FC = () => {
             ))}
           </div>
 
-          <button 
+          <button
             ref={ubtnRef}
-            className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`} 
-            disabled={password.length === 0 || loading || isSuccess}
+            className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
+            disabled={password.length === 0 || loading || isSuccess || lockoutTimer > 0}
             onClick={doUnlock}
             type="button"
           >
@@ -615,7 +638,7 @@ export const UnlockPage: React.FC = () => {
                   <rect x="3" y="11" width="18" height="11" rx="1" />
                   <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
-                <span className="btxt">Unlock Vault</span>
+                <span className="btxt">{lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : 'Unlock Vault'}</span>
                 <div className="spin" />
               </>
             )}
@@ -624,10 +647,10 @@ export const UnlockPage: React.FC = () => {
           {vaultMeta?.biometric && (
             <>
               <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
-              <button 
-                className={`bbtn ${biometricLoading ? 'scanning' : ''}`} 
+              <button
+                className={`bbtn ${biometricLoading ? 'scanning' : ''}`}
                 onClick={doBio}
-                disabled={biometricLoading || loading || isSuccess}
+                disabled={biometricLoading || loading || isSuccess || lockoutTimer > 0}
                 type="button"
               >
                 <div className="fp">
@@ -641,7 +664,7 @@ export const UnlockPage: React.FC = () => {
           )}
 
           <div className="zk">Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.</div>
-          
+
           <button className="so" onClick={handleSignOut} type="button">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

@@ -48,6 +48,8 @@ interface VaultState {
   setVaultMeta: (meta: VaultMeta | null) => void;
   
   unlock: (password: string, uid: string) => Promise<boolean>;
+  verifyPassword: (password: string, uid: string) => Promise<CryptoKey | null>;
+  verifyBiometrics: (uid: string) => Promise<CryptoKey | null>;
   lock: () => void;
   initializeVault: (password: string, uid: string) => Promise<void>;
   changeVaultPassword: (uid: string, oldPassword: string, newPassword: string) => Promise<boolean>;
@@ -98,23 +100,46 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   setVaultMeta: (meta) => set({ vaultMeta: meta }),
   
   unlock: async (password: string, uid: string) => {
+    const key = await get().verifyPassword(password, uid);
+    if (key) {
+      set({ derivedKey: key, isLocked: false });
+      return true;
+    }
+    return false;
+  },
+
+  verifyPassword: async (password: string, uid: string) => {
     try {
       const meta = await getVaultMeta(uid);
-      if (!meta) {
-        throw new Error("Vault not setup");
-      }
-      set({ vaultMeta: meta });
+      if (!meta) throw new Error("Vault not setup");
       const key = await deriveKey(password, uid, meta.salt);
       const isValid = await checkVerifier(key, meta.verifier);
-      
-      if (isValid) {
-        set({ derivedKey: key, isLocked: false });
-        return true;
-      }
-      return false;
+      if (isValid) return key;
+      return null;
     } catch (err) {
       console.error(err);
-      return false;
+      return null;
+    }
+  },
+
+  verifyBiometrics: async (uid: string) => {
+    try {
+      let meta = get().vaultMeta;
+      if (!meta) {
+        meta = await getVaultMeta(uid);
+        if (!meta) throw new Error("Vault not setup");
+        set({ vaultMeta: meta });
+      }
+      if (!meta.biometric) return null;
+      const password = await coreUnlockWithBiometrics(
+        meta.biometric.credentialId,
+        meta.biometric.salt,
+        meta.biometric.encMasterPassword
+      );
+      return get().verifyPassword(password, uid);
+    } catch (err) {
+      console.error(err);
+      return null;
     }
   },
   
