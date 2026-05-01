@@ -1,19 +1,21 @@
 import type { ServiceName, SecretType, Environment, SecretStatus, ProjectColor } from './types';
 
 export const SERVICES: readonly ServiceName[] = [
-  'Google', 'Anthropic', 'GitHub', 'OpenRouter', 'AWS', 'Vercel', 'Stripe',
-  'Cloudflare', 'Supabase', 'OpenAI', 'HuggingFace', 'Twilio', 'SendGrid',
-  'Netlify', 'Railway', 'PlanetScale', 'Neon', 'Other'
+  'AWS', 'Azure', 'Google', 'OpenAI', 'Anthropic', 'OpenRouter',
+  'DigitalOcean', 'Vercel', 'Netlify', 'Railway',
+  'Cloudflare', 'Supabase', 'Firebase', 'GitHub', 'GitLab',
+  'HuggingFace', 'Stripe', 'Twilio', 'Slack', 'Other'
 ];
 
 export const SECRET_TYPES: readonly SecretType[] = [
   'API Key', 'Personal Access Token', 'OAuth Token', 'OAuth Client Secret',
-  'Recovery Codes', 'Secret Key', 'Webhook Secret', 'SSH Key',
-  'Service Account JSON', 'Database URL', 'Password', 'Other'
+  'Recovery Codes', 'Secret Key', 'Webhook Secret',
+  'Service Account JSON', 'Database URL', 'License Key', 'Passphrase',
+  'Secret Note', 'Password', 'Other'
 ];
 
 export const ENVIRONMENTS: readonly Environment[] = [
-  'Personal', 'Work', 'Development', 'Staging', 'Production'
+  'Personal', 'Work', 'Local', 'Development', 'Testing', 'Staging', 'Production', 'CI/CD'
 ];
 
 export const STATUSES: readonly SecretStatus[] = [
@@ -33,11 +35,13 @@ export const SERVICE_COLORS: Record<ServiceName, string> = {
   'OpenAI': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   'HuggingFace': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500',
   'Twilio': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  'SendGrid': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   'Netlify': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   'Railway': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  'PlanetScale': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  'Neon': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  'Firebase': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  'Azure': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'DigitalOcean': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'GitLab': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  'Slack': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   'Other': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
 };
 

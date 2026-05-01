@@ -17,19 +17,22 @@ import { ServiceIcon } from './ServiceIcon';
 const SERVICE_COLORS: Record<string, string> = {
   'AWS': '#f59e0b', 'GitHub': '#f0f6fc', 'Google': '#4285f4', 'Stripe': '#635bff',
   'OpenAI': '#74aa9c', 'Vercel': '#ffffff', 'Supabase': '#3ecf8e', 'Anthropic': '#d4a27f',
-  'Cloudflare': '#f48120', 'HuggingFace': '#ffd21e', 'Twilio': '#f22f46', 'SendGrid': '#1a82e2',
-  'Netlify': '#00c7b7', 'Railway': '#a855f7', 'PlanetScale': '#f0f0f0', 'Neon': '#00e699',
-  'OpenRouter': '#9b6dff', 'Other': '#10b981',
+  'Cloudflare': '#f48120', 'HuggingFace': '#ffd21e', 'Twilio': '#f22f46',
+  'Netlify': '#00c7b7', 'Railway': '#a855f7', 'Firebase': '#ffca28',
+  'Azure': '#0089d6', 'DigitalOcean': '#0080ff', 'GitLab': '#fca326',
+  'Slack': '#4a154b', 'OpenRouter': '#9b6dff', 'Other': '#10b981',
 };
 const ENV_COLORS: Record<string, string> = {
   'Production': '#ef4444', 'Staging': '#f59e0b', 'Development': '#3b82f6',
-  'Work': '#60a5fa', 'Personal': '#8b5cf6',
+  'Work': '#60a5fa', 'Personal': '#8b5cf6', 'Local': '#71717a',
+  'Testing': '#10b981', 'CI/CD': '#6366f1',
 };
 const TYPE_COLORS: Record<string, string> = {
   'API Key': '#10b981', 'Personal Access Token': '#60a5fa', 'OAuth Token': '#f59e0b',
   'OAuth Client Secret': '#f97316', 'Recovery Codes': '#ef4444', 'Secret Key': '#34d399',
-  'Webhook Secret': '#a78bfa', 'SSH Key': '#06b6d4', 'Service Account JSON': '#fbbf24',
-  'Database URL': '#ec4899', 'Password': '#8b5cf6', 'Other': '#64748b',
+  'Webhook Secret': '#a78bfa', 'Service Account JSON': '#fbbf24',
+  'Database URL': '#ec4899', 'License Key': '#06b6d4', 'Passphrase': '#f59e0b',
+  'Secret Note': '#f43f5e', 'Password': '#8b5cf6', 'Other': '#64748b',
 };
 
 const card: React.CSSProperties = { background: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: 20 };

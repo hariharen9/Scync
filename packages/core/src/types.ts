@@ -71,9 +71,11 @@ export type SecretType =
   | 'Recovery Codes'
   | 'Secret Key'
   | 'Webhook Secret'
-  | 'SSH Key'
   | 'Service Account JSON'
   | 'Database URL'
+  | 'License Key'
+  | 'Passphrase'
+  | 'Secret Note'
   | 'Password'
   | 'Other';
 
@@ -82,7 +84,10 @@ export type Environment =
   | 'Work'
   | 'Development'
   | 'Staging'
-  | 'Production';
+  | 'Production'
+  | 'Local'
+  | 'Testing'
+  | 'CI/CD';
 
 export type SecretStatus =
   | 'Active'

@@ -34,6 +34,23 @@ const labelStyle: React.CSSProperties = {
 
 const toOptions = (arr: readonly string[]): DropdownOption[] => arr.map(v => ({ value: v, label: v }));
 
+const PLACEHOLDERS: Record<string, { name: string; value: string }> = {
+  'API Key': { name: 'e.g. OpenAI API Key', value: 'sk-proj-...' },
+  'Personal Access Token': { name: 'e.g. GitHub PAT', value: 'ghp_...' },
+  'OAuth Token': { name: 'e.g. Slack OAuth Token', value: 'xoxb-...' },
+  'OAuth Client Secret': { name: 'e.g. Google Client Secret', value: 'GOCSPX-...' },
+  'Recovery Codes': { name: 'e.g. Discord Recovery Codes', value: '8f3a-2b1c\n9d4e-7f2d\n...' },
+  'Secret Key': { name: 'e.g. JWT Secret Key', value: 'your-high-entropy-secret-string' },
+  'Webhook Secret': { name: 'e.g. Stripe Signing Secret', value: 'whsec_...' },
+  'Service Account JSON': { name: 'e.g. Firebase Admin SDK', value: '{\n  "type": "service_account",\n  ...' },
+  'Database URL': { name: 'e.g. Prod Postgres DB', value: 'postgres://user:pass@host:5432/db' },
+  'License Key': { name: 'e.g. JetBrains License', value: 'A1B2-C3D4-E5F6-G7H8' },
+  'Passphrase': { name: 'e.g. MetaMask Seed Phrase', value: 'word1 word2 word3...' },
+  'Secret Note': { name: 'e.g. A secret love note ❤️', value: 'You are the CSS to my HTML... 😉' },
+  'Password': { name: 'e.g. Legacy Server Root', value: 'your-complex-password' },
+  'Other': { name: 'e.g. My Secret', value: 'Enter your secret here...' },
+};
+
 export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting }) => {
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
@@ -58,6 +75,8 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
     remainingCodes: initialData?.remainingCodes || null,
   });
   const [showValue, setShowValue] = useState(false);
+
+  const currentPlaceholders = PLACEHOLDERS[formData.type] || PLACEHOLDERS['Other'];
 
   const handleSubmit = async (e: React.FormEvent) => { 
     e.preventDefault(); 
@@ -112,7 +131,7 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
         <label style={labelStyle}>Secret Name</label>
         <div style={{ position: 'relative' }}>
           <FiKey size={12} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)', pointerEvents: 'none' }} />
-          <input required name="name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, paddingLeft: 28 }} placeholder="e.g. OpenAI API Key" autoFocus
+          <input required name="name" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} style={{ ...inputStyle, paddingLeft: 28 }} placeholder={currentPlaceholders.name} autoFocus
             onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
         </div>
       </div>
@@ -124,12 +143,12 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
         <div style={{ position: 'relative' }}>
           {formData.type === 'Recovery Codes' ? (
             <textarea required name="value" value={formData.value} onChange={e => setFormData(p => ({ ...p, value: e.target.value }))} rows={6}
-              style={{ ...monoInputStyle, paddingRight: 10, resize: 'vertical' } as any} placeholder={"8f3a-2b1c-9d4e\n7e2d-1a4f-0c8b\n..."}
+              style={{ ...monoInputStyle, paddingRight: 10, resize: 'vertical' } as any} placeholder={currentPlaceholders.value}
               onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
           ) : (
             <>
               <textarea required name="value" value={formData.value} onChange={e => setFormData(p => ({ ...p, value: e.target.value }))} rows={3}
-                style={{ ...monoInputStyle, paddingRight: 30, WebkitTextSecurity: showValue ? 'none' : 'disc' } as any} placeholder="sk-proj-..."
+                style={{ ...monoInputStyle, paddingRight: 30, WebkitTextSecurity: showValue ? 'none' : 'disc' } as any} placeholder={currentPlaceholders.value}
                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} />
               <button type="button" onClick={() => setShowValue(!showValue)} style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', padding: 0, display: 'flex' }}>
                 {showValue ? <FiEyeOff size={13} /> : <FiEye size={13} />}

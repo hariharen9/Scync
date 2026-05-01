@@ -2,10 +2,11 @@ import React from 'react';
 import { 
   SiGithub, SiGoogle, SiStripe, SiOpenai, SiVercel, SiSupabase,
   SiCloudflare, SiTwilio, SiNetlify, SiRailway, SiPlanetscale,
-  SiSendgrid, SiHuggingface, SiAnthropic
+  SiSendgrid, SiHuggingface, SiAnthropic, SiFirebase,
+  SiDigitalocean, SiGitlab, SiSlack
 } from 'react-icons/si';
 import { FiLayers, FiDatabase, FiZap, FiCpu } from 'react-icons/fi';
-import { FaAws } from 'react-icons/fa';
+import { FaAws, FaMicrosoft } from 'react-icons/fa';
 
 interface ServiceIconProps {
   service: string;
@@ -35,6 +36,11 @@ export const ServiceIcon: React.FC<ServiceIconProps> = ({ service, size = 16, cl
     case 'Anthropic':   return <SiAnthropic {...props} />;
     case 'HuggingFace': return <SiHuggingface {...props} />;
     case 'OpenRouter':  return <FiZap {...props} />;
+    case 'Firebase':    return <SiFirebase {...props} />;
+    case 'Azure':       return <FaMicrosoft {...props} />;
+    case 'DigitalOcean': return <SiDigitalocean {...props} />;
+    case 'GitLab':      return <SiGitlab {...props} />;
+    case 'Slack':       return <SiSlack {...props} />;
     case 'Other':       return <FiLayers {...props} />;
     default:            return <FiCpu {...props} />;
   }
