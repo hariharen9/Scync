@@ -116,22 +116,30 @@ That's it. Everything else exists to make that loop faster and the secrets insid
   </tr>
   <tr>
     <td valign="top">
-      <h3>🧬 Biometric Unlock</h3>
-      <p>Unlock with FaceID/TouchID using <b>Hardware-Backed PRF</b>. Native speed, zero-knowledge security.</p>
+      <h3>📜 SSL/TLS Certificate Manager</h3>
+      <p>Dedicated storage for PEM/CRT/KEY files. Client-side parsing extracts Issuer, Subject, and Expiration dates automatically.</p>
     </td>
     <td valign="top">
-      <h3>🌐 Native feel. Zero bloat.</h3>
-      <p>Installable PWA for mobile/desktop. Lightning fast, lightweight, and always in sync across devices.</p>
+      <h3>🧬 Biometric Unlock</h3>
+      <p>Unlock with FaceID/TouchID using <b>Hardware-Backed PRF</b>. Native speed, zero-knowledge security.</p>
     </td>
   </tr>
   <tr>
     <td valign="top">
+      <h3>🌐 Native feel. Zero bloat.</h3>
+      <p>Installable PWA for mobile/desktop. Lightning fast, lightweight, and always in sync across devices.</p>
+    </td>
+    <td valign="top">
       <h3>🔍 Instant search & filtering</h3>
       <p>Search by name or service. Filter by type, environment, or status. All in-memory — no network calls.</p>
     </td>
+  </tr>
+  <tr>
     <td valign="top">
       <h3>🛡️ Zero-Knowledge architecture</h3>
       <p>Enforced by math. Your plaintext data never leaves your device. Not "we promise," architecturally impossible.</p>
+    </td>
+    <td width="50%" valign="top">
     </td>
   </tr>
 </table>

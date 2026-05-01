@@ -41,3 +41,7 @@ export { TOTPAddModal } from './components/TOTPAddModal';
 export { ShareModal } from './components/ShareModal';
 export { ActiveSharesModal } from './components/ActiveSharesModal';
 export { ShareConsumePage } from './components/ShareConsumePage';
+
+// SSL/TLS Certificate Manager
+export { CertificateDashboard } from './components/CertificateDashboard';
+export { CertificateModal } from './components/CertificateModal';

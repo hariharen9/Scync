@@ -553,29 +553,130 @@
   height: 1px; background: var(--b2);
 }
 
-/* The terminal demo */
-.scync-landing .terminal {
+/* The vault mockup demo */
+.scync-landing .vault-mockup {
   margin-top: 48px;
-  background: #050505; border: 1px solid var(--b2);
+  background: var(--bg); border: 1px solid var(--b2);
   overflow: hidden; position: relative;
+  box-shadow: 0 32px 64px rgba(0,0,0,.5);
 }
 
-.scync-landing .terminal-bar {
-  padding: 10px 14px; border-bottom: 1px solid var(--b1);
-  display: flex; align-items: center; gap: 8px;
+.scync-landing .vault-mockup-header {
+  padding: 16px; border-bottom: 1px solid var(--b1);
   background: var(--s1);
 }
 
-.scync-landing .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+.scync-landing .v-search-bar {
+  background: var(--bg); border: 1px solid var(--b2);
+  padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+  color: var(--t3); font-size: 13px;
+  position: relative;
+}
 
-.scync-landing .terminal-body { padding: 20px 22px; font-family: var(--mono); font-size: 12.5px; line-height: 2; white-space: pre-wrap; }
-.scync-landing .t-comment { color: var(--t3); }
-.scync-landing .t-key { color: var(--blue); }
-.scync-landing .t-val { color: var(--green); }
-.scync-landing .t-val-masked { color: var(--t3); letter-spacing: .12em; }
-.scync-landing .t-service { color: var(--amber); }
-.scync-landing .t-dim { color: var(--t3); }
-.scync-landing .t-cursor-inline { display: inline-block; width: 7px; height: 13px; background: var(--green); vertical-align: middle; animation: cursorBlink 1s step-end infinite; margin-left: 2px; }
+.scync-landing .v-search-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scync-landing .v-search-cursor {
+  display: inline-block;
+  width: 2px; height: 14px; background: var(--green);
+  animation: cursorBlink 1s step-end infinite;
+}
+
+.scync-landing .vault-mockup-body {
+  padding: 8px; display: flex; flex-direction: column; gap: 4px;
+}
+
+.scync-landing .v-item {
+  padding: 12px 16px; display: flex; align-items: center; gap: 16px;
+  background: transparent; transition: all 200ms ease;
+  border: 1px solid transparent;
+}
+
+.scync-landing .v-item.active {
+  background: var(--s2); border-color: var(--b2);
+}
+
+.scync-landing .v-item.filtered {
+  opacity: 0.2;
+  filter: blur(1px);
+}
+
+.scync-landing .v-item-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+}
+
+.scync-landing .v-item-info {
+  flex: 1;
+}
+
+.scync-landing .v-item-service {
+  font-size: 9px; font-weight: 700; color: var(--t3); letter-spacing: .08em;
+  margin-bottom: 2px;
+}
+
+.scync-landing .v-item-name {
+  font-size: 13px; font-weight: 600; color: var(--t1);
+}
+
+.scync-landing .v-item-val {
+  font-family: var(--mono); font-size: 12px; color: var(--t3);
+  letter-spacing: .12em; margin-right: 12px;
+}
+
+.scync-landing .v-copy-tag {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; color: var(--green);
+  background: rgba(16,185,129,.1); padding: 4px 8px;
+  border: 1px solid rgba(16,185,129,.2);
+  animation: fadeIn .3s ease both;
+}
+
+.scync-landing .v-status-bar {
+  padding: 10px 16px; border-top: 1px solid var(--b1);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-family: var(--mono); color: var(--t3);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+
+.scync-landing .v-status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+}
+
+/* Lock Screen Mockup */
+.scync-landing .v-lock-screen {
+  padding: 40px 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  min-height: 240px;
+}
+
+.scync-landing .v-lock-icon {
+  font-size: 24px; margin-bottom: 16px;
+  filter: drop-shadow(0 0 10px var(--glow));
+}
+
+.scync-landing .v-lock-title {
+  font-size: 16px; font-weight: 700; color: var(--t1);
+  margin-bottom: 24px; letter-spacing: -0.02em;
+}
+
+.scync-landing .v-pass-field {
+  width: 100%; max-width: 240px;
+  background: var(--s1); border: 1px solid var(--b2);
+  padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 13px; color: var(--t2);
+  margin-bottom: 16px;
+}
+
+.scync-landing .v-lock-hint {
+  font-size: 10px; color: var(--t3); text-transform: uppercase;
+  letter-spacing: 0.1em; font-weight: 600;
+}
 
 /* ═══════════════════════════════════════════
    FEATURES
@@ -666,7 +767,7 @@
 
 .scync-landing .beyond-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1px;
   background: var(--b1);
   margin-top: 64px;
@@ -788,6 +889,76 @@
 @media (max-width: 1024px) {
   .scync-landing .beyond-grid { grid-template-columns: 1fr; }
   .scync-landing .beyond-item { padding: 32px 24px; }
+}
+
+/* Certificate Mockup */
+.scync-landing .cert-mockup {
+  width: 80%;
+  background: var(--s2);
+  border: 1px solid var(--b2);
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.4);
+  position: relative;
+}
+
+.scync-landing .cert-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.scync-landing .cert-icon-mini {
+  width: 32px;
+  height: 32px;
+  background: var(--s3);
+  border: 1px solid var(--b1);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.scync-landing .cert-domain {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t1);
+  letter-spacing: -0.01em;
+}
+
+.scync-landing .cert-issuer {
+  font-size: 10px;
+  color: var(--t3);
+  font-family: var(--mono);
+}
+
+.scync-landing .cert-meta {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.scync-landing .cert-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  background: rgba(16,185,129,.1);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,.2);
+  letter-spacing: 0.05em;
+}
+
+.scync-landing .cert-expiry-bar {
+  height: 3px;
+  background: var(--b1);
+  width: 100%;
+}
+
+.scync-landing .cert-expiry-fill {
+  height: 100%;
+  width: 65%;
+  background: var(--green);
 }
 
 /* ═══════════════════════════════════════════

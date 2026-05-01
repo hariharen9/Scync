@@ -19,7 +19,7 @@ const marqueeItems = [
   'Firebase-Backed', 'Free Forever',
 ];
 
-const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys', 'tokens', 'credentials', 'OAuth secrets'];
+const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys', 'SSL certificates', 'tokens', 'credentials', 'OAuth secrets'];
 const badPlaces = ['Notion', 'Notes', 'Slack DMs', 'Screenshots', '.env files', 'Discord', 'Email', 'text files'];
 
 export const AuthPage: React.FC = () => {
@@ -30,6 +30,13 @@ export const AuthPage: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const heroGridRef = useRef<HTMLDivElement>(null);
   const placeRef = useRef<HTMLSpanElement>(null);
+  
+  // Live Mockup States
+  const [mockSearch, setMockSearch] = React.useState('');
+  const [mockActive, setMockActive] = React.useState(false);
+  const [mockCopied, setMockCopied] = React.useState(false);
+  const [mockUnlocked, setMockUnlocked] = React.useState(false);
+  const [mockPass, setMockPass] = React.useState('');
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (cursorGlowRef.current) { cursorGlowRef.current.style.left = e.clientX + 'px'; cursorGlowRef.current.style.top = e.clientY + 'px'; } };
@@ -109,6 +116,60 @@ export const AuthPage: React.FC = () => {
     const fns: Array<[() => void, () => void]> = [];
     rows.forEach(row => { const el = row as HTMLElement; const a = () => { el.style.background = 'rgba(16,185,129,.02)'; }; const b = () => { el.style.background = ''; }; fns.push([a, b]); el.addEventListener('mouseenter', a); el.addEventListener('mouseleave', b); });
     return () => { rows.forEach((row, i) => { const el = row as HTMLElement; el.removeEventListener('mouseenter', fns[i][0]); el.removeEventListener('mouseleave', fns[i][1]); }); };
+  }, []);
+
+  useEffect(() => {
+    const query = "Stripe";
+    const pass = "••••••••";
+    let charIdx = 0;
+    let phase = 0; // 0: typing pass, 1: unlocking, 2: typing search, 3: found, 4: copied, 5: reset
+    
+    const tick = () => {
+      if (phase === 0) {
+        if (charIdx < pass.length) {
+          setMockPass(pass.substring(0, charIdx + 1));
+          charIdx++;
+          setTimeout(tick, 100);
+        } else {
+          phase = 1;
+          setTimeout(tick, 400);
+        }
+      } else if (phase === 1) {
+        setMockUnlocked(true);
+        charIdx = 0;
+        phase = 2;
+        setTimeout(tick, 800);
+      } else if (phase === 2) {
+        if (charIdx < query.length) {
+          setMockSearch(query.substring(0, charIdx + 1));
+          charIdx++;
+          setTimeout(tick, 150);
+        } else {
+          phase = 3;
+          setTimeout(tick, 600);
+        }
+      } else if (phase === 3) {
+        setMockActive(true);
+        phase = 4;
+        setTimeout(tick, 800);
+      } else if (phase === 4) {
+        setMockCopied(true);
+        phase = 5;
+        setTimeout(tick, 2000);
+      } else if (phase === 5) {
+        setMockPass('');
+        setMockUnlocked(false);
+        setMockSearch('');
+        setMockActive(false);
+        setMockCopied(false);
+        charIdx = 0;
+        phase = 0;
+        setTimeout(tick, 1000);
+      }
+    };
+
+    const timeout = setTimeout(tick, 2000);
+    return () => clearTimeout(timeout);
   }, []);
 
   const handleCopyFlash = (e: React.MouseEvent<HTMLDivElement>) => { const card = e.currentTarget; card.classList.add('copying'); setTimeout(() => card.classList.remove('copying'), 600); };
@@ -341,32 +402,58 @@ export const AuthPage: React.FC = () => {
           </div>
 
 
-          <div className="terminal reveal reveal-delay-3">
-            <div className="terminal-bar">
-              <div className="t-dot" style={{ background: "#ef4444" }}></div>
-              <div className="t-dot" style={{ background: "#f59e0b" }}></div>
-              <div className="t-dot" style={{ background: "#10b981" }}></div>
-              <span style={{ marginLeft: "8px", fontFamily: "var(--mono)", fontSize: "10px", color: "var(--t3)" }}>scync — vault unlocked</span>
-            </div>
-            <div className="terminal-body">
-              <div><span className="t-comment">// Your vault. Decrypted. In memory only.</span></div>
-              <div>{" "}</div>
-              <div><span className="t-key">const</span> vault = <span className="t-fn">await</span> scync.<span className="t-fn">unlock</span>(<span className="t-str">"your-vault-password"</span>);</div>
-              <div>{" "}</div>
-              <div><span className="t-comment">// Find any secret instantly</span></div>
-              <div><span className="t-key">const</span> key = vault.<span className="t-fn">find</span>(<span className="t-str">"openai"</span>);</div>
-              <div><span className="t-dim">// → {"{"} name: "OpenAI API Key", service: "OpenAI",</span></div>
-              <div><span className="t-dim">//     value: </span><span className="t-val">"sk-proj-xxxxxxxx..."</span><span className="t-dim">, env: "development" {"}"}</span></div>
-              <div>{" "}</div>
-              <div><span className="t-comment">// Server only ever sees this:</span></div>
-              <div><span className="t-dim">{"{"} value: </span><span className="t-val">"Uv8xQz3mK9pL2nR7..."</span><span className="t-dim"> {"}"} </span><span className="t-comment">// ← encrypted blob. useless.</span></div>
-              <div>{" "}</div>
-              <div><span className="t-key">await</span> navigator.clipboard.<span className="t-fn">writeText</span>(key.value); <span className="t-comment">// done.</span></div>
-              <div>{" "}</div>
-              <div><span className="t-comment">// New: Access your 2FA and SSH keys just as fast</span></div>
-              <div><span className="t-key">const</span> code = vault.<span className="t-fn">get2FA</span>(<span className="t-str">"github"</span>); <span className="t-comment">// → "482 910"</span></div>
-              <div><span className="t-key">const</span> ssh = vault.<span className="t-fn">getSSH</span>(<span className="t-str">"prod-server"</span>); <span className="t-comment">// → decrypted private key</span><span className="t-cursor-inline"></span></div>
-            </div>
+          <div className="vault-mockup reveal reveal-delay-3">
+            {!mockUnlocked ? (
+              <div className="v-lock-screen">
+                <div className="v-lock-icon">🔒</div>
+                <div className="v-lock-title">Vault Locked</div>
+                <div className="v-pass-field">
+                  {mockPass || <span style={{ color: 'var(--t3)' }}>Enter master password</span>}
+                  <div className="v-search-cursor"></div>
+                </div>
+                <div className="v-lock-hint">AES-256-GCM local decryption</div>
+              </div>
+            ) : (
+              <>
+                <div className="vault-mockup-header">
+                  <div className="v-search-bar">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                    <div className="v-search-text">
+                      {mockSearch || <span style={{ color: 'var(--t3)' }}>Search secrets...</span>}
+                      <div className="v-search-cursor"></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="vault-mockup-body">
+                  <div className={`v-item ${mockActive ? 'active' : ''} ${!mockActive && mockSearch.length > 0 ? 'filtered' : ''}`}>
+                    <div className="v-item-dot" style={{ background: 'var(--blue)' }}></div>
+                    <div className="v-item-info">
+                      <div className="v-item-service">STRIPE</div>
+                      <div className="v-item-name">Live Secret Key</div>
+                    </div>
+                    <div className="v-item-val">••••••••••••••••</div>
+                    {mockCopied && (
+                      <div className="v-copy-tag">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12" /></svg>
+                        COPIED
+                      </div>
+                    )}
+                  </div>
+                  <div className={`v-item ${!mockActive && mockSearch.length > 0 ? 'filtered' : ''}`}>
+                    <div className="v-item-dot" style={{ background: 'var(--green)' }}></div>
+                    <div className="v-item-info">
+                      <div className="v-item-service">OPENAI</div>
+                      <div className="v-item-name">Project Key</div>
+                    </div>
+                    <div className="v-item-val">••••••••••••••••</div>
+                  </div>
+                </div>
+                <div className="v-status-bar">
+                  <div className="v-status-dot"></div>
+                  <span>Vault Decrypted</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -558,6 +645,38 @@ export const AuthPage: React.FC = () => {
                 <h3 className="beyond-title">2FA Authenticator</h3>
                 <p className="beyond-desc">
                   Move your second factors out of siloed apps. Zero-knowledge sync for all your authenticator codes with seamless QR drag-and-drop and real-time countdowns.
+                </p>
+              </div>
+            </div>
+            <div className="beyond-item">
+              <div className="beyond-visual">
+                <div className="cert-mockup">
+                  <div className="cert-header">
+                    <div className="cert-icon-mini">📜</div>
+                    <div>
+                      <div className="cert-domain">*.scync.dev</div>
+                      <div className="cert-issuer">by Let's Encrypt</div>
+                    </div>
+                  </div>
+                  <div className="cert-meta">
+                    <div className="cert-tag">Valid</div>
+                    <div className="cert-tag">RSA 2048</div>
+                  </div>
+                  <div className="cert-expiry">
+                    <div className="cert-expiry-bar">
+                      <div className="cert-expiry-fill"></div>
+                    </div>
+                    <div style={{ fontSize: '9px', color: 'var(--t3)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>MAY 2024</span>
+                      <span>MAY 2025</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="beyond-text">
+                <h3 className="beyond-title">Certificate Manager</h3>
+                <p className="beyond-desc">
+                  Zero-knowledge storage for your PEM/CRT/KEY files. Client-side parsing extracts metadata and tracks expiry dates so you never have a production outage again.
                 </p>
               </div>
             </div>

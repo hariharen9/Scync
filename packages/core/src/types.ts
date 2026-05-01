@@ -163,6 +163,41 @@ export interface DecryptedTOTP extends Omit<StoredTOTP, 'encSecret'> {
   secret: string;
 }
 
+// SSL/TLS Certificate Manager
+export interface CertificateInfo {
+  subject: string;
+  issuer: string;
+  serialNumber: string;
+  validFrom: Date;
+  validTo: Date;
+  isSelfSigned: boolean;
+  fingerprint: string;
+  hosts: string[];
+}
+
+export interface StoredCertificate {
+  id: string;
+  name: string;
+  encCertPem: EncryptedField;
+  encKeyPem: EncryptedField | null;
+  // Parsed metadata (plaintext for dashboard/filtering)
+  subject: string;
+  issuer: string;
+  serialNumber: string;
+  validFrom: Date;
+  validTo: Date;
+  isSelfSigned: boolean;
+  fingerprint: string;
+  hosts: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DecryptedCertificate extends Omit<StoredCertificate, 'encCertPem' | 'encKeyPem'> {
+  certPem: string;
+  keyPem: string | null;
+}
+
 // Zero-Knowledge Secret Sharing
 export interface ShareDocument {
   id: string;

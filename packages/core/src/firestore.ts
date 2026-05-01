@@ -6,7 +6,8 @@ import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
-  Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP
+  Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP,
+  StoredCertificate
 } from './types';
 
 // Vault Meta
@@ -50,7 +51,8 @@ export async function changeVaultPassword(
   newVerifier: EncryptedField,
   secrets: StoredSecret[],
   sshKeys: StoredSSHKey[] = [],
-  totpTokens: StoredTOTP[] = []
+  totpTokens: StoredTOTP[] = [],
+  certificates: StoredCertificate[] = []
 ): Promise<void> {
   const batch = writeBatch(db);
 
@@ -103,7 +105,23 @@ export async function changeVaultPassword(
     });
   }
 
-  // 5. Commit the batch atomic operation
+  // 5. Re-encrypt all certificates
+  for (const cert of certificates) {
+    const certRef = doc(db, "users", uid, "certificates", cert.id);
+    const certPemPlaintext = await decrypt(oldKey, cert.encCertPem);
+    const newEncCertPem = await encrypt(newKey, certPemPlaintext);
+    const updates: Record<string, any> = {
+      encCertPem: newEncCertPem,
+      updatedAt: serverTimestamp()
+    };
+    if (cert.encKeyPem) {
+      const keyPemPlaintext = await decrypt(oldKey, cert.encKeyPem);
+      updates.encKeyPem = await encrypt(newKey, keyPemPlaintext);
+    }
+    batch.update(certRef, updates);
+  }
+
+  // 6. Commit the batch atomic operation
   await batch.commit();
 }
 
@@ -208,6 +226,67 @@ export function subscribeToTOTPs(uid: string, onUpdate: (tokens: StoredTOTP[]) =
       });
     });
     onUpdate(tokens);
+  });
+}
+
+// SSL/TLS Certificates
+export async function createCertificate(
+  uid: string,
+  key: CryptoKey,
+  data: Omit<StoredCertificate, 'id' | 'createdAt' | 'updatedAt' | 'encCertPem' | 'encKeyPem'> & { certPem: string; keyPem: string | null }
+): Promise<void> {
+  const certsRef = collection(db, "users", uid, "certificates");
+  const newRef = doc(certsRef);
+
+  const encCertPem = await encrypt(key, data.certPem);
+  const encKeyPem = data.keyPem ? await encrypt(key, data.keyPem) : null;
+
+  await setDoc(newRef, {
+    id: newRef.id,
+    name: data.name,
+    encCertPem,
+    encKeyPem,
+    subject: data.subject,
+    issuer: data.issuer,
+    serialNumber: data.serialNumber,
+    validFrom: data.validFrom,
+    validTo: data.validTo,
+    isSelfSigned: data.isSelfSigned,
+    fingerprint: data.fingerprint,
+    hosts: data.hosts,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deleteCertificate(uid: string, certId: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "certificates", certId));
+}
+
+export function subscribeToCertificates(uid: string, onUpdate: (certs: StoredCertificate[]) => void) {
+  const q = collection(db, "users", uid, "certificates");
+  return onSnapshot(q, (snapshot) => {
+    const certs: StoredCertificate[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      certs.push({
+        id: data.id || doc.id,
+        name: data.name,
+        encCertPem: data.encCertPem,
+        encKeyPem: data.encKeyPem || null,
+        subject: data.subject,
+        issuer: data.issuer,
+        serialNumber: data.serialNumber,
+        validFrom: data.validFrom?.toDate() || new Date(),
+        validTo: data.validTo?.toDate() || new Date(),
+        isSelfSigned: data.isSelfSigned || false,
+        fingerprint: data.fingerprint || '',
+        hosts: data.hosts || [],
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      });
+    });
+    onUpdate(certs);
   });
 }
 
@@ -449,6 +528,10 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   // 5. Delete all TOTP tokens
   const totpSnap = await getDocs(collection(db, "users", uid, "totp_tokens"));
   totpSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 6. Delete all certificates
+  const certsSnap = await getDocs(collection(db, "users", uid, "certificates"));
+  certsSnap.forEach(doc => batch.delete(doc.ref));
 
   // 5. Delete vault meta
   const metaRef = doc(db, "users", uid, "meta", "vault");

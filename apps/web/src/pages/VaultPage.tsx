@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
-         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal } from '@scync/ui';
+         Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, AddServiceModal, AboutModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal, CertificateDashboard, CertificateModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -25,9 +25,10 @@ export const VaultPage: React.FC = () => {
     const unsubSecrets = subscribeToSecrets(user.uid);
     const unsubSSHKeys = subscribeToSSHKeys(user.uid);
     const unsubTOTPs = useVaultStore.getState().subscribeToTOTPs(user.uid);
+    const unsubCerts = useVaultStore.getState().subscribeToCertificates(user.uid);
     const unsubProjects = subscribeToProjects(user.uid);
     const unsubServices = useServiceStore.getState().subscribeToServices(user.uid);
-    return () => { unsubSecrets(); unsubSSHKeys(); unsubTOTPs(); unsubProjects(); unsubServices(); };
+    return () => { unsubSecrets(); unsubSSHKeys(); unsubTOTPs(); unsubCerts(); unsubProjects(); unsubServices(); };
   }, [user, subscribeToSecrets, subscribeToSSHKeys, subscribeToProjects]);
 
   return (
@@ -179,7 +180,7 @@ export const VaultPage: React.FC = () => {
               overflowY: 'auto',
             }}
           >
-            {activeView === 'dashboard' ? <Dashboard /> : activeView === 'ssh' ? <SSHManagerDashboard /> : activeView === 'totp' ? <TOTPDashboard /> : <SecretList />}
+            {activeView === 'dashboard' ? <Dashboard /> : activeView === 'ssh' ? <SSHManagerDashboard /> : activeView === 'totp' ? <TOTPDashboard /> : activeView === 'certs' ? <CertificateDashboard /> : <SecretList />}
           </div>
 
           {/* Detail panel */}
@@ -294,6 +295,7 @@ export const VaultPage: React.FC = () => {
       <SettingsModal />
       <SSHKeyModal />
       <TOTPAddModal />
+      <CertificateModal />
     </div>
   );
 };
