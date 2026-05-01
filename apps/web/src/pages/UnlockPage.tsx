@@ -5,7 +5,7 @@ import './UnlockPage.css';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
-  const { unlock, vaultMeta, unlockWithBiometrics, verifyPassword, verifyBiometrics, setDerivedKey } = useVaultStore();
+  const { vaultMeta, verifyPassword, verifyBiometrics, setDerivedKey } = useVaultStore();
   const { openConfirmModal } = useUIStore();
 
   const [password, setPassword] = useState('');
