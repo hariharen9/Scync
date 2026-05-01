@@ -242,6 +242,37 @@
   position: relative;
 }
 
+.scync-landing .notion-morph {
+  display: inline-block;
+  position: relative;
+  min-width: 2.5em;
+  text-align: left;
+  transition: color 300ms ease;
+}
+
+.scync-landing .notion-morph.striking {
+  color: var(--t3);
+}
+
+.scync-landing .notion-morph::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 55%;
+  height: 3px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 350ms cubic-bezier(0.76, 0, 0.24, 1);
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+.scync-landing .notion-morph.striking::after {
+  transform: scaleX(1);
+}
+
 /* Cursor blink on last word */
 .scync-landing .hero-h1 .cursor {
   display: inline-block;

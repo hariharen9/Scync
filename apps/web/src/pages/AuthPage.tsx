@@ -19,7 +19,8 @@ const marqueeItems = [
   'Firebase-Backed', 'Free Forever',
 ];
 
-const words = ['API keys', 'secrets', '2FA codes', 'SSH keys', 'tokens', 'credentials', 'OAuth secrets'];
+const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys', 'tokens', 'credentials', 'OAuth secrets'];
+const badPlaces = ['Notion', 'Notes', 'Slack DMs', 'Screenshots', '.env files', 'Discord', 'Email', 'text files'];
 
 export const AuthPage: React.FC = () => {
   const { signIn } = useAuthStore();
@@ -28,6 +29,7 @@ export const AuthPage: React.FC = () => {
   const wordRef = useRef<HTMLSpanElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const heroGridRef = useRef<HTMLDivElement>(null);
+  const placeRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const h = (e: MouseEvent) => { if (cursorGlowRef.current) { cursorGlowRef.current.style.left = e.clientX + 'px'; cursorGlowRef.current.style.top = e.clientY + 'px'; } };
@@ -70,6 +72,29 @@ export const AuthPage: React.FC = () => {
     let idx = 0;
     const iv = setInterval(() => { idx = (idx + 1) % words.length; const el = wordRef.current; if (!el) return; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; el.style.transition = 'opacity 250ms ease, transform 250ms ease'; setTimeout(() => { if (!el) return; el.innerHTML = words[idx] + '<span class="cursor"></span>'; el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 280); }, 2800);
     return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
+    let idx = 0;
+    const interval = setInterval(() => {
+      const el = placeRef.current;
+      if (!el) return;
+
+      // Start strike animation
+      el.classList.add('striking');
+
+      setTimeout(() => {
+        if (!el) return;
+        idx = (idx + 1) % badPlaces.length;
+        el.textContent = badPlaces[idx];
+
+        // Short delay while struck, then release
+        setTimeout(() => {
+          if (el) el.classList.remove('striking');
+        }, 200);
+      }, 350);
+    }, 3800);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -142,7 +167,7 @@ export const AuthPage: React.FC = () => {
         <h1 className="hero-h1">
           Stop pasting
           <span className="line-green" ref={wordRef}>API keys<span className="cursor"></span></span>
-          into Notion.
+          into <span className="notion-morph" ref={placeRef}>Notion</span>.
         </h1>
 
         <p className="hero-sub">
@@ -632,7 +657,7 @@ export const AuthPage: React.FC = () => {
               <p className="section-sub reveal reveal-delay-2">
                 Scync isn't just a website. It's a high-performance <strong>Progressive Web App</strong> engineered to bridge the gap between web freedom and native power. No App Store gatekeepers, no 200MB binaries—just pure, encrypted performance.
               </p>
-              
+
               <div className="pwa-stats-grid reveal reveal-delay-2">
                 <div className="pwa-stat-box">
                   <span className="pwa-stat-val">0<small>MB</small></span>
