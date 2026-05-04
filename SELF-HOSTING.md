@@ -859,7 +859,7 @@ Edit the following files to customize branding:
 ### Professional Support
 
 For enterprise deployments or custom development:
-- Contact: support@scync.app (if available)
+- Contact: support@scync.space (if available)
 - Or hire a developer familiar with React + Firebase
 
 ---

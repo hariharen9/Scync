@@ -12,22 +12,22 @@ const App: React.FC = () => {
 
   // Check if this is a share consumption page
   const isSharePage = window.location.pathname.startsWith('/share/');
-  
+
   // Handle hash fragment loading
   React.useEffect(() => {
     if (isSharePage) {
       const pathParts = window.location.pathname.split('/');
       const shareId = pathParts[2];
       const keyFragment = window.location.hash.slice(1);
-      
-      console.log('[Scync] Share page detected:', { shareId, keyFragment: keyFragment ? keyFragment.substring(0, 10) + '...' : 'MISSING', fullHash: window.location.hash });
-      
+
+      // console.log('[Scync] Share page detected:', { shareId, keyFragment: keyFragment ? keyFragment.substring(0, 10) + '...' : 'MISSING', fullHash: window.location.hash });
+
       if (shareId && keyFragment) {
         setSharePageData({ shareId, keyFragment });
       }
     }
   }, [isSharePage]);
-  
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -61,7 +61,7 @@ const App: React.FC = () => {
   if (isSharePage) {
     const pathParts = window.location.pathname.split('/');
     const shareId = pathParts[2];
-    
+
     if (!shareId) {
       return (
         <ErrorBoundary>
@@ -85,7 +85,7 @@ const App: React.FC = () => {
         </ErrorBoundary>
       );
     }
-    
+
     if (!sharePageData) {
       return (
         <ErrorBoundary>
@@ -117,7 +117,7 @@ const App: React.FC = () => {
         </ErrorBoundary>
       );
     }
-    
+
     return (
       <ErrorBoundary>
         <ShareConsumePage shareId={sharePageData.shareId} keyFragment={sharePageData.keyFragment} />
@@ -130,8 +130,8 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <ReactLenis root>
         <AuthGuard fallback={<AuthPage />}>
-          <VaultGuard 
-            setupFallback={<SetupPage />} 
+          <VaultGuard
+            setupFallback={<SetupPage />}
             unlockFallback={<UnlockPage />}
           >
             <VaultPage />

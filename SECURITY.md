@@ -49,7 +49,7 @@ We take the security of Scync extremely seriously. If you believe you've found a
 
 **Please do not open a public GitHub Issue for security vulnerabilities.**
 
-Instead, please send an email to **security@scync.app** (or the project maintainer). 
+Instead, please send an email to **security@scync.space** (or the project maintainer). 
 
 ### What to include:
 - A detailed description of the vulnerability.

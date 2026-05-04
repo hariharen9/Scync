@@ -201,7 +201,7 @@ If you are a California resident, you have the right to:
 
 If you have questions about this Privacy Policy or our privacy practices:
 
-**Email:** privacy@scync.app (or open an issue on GitHub)  
+**Email:** privacy@scync.space (or open an issue on GitHub)  
 **GitHub:** https://github.com/hariharen9/Scync  
 **Response Time:** We aim to respond within 7 business days
 
@@ -211,7 +211,7 @@ Scync is open source (MIT License). You can review our entire codebase, includin
 
 **GitHub Repository:** https://github.com/hariharen9/Scync
 
-We encourage security researchers and privacy advocates to audit our code. If you discover a security vulnerability, please report it responsibly to security@scync.app.
+We encourage security researchers and privacy advocates to audit our code. If you discover a security vulnerability, please report it responsibly to security@scync.space.
 
 ---
 
@@ -224,7 +224,7 @@ We encourage security researchers and privacy advocates to audit our code. If yo
 ✅ **We don't sell your data** — we're open source and free  
 ✅ **You can self-host** — full control over your data  
 
-**Questions?** Read the full policy above or contact us at privacy@scync.app.
+**Questions?** Read the full policy above or contact us at privacy@scync.space.
 
 ---
 

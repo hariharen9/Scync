@@ -593,7 +593,7 @@ export async function createShare(uid: string, config: ShareConfig): Promise<str
   const keyFragment = await exportShareKey(shareKey);
   
   // Construct the full URL
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scync.app';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://scync.space';
   return `${baseUrl}/share/${shareRef.id}#${keyFragment}`;
 }
 

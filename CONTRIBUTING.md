@@ -12,7 +12,7 @@ First off, thank you for considering contributing to Scync! It's people like you
 ### Setup
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/Scync.git
+   git clone https://github.com/hariharen9/Scync.git
    cd Scync
    ```
 
@@ -68,7 +68,7 @@ pnpm test
 ```
 
 ## 🤝 Community
-If you have questions or want to discuss a feature, please open a [GitHub Discussion](https://github.com/your-username/Scync/discussions).
+If you have questions or want to discuss a feature, please open a [GitHub Discussion](https://github.com/hariharen9/Scync/discussions).
 
 ## 📜 License
 By contributing to Scync, you agree that your contributions will be licensed under its [MIT License](LICENSE).
