@@ -1,120 +1,190 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Primary Meta Tags -->
-    <title>Scync — Zero-Knowledge Secrets Manager for Developers</title>
-    <meta name="title" content="Scync — Zero-Knowledge Secrets Manager for Developers" />
-    <meta name="description" content="The open-source, zero-knowledge secrets manager built for developers. Store API keys, recovery codes, and environment variables securely with client-side encryption." />
-    <meta name="keywords" content="secrets manager, api keys, environment variables, zero knowledge, encryption, developer tools, open source, vault, credentials" />
-    <meta name="author" content="Scync Team" />
-    <meta name="theme-color" content="#060606" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://scync.space/" />
-    <meta property="og:title" content="Scync — Your Secrets. Synced. Encrypted. Everywhere." />
-    <meta property="og:description" content="The zero-knowledge secrets manager built for developers who are tired of pasting API keys into Notion. Architecturally impossible for the server to see your data." />
-    <meta property="og:image" content="/og-2.png" />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://scync.space/" />
-    <meta property="twitter:title" content="Scync — Your Secrets. Synced. Encrypted." />
-    <meta property="twitter:description" content="Zero-knowledge secrets manager for developers. Client-side encryption with Web Crypto API." />
-    <meta property="twitter:image" content="/og-2.png" />
+  <!-- Primary Meta Tags -->
+  <title>Scync — Zero-Knowledge Secrets Manager for Developers</title>
+  <meta name="title" content="Scync — Zero-Knowledge Secrets Manager for Developers" />
+  <meta name="description"
+    content="The open-source, zero-knowledge secrets manager built for developers. Store API keys, recovery codes, and environment variables securely with client-side encryption." />
+  <meta name="keywords"
+    content="secrets manager, api keys, environment variables, zero knowledge, encryption, developer tools, open source, vault, credentials" />
+  <meta name="author" content="Scync Team" />
+  <meta name="theme-color" content="#060606" />
 
-    <!-- Canonical -->
-    <link rel="canonical" href="https://scync.space/" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://scync.space/" />
+  <meta property="og:title" content="Scync — Your Secrets. Synced. Encrypted. Everywhere." />
+  <meta property="og:description"
+    content="The zero-knowledge secrets manager built for developers who are tired of pasting API keys into Notion. Architecturally impossible for the server to see your data." />
+  <meta property="og:image" content="/og-2.png" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
-  </head>
-  <body style="background-color: #060606; color: white; margin: 0; font-family: sans-serif; overflow: hidden;">
-    <div id="root">
-      <div id="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #060606;">
-        <style>
-          .brutalist-spinner {
-            width: 48px;
-            height: 48px;
-            border: 2px solid #222;
-            border-top-color: #fff;
-            animation: b-spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
-            margin-bottom: 32px;
-          }
-          @keyframes b-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          .b-text {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: -0.02em;
-            color: #fff;
-            margin: 0;
-            line-height: 1;
-          }
-          .b-sub {
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            color: #666;
-            margin-top: 12px;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-          }
-          .b-blink {
-            animation: b-blink 1s step-end infinite;
-          }
-          @keyframes b-blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-          }
-          #error-display {
-            color: #ef4444; 
-            max-width: 80%; 
-            text-align: center; 
-            font-family: 'DM Mono', monospace; 
-            font-size: 12px; 
-            white-space: pre-wrap; 
-            margin-top: 32px; 
-            border: 1px solid rgba(239, 68, 68, 0.2); 
-            padding: 16px; 
-            background: rgba(239, 68, 68, 0.05); 
-            display: none;
-          }
-        </style>
-        <div class="brutalist-spinner"></div>
-        <h1 class="b-text">SCYNC</h1>
-        <div class="b-sub">Establishing Zero-Knowledge Void<span class="b-blink">_</span></div>
-        <div id="error-display"></div>
-      </div>
-    </div>
-    
-    <script>
-      // Global error handler to help debug production issues
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-        const display = document.getElementById('error-display');
-        if (display) {
-          display.style.display = 'block';
-          display.innerText = 'Error: ' + msg + '\nAt: ' + url + ':' + lineNo + ':' + columnNo + (error ? '\nStack: ' + error.stack : '');
-        }
-        return false;
-      };
-      
-      window.addEventListener('unhandledrejection', function(event) {
-        const display = document.getElementById('error-display');
-        if (display) {
-          display.style.display = 'block';
-          display.innerText = 'Promise Rejection: ' + event.reason + (event.reason && event.reason.stack ? '\nStack: ' + event.reason.stack : '');
-        }
-      });
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://scync.space/" />
+  <meta property="twitter:title" content="Scync — Your Secrets. Synced. Encrypted." />
+  <meta property="twitter:description"
+    content="Zero-knowledge secrets manager for developers. Client-side encryption with Web Crypto API." />
+  <meta property="twitter:image" content="/og-2.png" />
+
+  <!-- Canonical and Sitemap -->
+  <link rel="canonical" href="https://scync.space/" />
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Scync",
+      "operatingSystem": "Web, Windows, macOS, Linux, iOS, Android",
+      "applicationCategory": "DeveloperApplication, SecurityApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Zero-knowledge secrets manager built for developers. Store API keys, tokens, and environments variables with complete end-to-end encryption.",
+      "url": "https://scync.space",
+      "softwareVersion": "1.0",
+      "author": {
+        "@type": "Person",
+        "name": "Hariharen",
+        "url": "https://hariharen.site",
+        "sameAs": [
+          "https://github.com/hariharen9",
+          "https://www.linkedin.com/in/hariharen9"
+        ]
+      }
+    }
     </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Scync — Zero-Knowledge Secrets Manager",
+      "url": "https://scync.space/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://scync.space/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body style="background-color: #060606; color: white; margin: 0; font-family: sans-serif; overflow: hidden;">
+  <div id="root">
+    <div id="loading-state"
+      style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #060606;">
+      <style>
+        .brutalist-spinner {
+          width: 48px;
+          height: 48px;
+          border: 2px solid #222;
+          border-top-color: #fff;
+          animation: b-spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
+          margin-bottom: 32px;
+        }
+
+        @keyframes b-spin {
+          0% {
+            transform: rotate(0deg);
+          }
+
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        .b-text {
+          font-family: 'Syne', sans-serif;
+          font-size: 28px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: -0.02em;
+          color: #fff;
+          margin: 0;
+          line-height: 1;
+        }
+
+        .b-sub {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          color: #666;
+          margin-top: 12px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+
+        .b-blink {
+          animation: b-blink 1s step-end infinite;
+        }
+
+        @keyframes b-blink {
+
+          0%,
+          100% {
+            opacity: 1;
+          }
+
+          50% {
+            opacity: 0;
+          }
+        }
+
+        #error-display {
+          color: #ef4444;
+          max-width: 80%;
+          text-align: center;
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+          margin-top: 32px;
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.05);
+          display: none;
+        }
+      </style>
+      <div class="brutalist-spinner"></div>
+      <h1 class="b-text">SCYNC</h1>
+      <div class="b-sub">Establishing Zero-Knowledge Void<span class="b-blink">_</span></div>
+      <div id="error-display"></div>
+    </div>
+  </div>
+
+  <script>
+    // Global error handler to help debug production issues
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      const display = document.getElementById('error-display');
+      if (display) {
+        display.style.display = 'block';
+        display.innerText = 'Error: ' + msg + '\nAt: ' + url + ':' + lineNo + ':' + columnNo + (error ? '\nStack: ' + error.stack : '');
+      }
+      return false;
+    };
+
+    window.addEventListener('unhandledrejection', function (event) {
+      const display = document.getElementById('error-display');
+      if (display) {
+        display.style.display = 'block';
+        display.innerText = 'Promise Rejection: ' + event.reason + (event.reason && event.reason.stack ? '\nStack: ' + event.reason.stack : '');
+      }
+    });
+  </script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

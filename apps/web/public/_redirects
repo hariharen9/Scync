@@ -24,6 +24,8 @@
 /*.ttf                 /:splat.ttf            200
 /*.eot                 /:splat.eot            200
 /*.webp                /:splat.webp           200
+/*.txt                 /:splat.txt            200
+/*.xml                 /:splat.xml            200
 
 # SPA fallback - MUST BE LAST
 /*                     /index.html            200
