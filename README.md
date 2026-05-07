@@ -14,6 +14,8 @@
 [![Platforms: Web · Desktop · PWA](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20PWA-blue.svg)]()
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-red.svg)]()
 [![Zero Knowledge](https://img.shields.io/badge/Architecture-Zero--Knowledge-purple.svg)]()
+<a href="https://www.producthunt.com/products/scync/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-scync" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1219152&theme=light" alt="Scync - Your&#0032;secrets&#0046;&#0032;Synced&#0046;&#0032;Encrypted&#0046;&#0032;Everywhere&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 
 </div>
 
