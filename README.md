@@ -9,17 +9,45 @@
 
 **The open-source, zero-knowledge secrets manager built for developers who are tired of pasting API keys into Notion.**
 
+<div align="center">
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status: Initial Release](https://img.shields.io/badge/Status-Initial%20Release-blue.svg)]()
 [![Platforms: Web · Desktop · PWA](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20PWA-blue.svg)]()
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-red.svg)]()
 [![Zero Knowledge](https://img.shields.io/badge/Architecture-Zero--Knowledge-purple.svg)]()
-<a href="https://www.producthunt.com/products/scync/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-scync" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1219152&theme=light" alt="Scync - Your&#0032;secrets&#0046;&#0032;Synced&#0046;&#0032;Encrypted&#0046;&#0032;Everywhere&#0046; | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
+<table>
+<tr>
+<td align="center">
 
+<a href="https://www.producthunt.com/products/scync/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-scync" target="_blank">
+  <img 
+    src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1219152&theme=light" 
+    alt="Scync | Product Hunt" 
+    width="250" 
+    height="54"
+  />
+</a>
+
+</td>
+
+<td align="center">
+
+<a href="https://peerlist.io/hariharen/project/scync" target="_blank" rel="noreferrer">
+				<img
+					src="https://peerlist.io/api/v1/projects/embed/PRJHMQ6DNPLOGN6LBIJM8D8LBR7KEB?showUpvote=true&theme=light"
+					alt="Scync"
+					style="width: auto; height: 72px;"
+				/>
+			</a>
+
+</td>
+</tr>
+</table>
 </div>
 
----
+</div>
 
 ## The Problem
 
@@ -268,6 +296,8 @@ MIT — see [LICENSE](./LICENSE) for details.
 Scync is and will remain free. There is no paid tier. There is no enterprise plan. There is no "features behind a paywall someday." The spec says so, and the spec is the law.
 
 ---
+# <img width="1200" height="630" alt="Scync (1)" src="https://github.com/user-attachments/assets/44407456-ad61-498c-a8ce-6f8868e7ba4d" />
+
 
 <div align="center">
 
