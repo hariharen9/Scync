@@ -240,3 +240,30 @@ export interface DecryptedShare {
   viewsRemaining: number | null;
   expiresAt: Date;
 }
+
+// Passwords
+export interface StoredPassword {
+  id: string;
+  name: string;
+  username: string;
+  encPassword: EncryptedField;
+  url: string;
+  encNotes: EncryptedField | null;
+  category: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DecryptedPassword extends Omit<StoredPassword, 'encPassword' | 'encNotes'> {
+  password: string;
+  notes: string;
+}
+
+export interface PasswordFormData {
+  name: string;
+  username: string;
+  password: string;
+  url: string;
+  notes: string;
+  category: string;
+}

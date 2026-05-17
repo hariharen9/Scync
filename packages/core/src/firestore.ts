@@ -7,7 +7,7 @@ import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
   Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP,
-  StoredCertificate
+  StoredCertificate, StoredPassword, DecryptedPassword, PasswordFormData
 } from './types';
 
 // Vault Meta
@@ -52,7 +52,8 @@ export async function changeVaultPassword(
   secrets: StoredSecret[],
   sshKeys: StoredSSHKey[] = [],
   totpTokens: StoredTOTP[] = [],
-  certificates: StoredCertificate[] = []
+  certificates: StoredCertificate[] = [],
+  passwords: StoredPassword[] = []
 ): Promise<void> {
   const batch = writeBatch(db);
 
@@ -119,6 +120,22 @@ export async function changeVaultPassword(
       updates.encKeyPem = await encrypt(newKey, keyPemPlaintext);
     }
     batch.update(certRef, updates);
+  }
+
+  // 6. Re-encrypt all passwords
+  for (const p of passwords) {
+    const pRef = doc(db, "users", uid, "passwords", p.id);
+    const passPlaintext = await decrypt(oldKey, p.encPassword);
+    const newEncPassword = await encrypt(newKey, passPlaintext);
+    const updates: Record<string, any> = {
+      encPassword: newEncPassword,
+      updatedAt: serverTimestamp()
+    };
+    if (p.encNotes) {
+      const notesPlaintext = await decrypt(oldKey, p.encNotes);
+      updates.encNotes = await encrypt(newKey, notesPlaintext);
+    }
+    batch.update(pRef, updates);
   }
 
   // 6. Commit the batch atomic operation
@@ -397,6 +414,100 @@ export async function decryptSecret(
   };
 }
 
+// Passwords
+export async function createPassword(
+  uid: string, 
+  key: CryptoKey, 
+  formData: PasswordFormData
+): Promise<void> {
+  const ref = collection(db, "users", uid, "passwords");
+  const newRef = doc(ref);
+  
+  const encPassword = await encrypt(key, formData.password);
+  const encNotes = formData.notes ? await encrypt(key, formData.notes) : null;
+
+  const stored: StoredPassword = {
+    id: newRef.id,
+    name: formData.name,
+    username: formData.username,
+    url: formData.url,
+    category: formData.category,
+    encPassword,
+    encNotes,
+    createdAt: new Date(), 
+    updatedAt: new Date(),
+  };
+
+  await setDoc(newRef, {
+    ...stored,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function updatePassword(
+  uid: string, 
+  key: CryptoKey, 
+  id: string, 
+  formData: PasswordFormData
+): Promise<void> {
+  const ref = doc(db, "users", uid, "passwords", id);
+  
+  const encPassword = await encrypt(key, formData.password);
+  const encNotes = formData.notes ? await encrypt(key, formData.notes) : null;
+
+  await updateDoc(ref, {
+    name: formData.name,
+    username: formData.username,
+    url: formData.url,
+    category: formData.category,
+    encPassword,
+    encNotes,
+    updatedAt: serverTimestamp()
+  });
+}
+
+export async function deletePassword(uid: string, id: string): Promise<void> {
+  const ref = doc(db, "users", uid, "passwords", id);
+  await deleteDoc(ref);
+}
+
+export function subscribeToPasswords(
+  uid: string, 
+  callback: (passwords: StoredPassword[]) => void
+): () => void {
+  const ref = collection(db, "users", uid, "passwords");
+  
+  return onSnapshot(ref, (snapshot) => {
+    const list = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as StoredPassword;
+    });
+    callback(list);
+  });
+}
+
+export async function decryptPasswordItem(
+  key: CryptoKey, 
+  stored: StoredPassword
+): Promise<DecryptedPassword> {
+  const password = await decrypt(key, stored.encPassword);
+  const notes = stored.encNotes ? await decrypt(key, stored.encNotes) : "";
+  
+  const { encPassword, encNotes, ...rest } = stored;
+  
+  return {
+    ...rest,
+    password,
+    notes
+  };
+}
+
 export async function createProject(
   uid: string, 
   data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>
@@ -533,7 +644,11 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   const certsSnap = await getDocs(collection(db, "users", uid, "certificates"));
   certsSnap.forEach(doc => batch.delete(doc.ref));
 
-  // 5. Delete vault meta
+  // 7. Delete all passwords
+  const passSnap = await getDocs(collection(db, "users", uid, "passwords"));
+  passSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 8. Delete vault meta
   const metaRef = doc(db, "users", uid, "meta", "vault");
   batch.delete(metaRef);
 
@@ -542,7 +657,7 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   // Otherwise, we would need chunking.
   await batch.commit();
 
-  // 5. Delete main user document (cannot be in the same batch if it causes issues, but usually fine.
+  // 9. Delete main user document (cannot be in the same batch if it causes issues, but usually fine.
   // Actually, let's delete it directly after the batch to be safe).
   await deleteDoc(doc(db, "users", uid));
 }

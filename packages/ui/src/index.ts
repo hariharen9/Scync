@@ -45,3 +45,8 @@ export { ShareConsumePage } from './components/ShareConsumePage';
 // SSL/TLS Certificate Manager
 export { CertificateDashboard } from './components/CertificateDashboard';
 export { CertificateModal } from './components/CertificateModal';
+
+// Passwords
+export { PasswordDashboard } from './components/PasswordDashboard';
+export { PasswordModal } from './components/PasswordModal';
+export { PasswordImportModal } from './components/PasswordImportModal';

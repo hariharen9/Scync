@@ -8,3 +8,4 @@ export * from './webauthn';
 export * from './ssh';
 export * from './totp';
 export * from './certificates';
+export * from './passwordImport';

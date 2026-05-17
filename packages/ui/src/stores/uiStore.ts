@@ -31,7 +31,7 @@ const getStoredSettings = (): SettingsConfig => {
 
 export interface UIState {
   // Navigation
-  activeView: 'dashboard' | 'project' | 'all' | 'ssh' | 'totp' | 'certs';
+  activeView: 'dashboard' | 'project' | 'all' | 'ssh' | 'totp' | 'certs' | 'passwords';
   setActiveView: (view: UIState['activeView']) => void;
 
   // View state
@@ -44,6 +44,8 @@ export interface UIState {
   isAddSSHModalOpen: boolean;
   isAddTOTPModalOpen: boolean;
   isAddCertModalOpen: boolean;
+  isAddPasswordModalOpen: boolean;
+  isPasswordImportModalOpen: boolean;
   isAboutModalOpen: boolean;
   isSettingsModalOpen: boolean;
   isCommandBarOpen: boolean;
@@ -73,6 +75,10 @@ export interface UIState {
   closeAddTOTPModal: () => void;
   openAddCertModal: () => void;
   closeAddCertModal: () => void;
+  openAddPasswordModal: () => void;
+  closeAddPasswordModal: () => void;
+  openPasswordImportModal: () => void;
+  closePasswordImportModal: () => void;
   openAboutModal: () => void;
   closeAboutModal: () => void;
   openSettingsModal: () => void;
@@ -115,6 +121,8 @@ export const useUIStore = create<UIState>((set) => ({
   isAddSSHModalOpen: false,
   isAddTOTPModalOpen: false,
   isAddCertModalOpen: false,
+  isAddPasswordModalOpen: false,
+  isPasswordImportModalOpen: false,
   isAboutModalOpen: false,
   isSettingsModalOpen: false,
   isCommandBarOpen: false,
@@ -144,6 +152,10 @@ export const useUIStore = create<UIState>((set) => ({
   closeAddTOTPModal: () => set({ isAddTOTPModalOpen: false }),
   openAddCertModal: () => set({ isAddCertModalOpen: true }),
   closeAddCertModal: () => set({ isAddCertModalOpen: false }),
+  openAddPasswordModal: () => set({ isAddPasswordModalOpen: true }),
+  closeAddPasswordModal: () => set({ isAddPasswordModalOpen: false }),
+  openPasswordImportModal: () => set({ isPasswordImportModalOpen: true }),
+  closePasswordImportModal: () => set({ isPasswordImportModalOpen: false }),
   openAboutModal: () => set({ isAboutModalOpen: true }),
   closeAboutModal: () => set({ isAboutModalOpen: false }),
   openSettingsModal: () => set({ isSettingsModalOpen: true, isMobileMenuOpen: false }),
