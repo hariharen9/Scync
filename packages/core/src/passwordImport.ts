@@ -134,3 +134,101 @@ function parseCsvRow(text: string): string[] {
   result.push(current);
   return result;
 }
+
+export function parse1PasswordCsv(csvText: string): ImportedPassword[] {
+  const lines = splitCsvLines(csvText);
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvRow(lines[0]).map(h => h.toLowerCase().trim());
+  const titleIdx = headers.findIndex(h => h.includes('title') || h === 'name');
+  const urlIdx = headers.findIndex(h => h.includes('website') || h.includes('url'));
+  const userIdx = headers.findIndex(h => h.includes('username'));
+  const passIdx = headers.findIndex(h => h.includes('password'));
+  const noteIdx = headers.findIndex(h => h.includes('notes'));
+
+  if (titleIdx === -1 || passIdx === -1) {
+    throw new Error('Invalid 1Password CSV format');
+  }
+
+  const results: ImportedPassword[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = parseCsvRow(lines[i]);
+    const password = row[passIdx] || '';
+    if (!password) continue;
+
+    results.push({
+      name: row[titleIdx] || 'Unnamed',
+      url: urlIdx !== -1 ? row[urlIdx] : '',
+      username: userIdx !== -1 ? row[userIdx] : '',
+      password,
+      notes: noteIdx !== -1 ? row[noteIdx] : '',
+    });
+  }
+  return results;
+}
+
+export function parseAppleKeychainCsv(csvText: string): ImportedPassword[] {
+  const lines = splitCsvLines(csvText);
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvRow(lines[0]).map(h => h.toLowerCase().trim());
+  const titleIdx = headers.findIndex(h => h.includes('title') || h.includes('name'));
+  const urlIdx = headers.findIndex(h => h.includes('url') || h.includes('website'));
+  const userIdx = headers.findIndex(h => h.includes('username'));
+  const passIdx = headers.findIndex(h => h.includes('password'));
+  const noteIdx = headers.findIndex(h => h.includes('notes'));
+
+  if (titleIdx === -1 || passIdx === -1) {
+    throw new Error('Invalid Apple Keychain CSV format');
+  }
+
+  const results: ImportedPassword[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = parseCsvRow(lines[i]);
+    const password = row[passIdx] || '';
+    if (!password) continue;
+
+    results.push({
+      name: row[titleIdx] || 'Unnamed',
+      url: urlIdx !== -1 ? row[urlIdx] : '',
+      username: userIdx !== -1 ? row[userIdx] : '',
+      password,
+      notes: noteIdx !== -1 ? row[noteIdx] : '',
+    });
+  }
+  return results;
+}
+
+export function parseLastPassCsv(csvText: string): ImportedPassword[] {
+  const lines = splitCsvLines(csvText);
+  if (lines.length < 2) return [];
+
+  const headers = parseCsvRow(lines[0]).map(h => h.toLowerCase().trim());
+  const nameIdx = headers.findIndex(h => h === 'name');
+  const urlIdx = headers.findIndex(h => h === 'url');
+  const userIdx = headers.findIndex(h => h === 'username');
+  const passIdx = headers.findIndex(h => h === 'password');
+  const noteIdx = headers.findIndex(h => h === 'extra');
+  const groupIdx = headers.findIndex(h => h === 'grouping');
+
+  if (nameIdx === -1 || passIdx === -1) {
+    throw new Error('Invalid LastPass CSV format');
+  }
+
+  const results: ImportedPassword[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const row = parseCsvRow(lines[i]);
+    const password = row[passIdx] || '';
+    if (!password) continue;
+
+    results.push({
+      name: row[nameIdx] || 'Unnamed',
+      url: urlIdx !== -1 ? row[urlIdx] : '',
+      username: userIdx !== -1 ? row[userIdx] : '',
+      password,
+      notes: noteIdx !== -1 ? row[noteIdx] : '',
+      category: groupIdx !== -1 ? row[groupIdx] : undefined,
+    });
+  }
+  return results;
+}

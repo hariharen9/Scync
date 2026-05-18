@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { FiX, FiDownload, FiCheckCircle, FiAlertCircle, FiUploadCloud } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
-import { SiBitwarden } from 'react-icons/si';
+import { SiBitwarden, Si1Password, SiApple, SiLastpass } from 'react-icons/si';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
-import { parseGooglePasswordsCsv, parseBitwardenCsv, type ImportedPassword } from '@scync/core';
+import { parseGooglePasswordsCsv, parseBitwardenCsv, parse1PasswordCsv, parseAppleKeychainCsv, parseLastPassCsv, type ImportedPassword } from '@scync/core';
 
 export const PasswordImportModal: React.FC = () => {
   const { isPasswordImportModalOpen, closePasswordImportModal } = useUIStore();
@@ -14,7 +14,7 @@ export const PasswordImportModal: React.FC = () => {
   const { createPassword } = useVaultStore();
 
   const [step, setStep] = useState<1 | 2 | 3>(1); // 1: Select type, 2: Upload, 3: Confirm
-  const [provider, setProvider] = useState<'google' | 'bitwarden' | null>(null);
+  const [provider, setProvider] = useState<'google' | 'bitwarden' | '1password' | 'apple' | 'lastpass' | null>(null);
   const [parsedData, setParsedData] = useState<ImportedPassword[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,9 @@ export const PasswordImportModal: React.FC = () => {
         let data: ImportedPassword[] = [];
         if (provider === 'google') data = parseGooglePasswordsCsv(text);
         if (provider === 'bitwarden') data = parseBitwardenCsv(text);
+        if (provider === '1password') data = parse1PasswordCsv(text);
+        if (provider === 'apple') data = parseAppleKeychainCsv(text);
+        if (provider === 'lastpass') data = parseLastPassCsv(text);
         
         if (data.length === 0) {
           setError('No passwords found or invalid file format.');
@@ -140,7 +143,7 @@ export const PasswordImportModal: React.FC = () => {
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
                     <FcGoogle size={18} />
-                    Google Password Manager (CSV)
+                    Google Password Manager
                   </button>
                   
                   <button 
@@ -150,7 +153,37 @@ export const PasswordImportModal: React.FC = () => {
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
                     <SiBitwarden size={18} color="#175DDC" />
-                    Bitwarden (CSV)
+                    Bitwarden
+                  </button>
+
+                  <button 
+                    onClick={() => { setProvider('1password'); setStep(2); }}
+                    style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  >
+                    <Si1Password size={18} color="#0052C4" />
+                    1Password
+                  </button>
+
+                  <button 
+                    onClick={() => { setProvider('apple'); setStep(2); }}
+                    style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  >
+                    <SiApple size={18} color="var(--color-text)" />
+                    Apple Keychain / Safari
+                  </button>
+
+                  <button 
+                    onClick={() => { setProvider('lastpass'); setStep(2); }}
+                    style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                  >
+                    <SiLastpass size={18} color="#D32D27" />
+                    LastPass
                   </button>
                 </div>
               )}
@@ -158,7 +191,12 @@ export const PasswordImportModal: React.FC = () => {
               {step === 2 && (
                 <div>
                   <p style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--color-text-2)', fontFamily: 'var(--font-sans)', lineHeight: 1.5 }}>
-                    Export your passwords as a CSV file from {provider === 'google' ? 'Google' : 'Bitwarden'}, then select it below.
+                    Export your passwords as a CSV file from {
+                      provider === 'google' ? 'Google' : 
+                      provider === 'bitwarden' ? 'Bitwarden' :
+                      provider === '1password' ? '1Password' :
+                      provider === 'apple' ? 'Apple' : 'LastPass'
+                    }, then select it below.
                   </p>
                   
                   <div
