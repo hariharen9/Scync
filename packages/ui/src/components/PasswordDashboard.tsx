@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
@@ -12,11 +13,20 @@ export const PasswordDashboard: React.FC = () => {
   const { openAddPasswordModal, openPasswordImportModal } = useUIStore();
   const [search, setSearch] = useState('');
   
+  const parentRef = useRef<HTMLDivElement>(null);
+
   const visiblePasswords = storedPasswords.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.username.toLowerCase().includes(search.toLowerCase()) ||
     (p.url && p.url.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const virtualizer = useVirtualizer({
+    count: visiblePasswords.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 57,
+    overscan: 10,
+  });
 
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
@@ -141,22 +151,68 @@ export const PasswordDashboard: React.FC = () => {
         </div>
       ) : (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 1,
+          display: 'flex', flexDirection: 'column', gap: 1,
           background: 'var(--color-border)',
           border: '1px solid var(--color-border)',
         }}>
-          {visiblePasswords.map(pwd => (
-            <PasswordCard key={pwd.id} password={pwd} />
-          ))}
+          {/* Header */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 80px', gap: 16,
+            padding: '10px 16px', background: 'var(--color-surface-2)',
+            fontSize: 12, fontWeight: 600, color: 'var(--color-text-2)',
+            fontFamily: 'var(--font-sans)', borderBottom: '1px solid var(--color-border)'
+          }}>
+            <div>Name</div>
+            <div>Username</div>
+            <div>Password</div>
+            <div style={{ textAlign: 'right' }}>Actions</div>
+          </div>
+          
+          {/* Virtualized List Container */}
+          <div
+            ref={parentRef}
+            style={{
+              height: 'calc(100vh - 280px)',
+              minHeight: 300,
+              overflow: 'auto',
+              background: 'var(--color-border)',
+            }}
+          >
+            <div
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const pwd = visiblePasswords[virtualItem.index];
+                return (
+                  <div
+                    key={virtualItem.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualItem.size}px`,
+                      transform: `translateY(${virtualItem.start}px)`,
+                      paddingBottom: 1, // simulates the gap
+                    }}
+                  >
+                    <PasswordListItem password={pwd} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-const PasswordCard: React.FC<{ password: StoredPassword }> = ({ password }) => {
+const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) => {
   const { user } = useAuthStore();
   const { deletePassword, decryptPassword } = useVaultStore();
   const { openConfirmModal } = useUIStore();
@@ -213,143 +269,130 @@ const PasswordCard: React.FC<{ password: StoredPassword }> = ({ password }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setMenuOpen(false); }}
       style={{
-        position: 'relative', cursor: 'default',
-        background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
-        padding: 18, display: 'flex', flexDirection: 'column', gap: 10,
-        transition: 'background 140ms',
+        display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 80px', gap: 16, alignItems: 'center',
+        padding: '12px 16px', background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
+        transition: 'background 140ms', cursor: 'default',
+        height: '100%'
       }}
     >
-      {/* Top row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0, flex: 1 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-            fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
-            color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)'
-          }}>
-            <FiLock size={10} />
-            {password.category || 'Password'}
-          </div>
-          <h3 style={{
-            fontSize: '13.5px', fontWeight: 700, color: 'var(--color-text)',
-            margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            letterSpacing: '-0.01em', fontFamily: 'var(--font-sans)'
-          }} title={password.name}>
-            {password.name}
-          </h3>
+      {/* Name and Category */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+        <div style={{ width: 32, height: 32, background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <FiLock size={14} color="var(--color-text-3)" />
         </div>
-
-        {/* 3-dot menu */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 140ms' }}>
-          {password.url && (
-            <a
-              href={password.url.startsWith('http') ? password.url : `https://${password.url}`}
-              target="_blank" rel="noreferrer"
-              title="Open URL"
-              style={{
-                width: 26, height: 26, display: 'grid', placeItems: 'center',
-                background: 'none', border: 'none',
-                color: 'var(--color-text-3)', cursor: 'pointer',
-                transition: 'color 140ms',
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
-              onClick={e => e.stopPropagation()}
-            >
-              <FiExternalLink size={14} />
-            </a>
-          )}
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
-              style={{
-                width: 26, height: 26, display: 'grid', placeItems: 'center',
-                background: 'none', border: 'none',
-                color: 'var(--color-text-3)', cursor: 'pointer',
-                transition: 'color 140ms',
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
-            >
-              <FiMoreVertical size={14} />
-            </button>
-
-            {menuOpen && (
-              <div style={{
-                position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
-                width: 120, background: 'var(--color-surface-2)',
-                border: '1px solid var(--color-border-2)',
-                boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
-              }}>
-                <button
-                  onClick={handleEdit}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
-                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
-                >
-                  <FiEdit2 size={12} /> Edit
-                </button>
-                <div style={{ height: 1, background: 'var(--color-border)' }} />
-                <button
-                  onClick={handleDelete}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
-                    padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
-                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'var(--font-sans)', transition: 'background 100ms',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                >
-                  <FiTrash2 size={12} /> Delete
-                </button>
-              </div>
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>
+            {password.name}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {password.category || 'Password'}
           </div>
         </div>
       </div>
 
-      {/* Meta tags */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{
-          fontSize: '11px', fontWeight: 500, color: 'var(--color-text-2)', fontFamily: 'var(--font-mono)',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'calc(100% - 30px)'
-        }}>
-          {password.username || 'No username'}
+      {/* Username */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+        <span style={{ fontSize: 13, color: 'var(--color-text-2)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {password.username || '—'}
         </span>
         {password.username && (
           <button
             onClick={handleCopyUsername}
             style={{
               background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', padding: 0,
-              display: 'grid', placeItems: 'center', width: 18, height: 18, transition: 'color 140ms'
+              display: hovered ? 'grid' : 'none', placeItems: 'center', width: 24, height: 24, transition: 'color 140ms'
             }}
             title="Copy username"
             onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
           >
-            {hasCopied ? <FiCheck size={11} color="var(--color-green)" /> : <FiCopy size={11} />}
+            {hasCopied ? <FiCheck size={13} color="var(--color-green)" /> : <FiCopy size={13} />}
           </button>
         )}
       </div>
 
-      {/* Masked value */}
-      <div style={{
-        background: 'var(--color-bg)', border: '1px solid var(--color-border)',
-        padding: '6px 10px', marginTop: 4,
-      }}>
-        <MaskedValue
-          value={decryptedValue || ''}
-          onRevealToggled={handleRevealToggle}
-          compact
-        />
+      {/* Password Mask */}
+      <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <div style={{ flex: 1, maxWidth: 220, background: 'var(--color-bg)', border: '1px solid var(--color-border)', padding: '4px 8px' }}>
+          <MaskedValue
+            value={decryptedValue || ''}
+            onRevealToggled={handleRevealToggle}
+            compact
+          />
+        </div>
       </div>
 
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+        {password.url && (
+          <a
+            href={password.url.startsWith('http') ? password.url : `https://${password.url}`}
+            target="_blank" rel="noreferrer"
+            title="Open URL"
+            style={{
+              width: 28, height: 28, display: 'grid', placeItems: 'center',
+              background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer',
+              transition: 'color 140ms', opacity: hovered ? 1 : 0
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+            onClick={e => e.stopPropagation()}
+          >
+            <FiExternalLink size={14} />
+          </a>
+        )}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            style={{
+              width: 28, height: 28, display: 'grid', placeItems: 'center',
+              background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer',
+              transition: 'color 140ms', opacity: hovered || menuOpen ? 1 : 0
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+          >
+            <FiMoreVertical size={14} />
+          </button>
+
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
+              width: 120, background: 'var(--color-surface-2)',
+              border: '1px solid var(--color-border-2)',
+              boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
+            }}>
+              <button
+                onClick={handleEdit}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
+                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+              >
+                <FiEdit2 size={12} /> Edit
+              </button>
+              <div style={{ height: 1, background: 'var(--color-border)' }} />
+              <button
+                onClick={handleDelete}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
+                  background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                  fontFamily: 'var(--font-sans)', transition: 'background 100ms',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <FiTrash2 size={12} /> Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
