@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { FiX, FiDownload, FiCheckCircle, FiAlertCircle, FiUploadCloud } from 'react-icons/fi';
+import { FcGoogle } from 'react-icons/fc';
+import { SiBitwarden } from 'react-icons/si';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
@@ -137,7 +139,7 @@ export const PasswordImportModal: React.FC = () => {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
-                    <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: 18, height: 18 }} />
+                    <FcGoogle size={18} />
                     Google Password Manager (CSV)
                   </button>
                   
@@ -147,7 +149,7 @@ export const PasswordImportModal: React.FC = () => {
                     onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
-                    <img src="https://bitwarden.com/images/icon_128x128.png" alt="Bitwarden" style={{ width: 18, height: 18 }} />
+                    <SiBitwarden size={18} color="#175DDC" />
                     Bitwarden (CSV)
                   </button>
                 </div>
