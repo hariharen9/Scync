@@ -26,7 +26,6 @@ export const TOTPDashboard: React.FC = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isDecrypting, setIsDecrypting] = useState(storedTOTPs.length > 0);
 
-  // Tick every second to update codes + countdown
   const tick = useCallback(() => {
     const codes: LiveCode[] = [];
     decryptedCache.current.forEach((decrypted) => {
@@ -56,7 +55,6 @@ export const TOTPDashboard: React.FC = () => {
     setLiveCodes(codes);
   }, []);
 
-  // Decrypt all TOTP tokens on mount / when storedTOTPs change
   useEffect(() => {
     const decryptAll = async () => {
       if (storedTOTPs.length === 0) {
@@ -67,7 +65,6 @@ export const TOTPDashboard: React.FC = () => {
       setIsDecrypting(true);
       const cache = new Map<string, DecryptedTOTP>();
       for (const token of storedTOTPs) {
-        // Reuse cached decryption if token hasn't changed
         const existing = decryptedCache.current.get(token.id);
         if (existing && existing.updatedAt.getTime() === token.updatedAt.getTime()) {
           cache.set(token.id, existing);
@@ -84,7 +81,7 @@ export const TOTPDashboard: React.FC = () => {
   }, [storedTOTPs, decryptTOTP, tick]);
 
   useEffect(() => {
-    tick(); // immediate
+    tick();
     intervalRef.current = setInterval(tick, 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [tick]);
@@ -145,7 +142,7 @@ export const TOTPDashboard: React.FC = () => {
           stroke={color} strokeWidth={stroke}
           strokeDasharray={circumference} strokeDashoffset={offset}
           strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 0.3s linear, stroke 0.3s ease' }}
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease' }}
         />
         <text
           x={size/2} y={size/2}
@@ -159,124 +156,138 @@ export const TOTPDashboard: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 4px 0', fontFamily: 'var(--font-sans)', color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FiShield /> Authenticator
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0, fontFamily: 'var(--font-sans)' }}>Encrypted 2FA codes synced across your devices.</p>
+          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FiShield size={20} style={{ color: 'var(--color-green)' }} />
+            Authenticator
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+            {storedTOTPs.length} code{storedTOTPs.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <button
-          onClick={openAddTOTPModal}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-            background: 'var(--color-text)', color: 'var(--color-bg)', border: 'none',
-            fontSize: 12, fontWeight: 700, cursor: 'pointer',
-            fontFamily: 'var(--font-sans)', transition: 'opacity 140ms'
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          <FiPlus size={14} />
-          <span className="hidden sm:inline">Add Authenticator</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={openAddTOTPModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+          >
+            <FiPlus size={13} />
+            Add Authenticator
+          </button>
+        </div>
       </div>
 
       {/* Search */}
-      {liveCodes.length > 0 && (
-        <div style={{ position: 'relative', marginBottom: 20 }}>
-          <FiSearch size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)', pointerEvents: 'none' }} />
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ position: 'relative' }}>
+          <FiSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
           <input
-            type="text" placeholder="Search authenticators..."
-            value={search} onChange={e => setSearch(e.target.value)}
+            type="text"
+            placeholder="Search authenticators by issuer or label..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
             style={{
-              width: '100%', maxWidth: 320, border: '1px solid var(--color-border)',
-              background: 'var(--color-surface-2)', padding: '8px 10px 8px 30px',
-              fontSize: 12, color: 'var(--color-text)', outline: 'none',
-              fontFamily: 'var(--font-sans)', transition: 'border-color 140ms'
+              width: '100%', padding: '9px 12px 9px 34px',
+              border: '1px solid var(--color-border)', background: 'var(--color-surface-2)',
+              color: 'var(--color-text)', fontSize: 13, outline: 'none',
+              fontFamily: 'var(--font-sans)', transition: 'border-color 140ms',
             }}
             onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
             onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
           />
         </div>
-      )}
+      </div>
 
-      {/* Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))',
-        gap: 16, flex: 1, overflowY: 'auto', alignContent: 'start'
-      }}>
-        {isDecrypting && liveCodes.length === 0 ? (
-           <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px 0', color: 'var(--color-text-muted)' }}>
-             <div className="animate-spin" style={{ width: 24, height: 24, border: '2px solid var(--color-border)', borderTopColor: 'var(--color-text)', borderRadius: '50%', marginBottom: 12 }} />
-             <p style={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}>Decrypting authenticators...</p>
-           </div>
-        ) : storedTOTPs.length === 0 ? (
-          <div style={{ 
-            gridColumn: '1 / -1',
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
-            padding: '60px 20px', color: 'var(--color-text-muted)', textAlign: 'center'
+      {isDecrypting && liveCodes.length === 0 ? (
+        <div style={{ padding: '100px 0', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          <div className="animate-spin" style={{ width: 24, height: 24, border: '2px solid var(--color-border)', borderTopColor: 'var(--color-text)', borderRadius: '50%', margin: '0 auto 12px' }} />
+          <p style={{ fontSize: 12, fontFamily: 'var(--font-sans)' }}>Decrypting authenticators...</p>
+        </div>
+      ) : storedTOTPs.length === 0 ? (
+        <div style={{
+          border: '1px dashed var(--color-border-2)', background: 'var(--color-surface)',
+          padding: '64px 32px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 48, height: 48, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center',
+            marginBottom: 16,
           }}>
-            <div style={{ 
-              width: 80, height: 80, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-              display: 'grid', placeItems: 'center', marginBottom: 20, borderRadius: '50%'
-            }}>
-              <FiShield size={36} style={{ opacity: 0.4, color: 'var(--color-green)' }} />
-            </div>
-            <p style={{ margin: '0 0 6px 0', fontSize: 16, fontWeight: 700, color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>No authenticators in your vault.</p>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-3)', maxWidth: 300, lineHeight: 1.5 }}>
-              Add TOTP 2FA codes to sync them securely across all your devices.
-            </p>
-            <button
-              onClick={openAddTOTPModal}
-              style={{
-                marginTop: 24, padding: '8px 20px', background: 'var(--color-surface-3)', 
-                border: '1px solid var(--color-border)', color: 'var(--color-text)',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)'
-              }}
-            >
-              Add your first authenticator
-            </button>
+            <FiShield size={20} color="var(--color-text-3)" />
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px 0', color: 'var(--color-text-muted)' }}>
-            <p style={{ fontSize: 13, fontFamily: 'var(--font-sans)' }}>No results for "{search}"</p>
-          </div>
-        ) : (
-          filtered.map(item => {
+          {search ? (
+            <>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>
+                No results for "{search}"
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: 0 }}>
+                Try a different search term.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0', fontFamily: 'var(--font-sans)' }}>No authenticators yet</h3>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '0 0 20px 0', maxWidth: 300, lineHeight: 1.5, fontFamily: 'var(--font-sans)' }}>
+                Add TOTP 2FA codes to sync them securely across all your devices.
+              </p>
+              <button
+                onClick={openAddTOTPModal}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+                  background: 'white', color: '#080808', border: 'none',
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <FiPlus size={14} /> Add Authenticator
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: 1,
+          background: 'var(--color-border)',
+          border: '1px solid var(--color-border)',
+        }}>
+          {filtered.map(item => {
             const urgencyColor = getUrgencyColor(item.remaining, item.config.period);
             const isUrgent = item.remaining <= 5;
             return (
               <div
                 key={item.id}
                 style={{
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-surface-2)',
-                  overflow: 'hidden',
-                  transition: 'border-color 200ms',
-                  borderRadius: 4,
+                  background: 'var(--color-surface)', display: 'flex', flexDirection: 'column',
+                  transition: 'background 140ms', position: 'relative'
                 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-border-2)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
               >
-                {/* Service info bar */}
                 <div style={{
-                  padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                   borderBottom: '1px solid var(--color-border)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                     <div style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', borderRadius: 4, flexShrink: 0 }}>
-                      <ServiceIcon service={item.issuer} size={14} />
+                      <ServiceIcon service={item.issuer} size={12} />
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)' }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--color-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-sans)', letterSpacing: '-0.01em' }}>
                         {item.issuer || 'Unknown Service'}
                       </div>
                       {item.label && (
-                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
+                        <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
                           {item.label}
                         </div>
                       )}
@@ -284,40 +295,34 @@ export const TOTPDashboard: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleDelete(storedTOTPs.find(t => t.id === item.id)!)}
-                    style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer', padding: 4, opacity: 0.5, transition: 'opacity 140ms, color 140ms' }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--color-red)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+                    style={{ width: 26, height: 26, display: 'grid', placeItems: 'center', background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', transition: 'color 140ms' }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--color-red)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
                     title="Delete"
                   >
                     <FiTrash2 size={14} />
                   </button>
                 </div>
 
-                {/* Code display */}
                 <div
                   style={{
-                    padding: '20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    cursor: 'pointer', transition: 'background 100ms',
-                    background: 'var(--color-surface)',
+                    padding: '24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    cursor: 'pointer', flex: 1
                   }}
                   onClick={() => handleCopy(item.code, item.id)}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
                   title="Click to copy"
                 >
+                  <span 
+                    key={item.code}
+                    style={{
+                      fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.15em', color: urgencyColor,
+                      transition: 'color 0.3s ease',
+                      animation: isUrgent ? 'pulse 1s ease-in-out infinite' : 'none'
+                    }}>
+                    {formatCode(item.code)}
+                  </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span 
-                      key={item.code}
-                      style={{
-                        fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-mono)',
-                        letterSpacing: '0.12em', color: urgencyColor,
-                        transition: 'color 0.3s ease',
-                        animation: isUrgent ? 'pulse 1s ease-in-out infinite, slideUp 0.2s ease-out' : 'slideUp 0.2s ease-out'
-                      }}>
-                      {formatCode(item.code)}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {copiedId === item.id ? (
                       <FiCheck size={14} style={{ color: 'var(--color-green)' }} />
                     ) : (
@@ -328,9 +333,9 @@ export const TOTPDashboard: React.FC = () => {
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse {
@@ -343,10 +348,6 @@ export const TOTPDashboard: React.FC = () => {
         }
         .animate-spin {
           animation: spin 1s linear infinite;
-        }
-        @keyframes slideUp {
-          from { transform: translateY(8px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
     </div>

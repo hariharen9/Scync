@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink, FiClock } from 'react-icons/fi';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import { useClipboard } from '../hooks/useClipboard';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MaskedValue } from './MaskedValue';
 import type { StoredPassword, DecryptedPassword } from '@scync/core';
 
 export const PasswordDashboard: React.FC = () => {
@@ -12,59 +12,142 @@ export const PasswordDashboard: React.FC = () => {
   const { openAddPasswordModal, openPasswordImportModal } = useUIStore();
   const [search, setSearch] = useState('');
   
-  const filtered = storedPasswords.filter(p => 
+  const visiblePasswords = storedPasswords.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.username.toLowerCase().includes(search.toLowerCase()) ||
     (p.url && p.url.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 64 }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+    <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FiLock style={{ color: 'var(--color-green)' }} /> Passwords
-          </h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-2)', fontSize: 13 }}>
-            Manage and securely store your website and application passwords.
+          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <FiLock size={20} style={{ color: 'var(--color-green)' }} />
+            Passwords
+          </h2>
+          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+            {visiblePasswords.length} password{visiblePasswords.length !== 1 ? 's' : ''}
           </p>
         </div>
-        
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={openPasswordImportModal} className="btn-ghost" style={{ padding: '7px 12px' }}>
-            <FiDownload size={14} /> Import
+          <button
+            onClick={openPasswordImportModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+              background: 'none', border: '1px solid var(--color-border)',
+              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-green-border)'; e.currentTarget.style.color = 'var(--color-green)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+          >
+            <FiDownload size={13} />
+            Import CSV
           </button>
-          <button onClick={openAddPasswordModal} className="btn-primary" style={{ padding: '7px 12px' }}>
-            <FiPlus size={14} /> Add Password
+          <button
+            onClick={openAddPasswordModal}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+          >
+            <FiPlus size={13} />
+            Add Password
           </button>
         </div>
-      </header>
-
-      <div style={{ position: 'relative', maxWidth: 400 }}>
-        <FiSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
-        <input 
-          type="text" 
-          placeholder="Search passwords..." 
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="input-field"
-          style={{ paddingLeft: 34, borderRadius: 0 }}
-        />
       </div>
 
-      {storedPasswords.length === 0 ? (
-        <div style={{ padding: 48, textAlign: 'center', background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <FiLock size={32} style={{ color: 'var(--color-border-2)', margin: '0 auto 16px' }} />
-          <h3 style={{ margin: '0 0 8px', fontSize: 16, fontWeight: 700 }}>No Passwords Yet</h3>
-          <p style={{ margin: '0 0 24px', color: 'var(--color-text-2)', fontSize: 13 }}>Import from Google or Bitwarden, or add one manually.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <button onClick={openPasswordImportModal} className="btn-ghost"><FiDownload size={14} /> Import CSV</button>
-            <button onClick={openAddPasswordModal} className="btn-primary"><FiPlus size={14} /> Add Manual</button>
+      {/* Search */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ position: 'relative' }}>
+          <FiSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
+          <input
+            type="text"
+            placeholder="Search passwords by name, username, or URL..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              width: '100%', padding: '9px 12px 9px 34px',
+              border: '1px solid var(--color-border)', background: 'var(--color-surface-2)',
+              color: 'var(--color-text)', fontSize: 13, outline: 'none',
+              fontFamily: 'var(--font-sans)', transition: 'border-color 140ms',
+            }}
+            onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'}
+            onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+          />
+        </div>
+      </div>
+
+      {visiblePasswords.length === 0 ? (
+        <div style={{
+          border: '1px dashed var(--color-border-2)', background: 'var(--color-surface)',
+          padding: '64px 32px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', textAlign: 'center',
+        }}>
+          <div style={{
+            width: 48, height: 48, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center',
+            marginBottom: 16,
+          }}>
+            <FiLock size={20} color="var(--color-text-3)" />
           </div>
+          {search ? (
+            <>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>
+                No results for "{search}"
+              </h3>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: 0 }}>
+                Try a different search term.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px 0' }}>No passwords yet</h3>
+              <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '0 0 20px 0' }}>
+                Import from Google or Bitwarden, or add one manually.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                <button
+                  onClick={openPasswordImportModal}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+                    background: 'none', border: '1px solid var(--color-border)', color: 'var(--color-text-2)',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+                >
+                  <FiDownload size={14} /> Import CSV
+                </button>
+                <button
+                  onClick={openAddPasswordModal}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+                    background: 'white', color: '#080808', border: 'none',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  <FiPlus size={14} /> Add Password
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-          {filtered.map(pwd => (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+          gap: 1,
+          background: 'var(--color-border)',
+          border: '1px solid var(--color-border)',
+        }}>
+          {visiblePasswords.map(pwd => (
             <PasswordCard key={pwd.id} password={pwd} />
           ))}
         </div>
@@ -79,151 +162,194 @@ const PasswordCard: React.FC<{ password: StoredPassword }> = ({ password }) => {
   const { openConfirmModal } = useUIStore();
   const { copy, hasCopied } = useClipboard();
   
-  const [decrypted, setDecrypted] = useState<DecryptedPassword | null>(null);
-  const [isRevealed, setIsRevealed] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleCopy = async () => {
-    if (!decrypted) {
+  React.useEffect(() => {
+    if (decryptedValue !== null) {
+      decryptPassword(password.id).then(p => {
+        if (p) setDecryptedValue(p.password);
+      });
+    }
+  }, [password.updatedAt.getTime()]);
+
+  const handleRevealToggle = async (revealed: boolean) => {
+    if (revealed && !decryptedValue) {
       const p = await decryptPassword(password.id);
-      if (p) {
-        setDecrypted(p);
-        copy(p.password);
-      }
-    } else {
-      copy(decrypted.password);
+      if (p) setDecryptedValue(p.password);
     }
   };
 
-  const handleReveal = async () => {
-    if (isRevealed) {
-      setIsRevealed(false);
-    } else {
-      if (!decrypted) {
-        const p = await decryptPassword(password.id);
-        if (p) setDecrypted(p);
-      }
-      setIsRevealed(true);
-      // Auto hide after 15 seconds
-      setTimeout(() => setIsRevealed(false), 15000);
-    }
+  const handleCopyUsername = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (password.username) copy(password.username);
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
     if (!user) return;
+    
     openConfirmModal({
       title: 'Delete Password',
-      message: `Are you sure you want to delete the password for "${password.name}"?`,
-      danger: true,
+      message: `Are you sure you want to delete the password for "${password.name}"? This action cannot be undone.`,
       confirmText: 'Delete',
+      danger: true,
       onConfirm: async () => {
         await deletePassword(user.uid, password.id);
       }
     });
   };
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
     window.dispatchEvent(new CustomEvent('open-edit-password', { detail: password.id }));
   };
 
   return (
-    <div style={{ 
-      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-      padding: 16, display: 'flex', flexDirection: 'column', gap: 12, position: 'relative'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div style={{ minWidth: 0, flex: 1, paddingRight: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setMenuOpen(false); }}
+      style={{
+        position: 'relative', cursor: 'default',
+        background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
+        padding: 18, display: 'flex', flexDirection: 'column', gap: 10,
+        transition: 'background 140ms',
+      }}
+    >
+      {/* Top row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0, flex: 1 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+            fontSize: '9.5px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em',
+            color: 'var(--color-text-3)', fontFamily: 'var(--font-sans)'
+          }}>
+            <FiLock size={10} />
+            {password.category || 'Password'}
+          </div>
+          <h3 style={{
+            fontSize: '13.5px', fontWeight: 700, color: 'var(--color-text)',
+            margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            letterSpacing: '-0.01em', fontFamily: 'var(--font-sans)'
+          }} title={password.name}>
             {password.name}
           </h3>
-          <div style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {password.username || 'No username'}
-          </div>
         </div>
-        
-        <div style={{ position: 'relative' }}>
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="btn-ghost"
-            style={{ width: 28, height: 28, padding: 0, display: 'grid', placeItems: 'center', border: 'none' }}
-          >
-            <FiMoreVertical size={14} />
-          </button>
-          
-          <AnimatePresence>
-            {isMenuOpen && (
-              <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 10 }} onClick={() => setIsMenuOpen(false)} />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.1 }}
+
+        {/* 3-dot menu */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 140ms' }}>
+          {password.url && (
+            <a
+              href={password.url.startsWith('http') ? password.url : `https://${password.url}`}
+              target="_blank" rel="noreferrer"
+              title="Open URL"
+              style={{
+                width: 26, height: 26, display: 'grid', placeItems: 'center',
+                background: 'none', border: 'none',
+                color: 'var(--color-text-3)', cursor: 'pointer',
+                transition: 'color 140ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+              onClick={e => e.stopPropagation()}
+            >
+              <FiExternalLink size={14} />
+            </a>
+          )}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+              style={{
+                width: 26, height: 26, display: 'grid', placeItems: 'center',
+                background: 'none', border: 'none',
+                color: 'var(--color-text-3)', cursor: 'pointer',
+                transition: 'color 140ms',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+            >
+              <FiMoreVertical size={14} />
+            </button>
+
+            {menuOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
+                width: 120, background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border-2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
+              }}>
+                <button
+                  onClick={handleEdit}
                   style={{
-                    position: 'absolute', top: '100%', right: 0, zIndex: 20,
-                    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)', minWidth: 120, padding: 4
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 12px', fontSize: 12, color: 'var(--color-text-2)',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-sans)', transition: 'background 100ms, color 100ms',
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-3)'; e.currentTarget.style.color = 'var(--color-text)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
                 >
-                  {password.url && (
-                    <a href={password.url.startsWith('http') ? password.url : `https://${password.url}`} target="_blank" rel="noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', fontSize: 12, color: 'var(--color-text)', textDecoration: 'none' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <FiExternalLink size={12} /> Open URL
-                    </a>
-                  )}
-                  <button onClick={() => { setIsMenuOpen(false); handleEdit(); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', fontSize: 12, color: 'var(--color-text)', background: 'none', border: 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <FiEdit2 size={12} /> Edit
-                  </button>
-                  <button onClick={() => { setIsMenuOpen(false); handleDelete(); }}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', fontSize: 12, color: 'var(--color-red)', background: 'none', border: 'none', cursor: 'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--color-red-bg)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <FiTrash2 size={12} /> Delete
-                  </button>
-                </motion.div>
-              </>
+                  <FiEdit2 size={12} /> Edit
+                </button>
+                <div style={{ height: 1, background: 'var(--color-border)' }} />
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 7,
+                    padding: '8px 12px', fontSize: 12, color: 'var(--color-red)',
+                    background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-sans)', transition: 'background 100ms',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.05)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <FiTrash2 size={12} /> Delete
+                </button>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <input 
-            type={isRevealed ? 'text' : 'password'}
-            value={isRevealed && decrypted ? decrypted.password : '••••••••••••'}
-            readOnly
-            className="input-field"
-            style={{ fontFamily: 'var(--font-mono)', paddingRight: 32 }}
-          />
+      {/* Meta tags */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{
+          fontSize: '11px', fontWeight: 500, color: 'var(--color-text-2)', fontFamily: 'var(--font-mono)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 'calc(100% - 30px)'
+        }}>
+          {password.username || 'No username'}
+        </span>
+        {password.username && (
           <button
-            onClick={handleReveal}
-            style={{ 
-              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer',
-              fontSize: 10, fontWeight: 700, textTransform: 'uppercase'
+            onClick={handleCopyUsername}
+            style={{
+              background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer', padding: 0,
+              display: 'grid', placeItems: 'center', width: 18, height: 18, transition: 'color 140ms'
             }}
+            title="Copy username"
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
           >
-            {isRevealed ? 'HIDE' : 'SHOW'}
+            {hasCopied ? <FiCheck size={11} color="var(--color-green)" /> : <FiCopy size={11} />}
           </button>
-        </div>
-        <button 
-          onClick={handleCopy}
-          className={hasCopied ? 'btn-primary' : 'btn-ghost'}
-          style={{ width: 36, height: 38, padding: 0 }}
-          title="Copy password"
-        >
-          {hasCopied ? <FiCheck size={14} /> : <FiCopy size={14} />}
-        </button>
+        )}
       </div>
+
+      {/* Masked value */}
+      <div style={{
+        background: 'var(--color-bg)', border: '1px solid var(--color-border)',
+        padding: '6px 10px', marginTop: 4,
+      }}>
+        <MaskedValue
+          value={decryptedValue || ''}
+          onRevealToggled={handleRevealToggle}
+          compact
+        />
+      </div>
+
     </div>
   );
 };

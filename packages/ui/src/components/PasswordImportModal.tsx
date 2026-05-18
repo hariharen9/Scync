@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FiX, FiDownload, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import React, { useState, useRef } from 'react';
+import { FiX, FiDownload, FiCheckCircle, FiAlertCircle, FiUploadCloud } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
@@ -16,6 +16,8 @@ export const PasswordImportModal: React.FC = () => {
   const [parsedData, setParsedData] = useState<ImportedPassword[]>([]);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
     setStep(1);
@@ -23,17 +25,16 @@ export const PasswordImportModal: React.FC = () => {
     setParsedData([]);
     setIsImporting(false);
     setError(null);
+    setIsDragging(false);
   };
 
   const handleClose = () => {
+    if (isImporting) return;
     closePasswordImportModal();
-    setTimeout(resetState, 200);
+    setTimeout(resetState, 300);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleFile = (file: File) => {
     setError(null);
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -55,7 +56,6 @@ export const PasswordImportModal: React.FC = () => {
     };
     reader.onerror = () => setError('Failed to read file.');
     reader.readAsText(file);
-    e.target.value = ''; // reset
   };
 
   const executeImport = async () => {
@@ -85,70 +85,96 @@ export const PasswordImportModal: React.FC = () => {
   return (
     <AnimatePresence>
       {isPasswordImportModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
             onClick={!isImporting ? handleClose : undefined}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{ 
-              position: 'relative', width: '100%', maxWidth: 400,
-              background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-              display: 'flex', flexDirection: 'column'
+              position: 'relative', width: '100%', maxWidth: 460,
+              background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
+              boxShadow: '0 24px 64px rgba(0,0,0,.7)', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column', maxHeight: '90vh'
             }}
           >
-            <header style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FiDownload color="var(--color-green)" /> Import Passwords
-              </h2>
-              <button onClick={!isImporting ? handleClose : undefined} disabled={isImporting} style={{ background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: isImporting ? 'default' : 'pointer', padding: 4 }}>
-                <FiX size={18} />
-              </button>
-            </header>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 30, height: 30, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center' }}>
+                  <FiDownload size={14} color="var(--color-green)" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
+                    Import Passwords
+                  </h2>
+                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0', fontFamily: 'var(--font-sans)' }}>
+                    Securely migrate from other managers
+                  </p>
+                </div>
+              </div>
+              {!isImporting && (
+                <button onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: 'pointer', transition: 'all 140ms' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}><FiX size={14} /></button>
+              )}
+            </div>
 
-            <div style={{ padding: 20 }}>
+            <div style={{ padding: 18, overflowY: 'auto', flex: 1 }} className="hide-scrollbar">
               {error && (
-                <div style={{ padding: 12, background: 'var(--color-red-bg)', border: '1px solid var(--color-red)', color: 'var(--color-red)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
-                  <FiAlertCircle size={14} /> {error}
+                <div style={{ padding: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--color-red)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
+                  <FiAlertCircle size={14} style={{ flexShrink: 0 }} /> 
+                  <span style={{ fontFamily: 'var(--font-sans)', lineHeight: 1.4 }}>{error}</span>
                 </div>
               )}
 
               {step === 1 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-text-2)' }}>Select your password manager to import from.</p>
+                  <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--color-text-2)', fontFamily: 'var(--font-sans)' }}>Select your current password manager to import from.</p>
                   
                   <button 
                     onClick={() => { setProvider('google'); setStep(2); }}
-                    className="btn-ghost" 
-                    style={{ padding: 16, justifyContent: 'flex-start', border: '1px solid var(--color-border)' }}
+                    style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
-                    <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: 16, height: 16, marginRight: 4 }} />
+                    <img src="https://www.google.com/favicon.ico" alt="Google" style={{ width: 18, height: 18 }} />
                     Google Password Manager (CSV)
                   </button>
                   
                   <button 
                     onClick={() => { setProvider('bitwarden'); setStep(2); }}
-                    className="btn-ghost" 
-                    style={{ padding: 16, justifyContent: 'flex-start', border: '1px solid var(--color-border)' }}
+                    style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.background = 'var(--color-surface-3)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.background = 'var(--color-surface-2)'; }}
                   >
-                    <img src="https://bitwarden.com/images/icon_128x128.png" alt="Bitwarden" style={{ width: 16, height: 16, marginRight: 4 }} />
+                    <img src="https://bitwarden.com/images/icon_128x128.png" alt="Bitwarden" style={{ width: 18, height: 18 }} />
                     Bitwarden (CSV)
                   </button>
                 </div>
               )}
 
               {step === 2 && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center', padding: '24px 0' }}>
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--color-text-2)' }}>
+                <div>
+                  <p style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--color-text-2)', fontFamily: 'var(--font-sans)', lineHeight: 1.5 }}>
                     Export your passwords as a CSV file from {provider === 'google' ? 'Google' : 'Bitwarden'}, then select it below.
                   </p>
-                  <label className="btn-primary" style={{ padding: '9px 24px', cursor: 'pointer' }}>
-                    Select CSV File
-                    <input type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} />
-                  </label>
-                  <button onClick={() => setStep(1)} className="btn-ghost" style={{ fontSize: 11, padding: '4px 8px', border: 'none' }}>Back</button>
+                  
+                  <div
+                    onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={e => { e.preventDefault(); setIsDragging(false); }}
+                    onDrop={e => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); }}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ height: 160, width: '100%', border: `2px dashed ${isDragging ? 'var(--color-green)' : 'var(--color-border)'}`, background: isDragging ? 'var(--color-green-bg)' : 'var(--color-surface-2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 140ms', marginBottom: 16 }}
+                  >
+                    <input type="file" ref={fileInputRef} onChange={e => { const f = e.target.files?.[0]; if (f) { handleFile(f); e.target.value = ''; } }} className="hidden" accept=".csv" />
+                    <FiUploadCloud size={28} color={isDragging ? 'var(--color-green)' : 'var(--color-text-3)'} style={{ marginBottom: 10 }} />
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Drop your CSV file here</p>
+                    <p style={{ fontSize: 11, color: 'var(--color-text-2)', marginTop: 4, fontFamily: 'var(--font-sans)' }}>or click to browse</p>
+                  </div>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                    <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: 'var(--color-text-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)' }}>← Back</button>
+                  </div>
                 </div>
               )}
 
@@ -157,18 +183,19 @@ export const PasswordImportModal: React.FC = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--color-surface-2)', padding: 16, border: '1px solid var(--color-border)' }}>
                     <FiCheckCircle size={24} color="var(--color-green)" />
                     <div>
-                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Ready to Import</h4>
-                      <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-2)' }}>Found {parsedData.length} valid passwords.</p>
+                      <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-sans)' }}>Ready to Import</h4>
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--color-text-2)', fontFamily: 'var(--font-sans)' }}>Found {parsedData.length} valid passwords.</p>
                     </div>
                   </div>
                   
-                  <div style={{ fontSize: 12, color: 'var(--color-text-3)', background: 'var(--color-green-bg)', padding: 12, border: '1px solid var(--color-green-border)' }}>
-                    All imported passwords will be immediately encrypted with your vault key before saving.
+                  <div style={{ fontSize: 11, color: 'var(--color-text-3)', background: 'rgba(59,130,246,0.03)', padding: 12, border: '1px solid rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FiAlertCircle size={14} color="#3b82f6" style={{ flexShrink: 0 }} />
+                    <span style={{ fontFamily: 'var(--font-sans)', lineHeight: 1.4 }}>All imported passwords will be immediately encrypted with your vault key before leaving this device.</span>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, margin: '8px 0 0' }}>
-                    <button onClick={() => setStep(1)} disabled={isImporting} className="btn-ghost">Cancel</button>
-                    <button onClick={executeImport} disabled={isImporting} className="btn-primary">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, margin: '8px 0 0' }}>
+                    <button onClick={() => setStep(1)} disabled={isImporting} style={{ padding: '7px 14px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600, cursor: isImporting ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }} onMouseEnter={e => { if (!isImporting) { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; } }} onMouseLeave={e => { if (!isImporting) { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; } }}>Cancel</button>
+                    <button onClick={executeImport} disabled={isImporting} style={{ padding: '7px 18px', background: 'var(--color-green)', border: '1px solid var(--color-green-border)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: isImporting ? 'not-allowed' : 'pointer', opacity: isImporting ? 0.5 : 1, fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}>
                       {isImporting ? 'Importing...' : `Import ${parsedData.length} Passwords`}
                     </button>
                   </div>
