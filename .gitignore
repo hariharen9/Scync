@@ -13,3 +13,6 @@ apps/desktop/dist-electron
 apps/desktop/release
 .vscode/
 *SPEC.md
+
+# Local Netlify folder
+.netlify

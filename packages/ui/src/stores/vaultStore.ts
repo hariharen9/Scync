@@ -28,7 +28,15 @@ import {
   type DecryptedCertificate,
   subscribeToCertificates,
   createCertificate as coreCreateCertificate,
-  deleteCertificate as coreDeleteCertificate
+  deleteCertificate as coreDeleteCertificate,
+  type StoredPassword,
+  type DecryptedPassword,
+  type PasswordFormData,
+  createPassword as coreCreatePassword,
+  updatePassword as coreUpdatePassword,
+  deletePassword as coreDeletePassword,
+  subscribeToPasswords,
+  decryptPasswordItem
 } from '@scync/core';
 
 interface VaultState {
@@ -38,6 +46,7 @@ interface VaultState {
   storedSSHKeys: StoredSSHKey[];
   storedTOTPs: StoredTOTP[];
   storedCertificates: StoredCertificate[];
+  storedPasswords: StoredPassword[];
   vaultMeta: VaultMeta | null;
   
   setDerivedKey: (key: CryptoKey | null) => void;
@@ -45,6 +54,7 @@ interface VaultState {
   setSSHKeys: (keys: StoredSSHKey[]) => void;
   setTOTPs: (tokens: StoredTOTP[]) => void;
   setCertificates: (certs: StoredCertificate[]) => void;
+  setPasswords: (passwords: StoredPassword[]) => void;
   setVaultMeta: (meta: VaultMeta | null) => void;
   
   unlock: (password: string, uid: string) => Promise<boolean>;
@@ -70,14 +80,24 @@ interface VaultState {
   createCertificate: (uid: string, data: Omit<StoredCertificate, 'id' | 'createdAt' | 'updatedAt' | 'encCertPem' | 'encKeyPem'> & { certPem: string; keyPem: string | null }) => Promise<void>;
   deleteCertificate: (uid: string, id: string) => Promise<void>;
   decryptCertificate: (certId: string) => Promise<DecryptedCertificate | null>;
+
+  createPassword: (uid: string, formData: PasswordFormData) => Promise<void>;
+  updatePassword: (uid: string, id: string, formData: PasswordFormData) => Promise<void>;
+  deletePassword: (uid: string, id: string) => Promise<void>;
+  decryptPassword: (id: string) => Promise<DecryptedPassword | null>;
   
   subscribeToSecrets: (uid: string) => () => void;
   subscribeToSSHKeys: (uid: string) => () => void;
   subscribeToTOTPs: (uid: string) => () => void;
   subscribeToCertificates: (uid: string) => () => void;
+  subscribeToPasswords: (uid: string) => () => void;
   exportVault: (uid: string, password: string) => Promise<{
     meta: { salt: string; verifier: any };
     secrets: StoredSecret[];
+    sshKeys: StoredSSHKey[];
+    totpTokens: StoredTOTP[];
+    certificates: StoredCertificate[];
+    passwords: StoredPassword[];
   } | null>;
   unlockWithBiometrics: (uid: string) => Promise<boolean>;
   updateBiometrics: (uid: string, enabled: boolean, password?: string) => Promise<boolean>;
@@ -90,6 +110,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   storedSSHKeys: [],
   storedTOTPs: [],
   storedCertificates: [],
+  storedPasswords: [],
   vaultMeta: null,
   
   setDerivedKey: (key) => set({ derivedKey: key, isLocked: !key }),
@@ -97,6 +118,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   setSSHKeys: (keys) => set({ storedSSHKeys: keys }),
   setTOTPs: (tokens) => set({ storedTOTPs: tokens }),
   setCertificates: (certs) => set({ storedCertificates: certs }),
+  setPasswords: (passwords) => set({ storedPasswords: passwords }),
   setVaultMeta: (meta) => set({ vaultMeta: meta }),
   
   unlock: async (password: string, uid: string) => {
@@ -172,7 +194,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const newVerifier = await createVerifier(newKey);
 
       // Batch re-encrypt
-      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys, get().storedTOTPs, get().storedCertificates);
+      await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys, get().storedTOTPs, get().storedCertificates, get().storedPasswords);
 
       // If biometrics was enabled, we MUST clear it because the wrapped password is now wrong
       if (meta.biometric) {
@@ -267,6 +289,12 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     });
   },
 
+  subscribeToPasswords: (uid: string) => {
+    return subscribeToPasswords(uid, (passwords) => {
+      set({ storedPasswords: passwords });
+    });
+  },
+
   createTOTP: async (uid: string, data) => {
     const { derivedKey } = get();
     if (!derivedKey) throw new Error("Vault is locked");
@@ -314,6 +342,34 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     }
   },
 
+  createPassword: async (uid: string, formData) => {
+    const { derivedKey } = get();
+    if (!derivedKey) throw new Error("Vault is locked");
+    await coreCreatePassword(uid, derivedKey, formData);
+  },
+
+  updatePassword: async (uid: string, id: string, formData) => {
+    const { derivedKey } = get();
+    if (!derivedKey) throw new Error("Vault is locked");
+    await coreUpdatePassword(uid, derivedKey, id, formData);
+  },
+
+  deletePassword: async (uid: string, id: string) => {
+    await coreDeletePassword(uid, id);
+  },
+
+  decryptPassword: async (id: string) => {
+    const { derivedKey, storedPasswords } = get();
+    if (!derivedKey) return null;
+    const pwd = storedPasswords.find(p => p.id === id);
+    if (!pwd) return null;
+    try {
+      return await decryptPasswordItem(derivedKey, pwd);
+    } catch {
+      return null;
+    }
+  },
+
   exportVault: async (uid: string, password: string) => {
     try {
       const { storedSecrets } = get();
@@ -334,7 +390,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         secrets: storedSecrets,
         sshKeys: get().storedSSHKeys,
         totpTokens: get().storedTOTPs,
-        certificates: get().storedCertificates
+        certificates: get().storedCertificates,
+        passwords: get().storedPasswords
       };
     } catch (err) {
       console.error(err);
