@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink, FiClock } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import { useClipboard } from '../hooks/useClipboard';
 import { MaskedValue } from './MaskedValue';
-import type { StoredPassword, DecryptedPassword } from '@scync/core';
+import type { StoredPassword } from '@scync/core';
 
 export const PasswordDashboard: React.FC = () => {
   const { storedPasswords } = useVaultStore();
