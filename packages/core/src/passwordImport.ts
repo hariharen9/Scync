@@ -7,6 +7,38 @@ export interface ImportedPassword {
   category?: string;
 }
 
+export function normalizeImportName(name: string): string {
+  let processedName = name.trim();
+  
+  if (processedName.includes('://')) {
+    try {
+      processedName = new URL(processedName).hostname;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  if (!processedName.includes(' ') && processedName.includes('.')) {
+    processedName = processedName.split('/')[0].split(':')[0].split('?')[0];
+
+    const parts = processedName.split('.');
+    if (parts.length >= 2) {
+      const tld = parts[parts.length - 1];
+      const sld = parts[parts.length - 2];
+      
+      // Special case for .co.uk, .com.br, etc.
+      if (parts.length > 2 && (sld === 'co' || sld === 'com' || sld === 'org' || sld === 'net') && tld.length === 2) {
+        return parts.slice(-3).join('.');
+      }
+      
+      return parts.slice(-2).join('.');
+    }
+    return processedName;
+  }
+
+  return processedName || 'Unnamed';
+}
+
 export function parseGooglePasswordsCsv(csvText: string): ImportedPassword[] {
   const lines = splitCsvLines(csvText);
   if (lines.length < 2) return [];
@@ -31,7 +63,7 @@ export function parseGooglePasswordsCsv(csvText: string): ImportedPassword[] {
     if (!password) continue;
 
     results.push({
-      name: row[nameIdx] || 'Unnamed',
+      name: normalizeImportName(row[nameIdx]),
       url: urlIdx !== -1 ? row[urlIdx] : '',
       username: row[userIdx] || '',
       password,
@@ -72,7 +104,7 @@ export function parseBitwardenCsv(csvText: string): ImportedPassword[] {
     if (!password) continue;
 
     results.push({
-      name: row[nameIdx] || 'Unnamed',
+      name: normalizeImportName(row[nameIdx]),
       url: urlIdx !== -1 ? row[urlIdx] : '',
       username: row[userIdx] || '',
       password,
@@ -165,7 +197,7 @@ export function parse1PasswordCsv(csvText: string): ImportedPassword[] {
     if (!password) continue;
 
     results.push({
-      name: row[titleIdx] || 'Unnamed',
+      name: normalizeImportName(row[titleIdx]),
       url: urlIdx !== -1 ? row[urlIdx] : '',
       username: userIdx !== -1 ? row[userIdx] : '',
       password,
@@ -199,7 +231,7 @@ export function parseAppleKeychainCsv(csvText: string): ImportedPassword[] {
     if (!password) continue;
 
     results.push({
-      name: row[titleIdx] || 'Unnamed',
+      name: normalizeImportName(row[titleIdx]),
       url: urlIdx !== -1 ? row[urlIdx] : '',
       username: userIdx !== -1 ? row[userIdx] : '',
       password,
@@ -234,7 +266,7 @@ export function parseLastPassCsv(csvText: string): ImportedPassword[] {
     if (!password) continue;
 
     results.push({
-      name: row[nameIdx] || 'Unnamed',
+      name: normalizeImportName(row[nameIdx]),
       url: urlIdx !== -1 ? row[urlIdx] : '',
       username: userIdx !== -1 ? row[userIdx] : '',
       password,

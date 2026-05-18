@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
 import { useVaultStore } from '../stores/vaultStore';
@@ -15,11 +16,14 @@ export const PasswordDashboard: React.FC = () => {
   
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const visiblePasswords = storedPasswords.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.username.toLowerCase().includes(search.toLowerCase()) ||
-    (p.url && p.url.toLowerCase().includes(search.toLowerCase()))
-  );
+  const visiblePasswords = useMemo(() => {
+    const s = search.toLowerCase();
+    return storedPasswords.filter(p => 
+      p.name.toLowerCase().includes(s) || 
+      (p.username && p.username.toLowerCase().includes(s)) ||
+      (p.url && p.url.toLowerCase().includes(s))
+    );
+  }, [storedPasswords, search]);
 
   const virtualizer = useVirtualizer({
     count: visiblePasswords.length,
@@ -29,7 +33,7 @@ export const PasswordDashboard: React.FC = () => {
   });
 
   return (
-    <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
@@ -154,6 +158,7 @@ export const PasswordDashboard: React.FC = () => {
           display: 'flex', flexDirection: 'column', gap: 1,
           background: 'var(--color-border)',
           border: '1px solid var(--color-border)',
+          flex: 1, minHeight: 0
         }}>
           {/* Header */}
           <div style={{
@@ -172,9 +177,8 @@ export const PasswordDashboard: React.FC = () => {
           <div
             ref={parentRef}
             style={{
-              height: 'calc(100vh - 280px)',
-              minHeight: 300,
-              overflow: 'auto',
+              flex: 1, minHeight: 0,
+              overflowY: 'auto',
               background: 'var(--color-border)',
             }}
           >
@@ -212,7 +216,7 @@ export const PasswordDashboard: React.FC = () => {
   );
 };
 
-const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) => {
+const PasswordListItem = React.memo(({ password }: { password: StoredPassword }) => {
   const { user } = useAuthStore();
   const { deletePassword, decryptPassword } = useVaultStore();
   const { openConfirmModal } = useUIStore();
@@ -221,6 +225,16 @@ const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) 
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (menuOpen) {
+      const handleScroll = () => setMenuOpen(false);
+      window.addEventListener('scroll', handleScroll, true);
+      return () => window.removeEventListener('scroll', handleScroll, true);
+    }
+  }, [menuOpen]);
 
   React.useEffect(() => {
     if (decryptedValue !== null) {
@@ -343,11 +357,18 @@ const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) 
         )}
         <div style={{ position: 'relative' }}>
           <button
-            onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            ref={buttonRef}
+            onClick={e => { 
+              e.stopPropagation(); 
+              if (!menuOpen && buttonRef.current) {
+                setMenuRect(buttonRef.current.getBoundingClientRect());
+              }
+              setMenuOpen(!menuOpen); 
+            }}
             style={{
               width: 28, height: 28, display: 'grid', placeItems: 'center',
-              background: 'none', border: 'none', color: 'var(--color-text-3)', cursor: 'pointer',
-              transition: 'color 140ms', opacity: hovered || menuOpen ? 1 : 0
+              background: 'none', border: 'none', color: hovered || menuOpen ? 'var(--color-text)' : 'var(--color-text-3)', cursor: 'pointer',
+              transition: 'color 140ms'
             }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
@@ -355,13 +376,16 @@ const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) 
             <FiMoreVertical size={14} />
           </button>
 
-          {menuOpen && (
-            <div style={{
-              position: 'absolute', right: 0, top: '100%', zIndex: 100, marginTop: 4,
-              width: 120, background: 'var(--color-surface-2)',
-              border: '1px solid var(--color-border-2)',
-              boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
-            }}>
+          {menuOpen && menuRect && createPortal(
+            <div 
+              style={{
+                position: 'fixed', right: window.innerWidth - menuRect.right, top: menuRect.bottom + 4,
+                zIndex: 99999, width: 120, background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border-2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,.6)', overflow: 'hidden',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
               <button
                 onClick={handleEdit}
                 style={{
@@ -389,10 +413,11 @@ const PasswordListItem: React.FC<{ password: StoredPassword }> = ({ password }) 
               >
                 <FiTrash2 size={12} /> Delete
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>
     </div>
   );
-};
+});

@@ -179,6 +179,8 @@ export const VaultPage: React.FC = () => {
               flex: 1, padding: '36px 28px', width: '100%', minWidth: 0,
               animation: 'fadeUp .35s cubic-bezier(.16,1,.3,1) both',
               overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             {activeView === 'dashboard' ? <Dashboard /> : activeView === 'ssh' ? <SSHManagerDashboard /> : activeView === 'totp' ? <TOTPDashboard /> : activeView === 'certs' ? <CertificateDashboard /> : activeView === 'passwords' ? <PasswordDashboard /> : <SecretList />}
