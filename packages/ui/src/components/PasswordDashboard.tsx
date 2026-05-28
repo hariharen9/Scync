@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink } from 'react-icons/fi';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
@@ -9,13 +8,15 @@ import { useClipboard } from '../hooks/useClipboard';
 import { MaskedValue } from './MaskedValue';
 import type { StoredPassword } from '@scync/core';
 
+const PAGE_SIZE = 50;
+
 export const PasswordDashboard: React.FC = () => {
   const { storedPasswords } = useVaultStore();
   const { openAddPasswordModal, openPasswordImportModal } = useUIStore();
   const [search, setSearch] = useState('');
-  
-  const parentRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Search works across all entries
   const visiblePasswords = useMemo(() => {
     const s = search.toLowerCase();
     return storedPasswords.filter(p => 
@@ -25,12 +26,18 @@ export const PasswordDashboard: React.FC = () => {
     );
   }, [storedPasswords, search]);
 
-  const virtualizer = useVirtualizer({
-    count: visiblePasswords.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 57,
-    overscan: 10,
-  });
+  // Reset page to 1 on new search query
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(visiblePasswords.length / PAGE_SIZE) || 1;
+
+  // Paginated items
+  const paginatedPasswords = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return visiblePasswords.slice(start, start + PAGE_SIZE);
+  }, [visiblePasswords, currentPage]);
 
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -158,7 +165,6 @@ export const PasswordDashboard: React.FC = () => {
           display: 'flex', flexDirection: 'column', gap: 1,
           background: 'var(--color-border)',
           border: '1px solid var(--color-border)',
-          flex: 1, minHeight: 0
         }}>
           {/* Header */}
           <div style={{
@@ -173,43 +179,96 @@ export const PasswordDashboard: React.FC = () => {
             <div style={{ textAlign: 'right' }}>Actions</div>
           </div>
           
-          {/* Virtualized List Container */}
-          <div
-            ref={parentRef}
-            style={{
-              flex: 1, minHeight: 0,
-              overflowY: 'auto',
-              background: 'var(--color-border)',
-            }}
-          >
-            <div
-              style={{
-                height: `${virtualizer.getTotalSize()}px`,
-                width: '100%',
-                position: 'relative',
-              }}
-            >
-              {virtualizer.getVirtualItems().map((virtualItem) => {
-                const pwd = visiblePasswords[virtualItem.index];
-                return (
-                  <div
-                    key={virtualItem.key}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${virtualItem.size}px`,
-                      transform: `translateY(${virtualItem.start}px)`,
-                      paddingBottom: 1, // simulates the gap
-                    }}
-                  >
-                    <PasswordListItem password={pwd} />
-                  </div>
-                );
-              })}
-            </div>
+          {/* Paginated Password List Container */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--color-border)' }}>
+            {paginatedPasswords.map((pwd) => (
+              <PasswordListItem key={pwd.id} password={pwd} />
+            ))}
           </div>
+
+          {/* Brutalist Pagination Bar */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              background: 'var(--color-surface-2)',
+              borderTop: '1px solid var(--color-border)',
+              fontSize: 11,
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--color-text-3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              <div>
+                Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, visiblePasswords.length)} - {Math.min(currentPage * PAGE_SIZE, visiblePasswords.length)} of {visiblePasswords.length} entries
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'none',
+                    border: '1px solid var(--color-border)',
+                    color: currentPage === 1 ? 'var(--color-text-3)' : 'var(--color-text)',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === 1 ? 0.4 : 1,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    transition: 'all 100ms'
+                  }}
+                  onMouseEnter={e => {
+                    if (currentPage !== 1) {
+                      e.currentTarget.style.borderColor = 'var(--color-text-2)';
+                      e.currentTarget.style.background = 'var(--color-surface-3)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                    e.currentTarget.style.background = 'none';
+                  }}
+                >
+                  Previous
+                </button>
+                
+                <span style={{ color: 'var(--color-text-2)', fontWeight: 600 }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '6px 12px',
+                    background: 'none',
+                    border: '1px solid var(--color-border)',
+                    color: currentPage === totalPages ? 'var(--color-text-3)' : 'var(--color-text)',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === totalPages ? 0.4 : 1,
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    transition: 'all 100ms'
+                  }}
+                  onMouseEnter={e => {
+                    if (currentPage !== totalPages) {
+                      e.currentTarget.style.borderColor = 'var(--color-text-2)';
+                      e.currentTarget.style.background = 'var(--color-surface-3)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                    e.currentTarget.style.background = 'none';
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -331,6 +390,10 @@ const PasswordListItem = React.memo(({ password }: { password: StoredPassword })
           <MaskedValue
             value={decryptedValue || ''}
             onRevealToggled={handleRevealToggle}
+            onCopy={async () => {
+              const p = await decryptPassword(password.id);
+              return p ? p.password : '';
+            }}
             compact
           />
         </div>

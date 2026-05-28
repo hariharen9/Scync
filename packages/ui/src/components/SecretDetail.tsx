@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { MaskedValue } from './MaskedValue';
 import { RecoveryCodeViewer } from './RecoveryCodeViewer';
+import { ServiceAccountInspector } from './ServiceAccountInspector';
 import { ShareModal } from './ShareModal';
 import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw, FiArrowLeft, FiShare2 } from 'react-icons/fi';
 import type { DecryptedSecret } from '@scync/core';
@@ -97,7 +98,13 @@ export const SecretDetail: React.FC = () => {
           </div>
           <div style={{ border: secret.type !== 'Recovery Codes' ? '1px solid var(--color-border)' : 'none', background: secret.type !== 'Recovery Codes' ? 'var(--color-bg)' : 'transparent', padding: secret.type !== 'Recovery Codes' ? '10px 12px' : 0 }}>
             {decrypted ? (
-              secret.type === 'Recovery Codes' ? <RecoveryCodeViewer secret={decrypted} /> : <MaskedValue value={decrypted.value} />
+              secret.type === 'Recovery Codes' ? (
+                <RecoveryCodeViewer secret={decrypted} />
+              ) : secret.type === 'Service Account JSON' ? (
+                <ServiceAccountInspector secret={secret} decryptedValue={decrypted.value} />
+              ) : (
+                <MaskedValue value={decrypted.value} />
+              )
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-3)', fontSize: 12 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-green)', animation: 'spin 0.8s linear infinite' }} />

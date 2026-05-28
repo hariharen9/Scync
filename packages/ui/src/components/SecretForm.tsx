@@ -76,6 +76,44 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
   });
   const [showValue, setShowValue] = useState(false);
 
+  const handleImportJson = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event: any) => {
+        try {
+          const content = event.target.result;
+          const parsed = JSON.parse(content);
+          const pretty = JSON.stringify(parsed, null, 2);
+
+          let autoName = '';
+          if (parsed.project_id) {
+            autoName = `${parsed.project_id} Service Account`;
+          } else if (parsed.web?.project_id) {
+            autoName = `${parsed.web.project_id} OAuth Client`;
+          } else if (parsed.installed?.project_id) {
+            autoName = `${parsed.installed.project_id} OAuth Client`;
+          }
+
+          setFormData(prev => ({
+            ...prev,
+            value: pretty,
+            name: prev.name || autoName
+          }));
+        } catch (err) {
+          alert('Invalid JSON file format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   const currentPlaceholders = PLACEHOLDERS[formData.type] || PLACEHOLDERS['Other'];
 
   const handleSubmit = async (e: React.FormEvent) => { 
@@ -138,7 +176,30 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
 
       <div>
         <label style={labelStyle}>
-          {formData.type === 'Recovery Codes' ? 'Recovery Codes (One per line)' : 'Secret Value'}
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span>
+              {formData.type === 'Recovery Codes' ? 'Recovery Codes (One per line)' : 'Secret Value'}
+            </span>
+            {formData.type === 'Service Account JSON' && (
+              <button
+                type="button"
+                onClick={handleImportJson}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-green)',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: 0,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}
+              >
+                Import JSON File
+              </button>
+            )}
+          </span>
         </label>
         <div style={{ position: 'relative' }}>
           {formData.type === 'Recovery Codes' ? (

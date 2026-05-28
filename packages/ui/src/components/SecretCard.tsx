@@ -237,6 +237,10 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           <MaskedValue
             value={decryptedValue || ''}
             onRevealToggled={handleRevealToggle}
+            onCopy={async () => {
+              const dec = await decryptValue(secret.id);
+              return dec ? dec.value : '';
+            }}
             compact
           />
         )}

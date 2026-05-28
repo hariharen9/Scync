@@ -50,3 +50,6 @@ export { CertificateModal } from './components/CertificateModal';
 export { PasswordDashboard } from './components/PasswordDashboard';
 export { PasswordModal } from './components/PasswordModal';
 export { PasswordImportModal } from './components/PasswordImportModal';
+
+// Service Account JSON Inspector
+export { ServiceAccountInspector } from './components/ServiceAccountInspector';

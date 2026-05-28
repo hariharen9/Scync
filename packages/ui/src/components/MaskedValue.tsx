@@ -8,6 +8,7 @@ interface MaskedValueProps {
   onRevealToggled?: (revealed: boolean) => void;
   className?: string;
   compact?: boolean;
+  onCopy?: () => Promise<string> | string;
 }
 
 export const MaskedValue: React.FC<MaskedValueProps> = ({
@@ -16,9 +17,11 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
   onRevealToggled,
   className = '',
   compact = false,
+  onCopy,
 }) => {
   const [revealed, setRevealed] = useState(isRevealed);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [isCopying, setIsCopying] = useState(false);
   const { copy, hasCopied } = useClipboard();
 
   useEffect(() => { setRevealed(isRevealed); }, [isRevealed]);
@@ -47,9 +50,21 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
     onRevealToggled?.(next);
   };
 
-  const handleCopy = (e: React.MouseEvent) => {
+  const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    copy(value);
+    if (onCopy) {
+      setIsCopying(true);
+      try {
+        const val = await onCopy();
+        copy(val);
+      } catch (err) {
+        console.error('Failed to decrypt and copy value:', err);
+      } finally {
+        setIsCopying(false);
+      }
+    } else {
+      copy(value);
+    }
   };
 
   const iconBtnStyle: React.CSSProperties = {
@@ -77,6 +92,7 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
         <button
           onClick={handleCopy}
+          disabled={isCopying}
           style={iconBtnStyle}
           title="Copy"
           onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
@@ -84,6 +100,13 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
         >
           {hasCopied ? (
             <FiCheck style={{ width: compact ? 11 : 13, height: compact ? 11 : 13, color: 'var(--color-green)' }} />
+          ) : isCopying ? (
+            <div style={{
+              width: compact ? 10 : 12, height: compact ? 10 : 12,
+              borderRadius: '50%', border: '2px solid var(--color-border)',
+              borderTopColor: 'var(--color-green)',
+              animation: 'spin 0.8s linear infinite'
+            }} />
           ) : (
             <FiCopy style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
           )}
