@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   FiPlus, FiDownload, FiLock, FiSearch, FiCopy, FiCheck, 
   FiMoreVertical, FiEdit2, FiTrash2, FiExternalLink, 
-  FiEye, FiEyeOff, FiX, FiGlobe 
+  FiEye, FiEyeOff, FiX 
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVaultStore } from '../stores/vaultStore';
