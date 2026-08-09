@@ -90,27 +90,29 @@ export const MaskedValue: React.FC<MaskedValueProps> = ({
       </code>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-        <button
-          onClick={handleCopy}
-          disabled={isCopying}
-          style={iconBtnStyle}
-          title="Copy"
-          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
-          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
-        >
-          {hasCopied ? (
-            <FiCheck style={{ width: compact ? 11 : 13, height: compact ? 11 : 13, color: 'var(--color-green)' }} />
-          ) : isCopying ? (
-            <div style={{
-              width: compact ? 10 : 12, height: compact ? 10 : 12,
-              borderRadius: '50%', border: '2px solid var(--color-border)',
-              borderTopColor: 'var(--color-green)',
-              animation: 'spin 0.8s linear infinite'
-            }} />
-          ) : (
-            <FiCopy style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
-          )}
-        </button>
+        {revealed && (
+          <button
+            onClick={handleCopy}
+            disabled={isCopying}
+            style={iconBtnStyle}
+            title="Copy"
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+          >
+            {hasCopied ? (
+              <FiCheck style={{ width: compact ? 11 : 13, height: compact ? 11 : 13, color: 'var(--color-green)' }} />
+            ) : isCopying ? (
+              <div style={{
+                width: compact ? 10 : 12, height: compact ? 10 : 12,
+                borderRadius: '50%', border: '2px solid var(--color-border)',
+                borderTopColor: 'var(--color-green)',
+                animation: 'spin 0.8s linear infinite'
+              }} />
+            ) : (
+              <FiCopy style={{ width: compact ? 11 : 13, height: compact ? 11 : 13 }} />
+            )}
+          </button>
+        )}
 
         <button
           onClick={toggleReveal}

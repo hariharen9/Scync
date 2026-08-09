@@ -157,6 +157,9 @@ export const SecretList: React.FC = () => {
           <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
             {visibleSecrets.length} secret{visibleSecrets.length !== 1 ? 's' : ''}
           </p>
+          <p style={{ fontSize: 11, color: 'var(--color-text-3)', margin: '6px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+            Reveal a secret to decrypt it — copy becomes available only after revealing.
+          </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {activeView === 'project' && selectedProjectId && (
