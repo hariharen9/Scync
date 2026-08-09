@@ -5,7 +5,7 @@ import {
 import { db } from './firebase';
 import { encrypt, decrypt } from './crypto';
 import type { 
-  VaultMeta, SecretFormData, StoredSecret, DecryptedSecret, 
+  VaultMeta, BiometricMeta, SecretFormData, StoredSecret, DecryptedSecret, 
   Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP,
   StoredCertificate, StoredPassword, DecryptedPassword, PasswordFormData
 } from './types';
@@ -29,17 +29,16 @@ export async function getVaultMeta(uid: string): Promise<VaultMeta | null> {
     salt: data.salt,
     verifier: data.verifier,
     createdAt: data.createdAt?.toDate() || new Date(),
-    biometric: data.biometric || undefined
+    biometrics: data.biometrics ?? (data.biometric ? [data.biometric] : [])
   };
 }
 
-export async function updateVaultBiometrics(uid: string, biometric: VaultMeta['biometric'] | null): Promise<void> {
+export async function updateVaultBiometrics(uid: string, biometrics: BiometricMeta[] | null): Promise<void> {
   const ref = doc(db, "users", uid, "meta", "vault");
-  if (biometric === null) {
-    // We cannot easily delete a nested field without importing `deleteField`, so we set it to null
-    await updateDoc(ref, { biometric: null, updatedAt: serverTimestamp() });
+  if (biometrics === null) {
+    await updateDoc(ref, { biometrics: null, updatedAt: serverTimestamp() });
   } else {
-    await updateDoc(ref, { biometric, updatedAt: serverTimestamp() });
+    await updateDoc(ref, { biometrics, updatedAt: serverTimestamp() });
   }
 }
 

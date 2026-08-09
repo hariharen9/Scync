@@ -644,7 +644,7 @@ export const UnlockPage: React.FC = () => {
             )}
           </button>
 
-          {vaultMeta?.biometric && (
+          {vaultMeta?.biometrics && vaultMeta.biometrics.length > 0 && (
             <>
               <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
               <button

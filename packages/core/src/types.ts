@@ -13,7 +13,7 @@ export interface VaultMeta {
   salt: string;
   verifier: EncryptedField;
   createdAt: Date;
-  biometric?: BiometricMeta;
+  biometrics: BiometricMeta[];
 }
 
 export interface StoredSecret {

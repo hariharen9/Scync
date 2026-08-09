@@ -335,7 +335,7 @@
   position: relative;
   transition: border-color .2s ease;
 }
-.setup-page-root .pf:focus-within { border-color: var(--b4); }
+.setup-page-root .pf:focus-within { border-color: var(--green); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
 .setup-page-root .pf.match { border-color: var(--green); }
 .setup-page-root .pf.mismatch { border-color: var(--red); animation: setupShake .38s ease; }
 .setup-page-root .pf.has-val { border-color: var(--b3); }

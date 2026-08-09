@@ -100,7 +100,9 @@ interface VaultState {
     passwords: StoredPassword[];
   } | null>;
   unlockWithBiometrics: (uid: string) => Promise<boolean>;
-  updateBiometrics: (uid: string, enabled: boolean, password?: string) => Promise<boolean>;
+  addBiometric: (uid: string, password: string) => Promise<boolean>;
+  removeBiometric: (uid: string, index: number) => Promise<boolean>;
+  clearAllBiometrics: (uid: string) => Promise<boolean>;
 }
 
 export const useVaultStore = create<VaultState>((set, get) => ({
@@ -152,13 +154,23 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         if (!meta) throw new Error("Vault not setup");
         set({ vaultMeta: meta });
       }
-      if (!meta.biometric) return null;
-      const password = await coreUnlockWithBiometrics(
-        meta.biometric.credentialId,
-        meta.biometric.salt,
-        meta.biometric.encMasterPassword
-      );
-      return get().verifyPassword(password, uid);
+      if (!meta.biometrics || meta.biometrics.length === 0) return null;
+      // Try each biometric entry — the correct device will match
+      for (const bio of meta.biometrics) {
+        try {
+          const password = await coreUnlockWithBiometrics(
+            bio.credentialId,
+            bio.salt,
+            bio.encMasterPassword
+          );
+          const key = await get().verifyPassword(password, uid);
+          if (key) return key;
+        } catch {
+          // This biometric entry doesn't match this device; try the next one
+          continue;
+        }
+      }
+      return null;
     } catch (err) {
       console.error(err);
       return null;
@@ -196,8 +208,8 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       // Batch re-encrypt
       await coreChangeVaultPassword(uid, oldKey, newKey, newSalt, newVerifier, storedSecrets, storedSSHKeys, get().storedTOTPs, get().storedCertificates, get().storedPasswords);
 
-      // If biometrics was enabled, we MUST clear it because the wrapped password is now wrong
-      if (meta.biometric) {
+      // If biometrics were enabled, clear all — the wrapped passwords are now wrong
+      if (meta.biometrics && meta.biometrics.length > 0) {
         await updateVaultBiometrics(uid, null);
       }
 
@@ -408,40 +420,67 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         set({ vaultMeta: meta });
       }
 
-      if (!meta.biometric) return false;
+      if (!meta.biometrics || meta.biometrics.length === 0) return false;
 
-      const password = await coreUnlockWithBiometrics(
-        meta.biometric.credentialId,
-        meta.biometric.salt,
-        meta.biometric.encMasterPassword
-      );
-
-      return get().unlock(password, uid);
+      // Try each biometric entry for this device
+      for (const bio of meta.biometrics) {
+        try {
+          const password = await coreUnlockWithBiometrics(
+            bio.credentialId,
+            bio.salt,
+            bio.encMasterPassword
+          );
+          if (password) return get().unlock(password, uid);
+        } catch {
+          continue;
+        }
+      }
+      return false;
     } catch (err) {
       console.error(err);
       return false;
     }
   },
 
-  updateBiometrics: async (uid: string, enabled: boolean, password?: string) => {
+  addBiometric: async (uid: string, password: string) => {
     try {
-      if (enabled) {
-        if (!password) return false;
-        const result = await registerBiometrics(
-          uid,
-          'User',
-          password
-        );
-        await updateVaultBiometrics(uid, result);
-        const meta = await getVaultMeta(uid);
-        set({ vaultMeta: meta });
-        return true;
-      } else {
-        await updateVaultBiometrics(uid, null);
-        const meta = await getVaultMeta(uid);
-        set({ vaultMeta: meta });
-        return true;
-      }
+      const result = await registerBiometrics(uid, 'User', password);
+      const currentMeta = get().vaultMeta || await getVaultMeta(uid);
+      const currentBiometrics = currentMeta?.biometrics ?? [];
+      const updatedBiometrics = [...currentBiometrics, result];
+      await updateVaultBiometrics(uid, updatedBiometrics);
+      const meta = await getVaultMeta(uid);
+      set({ vaultMeta: meta });
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  },
+
+  removeBiometric: async (uid: string, index: number) => {
+    try {
+      const currentMeta = get().vaultMeta || await getVaultMeta(uid);
+      if (!currentMeta) return false;
+      const currentBiometrics = currentMeta.biometrics ?? [];
+      if (index < 0 || index >= currentBiometrics.length) return false;
+      const updatedBiometrics = currentBiometrics.filter((_, i) => i !== index);
+      await updateVaultBiometrics(uid, updatedBiometrics);
+      const meta = await getVaultMeta(uid);
+      set({ vaultMeta: meta });
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  },
+
+  clearAllBiometrics: async (uid: string) => {
+    try {
+      await updateVaultBiometrics(uid, null);
+      const meta = await getVaultMeta(uid);
+      set({ vaultMeta: meta });
+      return true;
     } catch (err) {
       console.error(err);
       return false;

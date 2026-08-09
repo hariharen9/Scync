@@ -307,7 +307,8 @@
   transition: border-color .2s ease;
 }
 .unlock-page-root .pf:focus-within {
-  border-color: var(--b4);
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 .unlock-page-root .pf.error {
   border-color: var(--red);
