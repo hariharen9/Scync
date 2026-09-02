@@ -131,9 +131,11 @@ consumers can't over-deliver and a failed decrypt consumes no view).
   `settings {theme, inactivityLockMinutes|null, windowBlurLock}` persisted in `localStorage['scync_settings']`;
   `filter: VaultFilter {service,type,environment,status,projectId,search}`, `sortBy/sortOrder`
   (updatedAt desc default). Matching `open*/close*` actions; `setFilter/clearFilters/setSortBy/setSortState`.
-- **authStore**: `user`, `isLoading`; `signIn()` = **Google popup** (`signInWithPopup`, NOT redirect);
+- **authStore**: `user`, `isLoading`; `signInWithGoogle()` (**popup**, NOT redirect), `signInWithEmail(email, password)`
+  and `registerWithEmail(email, password)` (email/password — added 2026-09-02; emails trimmed + lowercased);
   `signOut()`; `deleteUserAccount()` → core `deleteUserAccountData` + `deleteUser` with one
-  `auth/requires-recent-login` re-auth retry.
+  `auth/requires-recent-login` re-auth retry. Also exports `getAuthErrorMessage(error)` mapping Firebase codes
+  to honest copy (incl. "you made these up — unrecoverable" messaging).
 - **projectStore / serviceStore**: thin subscribe/CRUD wrappers + `selectedProjectId/selectProject(id|null)` (projects).
 - **shareStore**: `activeShares`, `isLoadingShares`; `createShare` (URL + list refresh), `revokeShare`,
   `subscribeToShares`, `fetchActiveShares`, `consumeShare`.
@@ -188,10 +190,15 @@ consumers can't over-deliver and a failed decrypt consumes no view).
 - **VaultPage**: registers ALL subscriptions once per user (secrets, ssh, totp, certs, passwords, projects,
   services); renders content by `activeView`; `selectedSecretId` → animated detail panel (sticky desktop /
   draggable bottom-sheet mobile); renders all modals; footer.
-- **AuthPage** (marketing + Google sign-in), **SetupPage** (vault creation: password ≥8 chars + uppercase + digit +
-  confirm; **no portable-vault import option**), **UnlockPage** (password + biometric unlock; in-memory 5-attempt
-  lockout — attempt 3 → 60 s wait, attempt 5 → auto sign-out; **no forgot-password/resetVault anywhere**),
-  **VaultPage** above.
+- **AuthPage** (marketing landing). All three CTAs (nav/hero/footer) open **`SignInOverlay`**
+  (`apps/web/src/components/SignInOverlay.tsx`, portaled, CSS in SignInOverlay.css): Google button +
+  email/password Sign-in / Create-account tabs, a "generate a random email & password" helper (CSPRNG),
+  and an explicit explainer — made-up login is allowed & must be saved (no recovery), the login is only
+  auth, and the Vault Master Password (next screen) is the real, unrecoverable key; vault is tied to the
+  login that created it. Email/password must be enabled in Firebase Console (Auth → Sign-in method).
+- **SetupPage** (vault creation: password ≥8 chars + uppercase + digit + confirm; warns there is no password
+  recovery; **no portable-vault import option**), **UnlockPage** (password + biometric unlock; in-memory 5-attempt
+  lockout — attempt 3 → 60 s wait, attempt 5 → auto sign-out; **no forgot-password/resetVault anywhere**).
 - PWA via vite-plugin-pwa (autoUpdate SW); `__APP_VERSION__` from git tag via `git describe --tags --abbrev=0`
   (empty in dev); theme applied in App.tsx.
 

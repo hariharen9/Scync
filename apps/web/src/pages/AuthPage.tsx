@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useAuthStore } from '@scync/ui';
+import { SignInOverlay } from '../components/SignInOverlay';
 import './AuthPage.css';
 
 const floatData = [
@@ -23,7 +23,7 @@ const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys',
 const badPlaces = ['Notion', 'Notes', 'Slack DMs', 'Screenshots', '.env files', 'Discord', 'Email', 'text files'];
 
 export const AuthPage: React.FC = () => {
-  const { signIn } = useAuthStore();
+  const [authOpen, setAuthOpen] = React.useState(false);
   const navRef = useRef<HTMLElement>(null);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
@@ -194,7 +194,7 @@ export const AuthPage: React.FC = () => {
           <li><a href="https://github.com/hariharen9/Scync" target="_blank">GitHub ↗</a></li>
         </ul>
         <div className="nav-cta">
-          <button className="nav-btn-primary" onClick={signIn}>
+          <button className="nav-btn-primary" onClick={() => setAuthOpen(true)}>
             Launch Scync 🚀
           </button>
         </div>
@@ -236,9 +236,9 @@ export const AuthPage: React.FC = () => {
         </p>
 
         <div className="hero-cta">
-          <button className="google-btn" onClick={signIn} id="hero-google-btn">
-            <svg width="17" height="17" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-            Continue with Google — it's free
+          <button className="google-btn" onClick={() => setAuthOpen(true)} id="hero-google-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
+            Get started — it's free
           </button>
           <a href="https://github.com/hariharen9/Scync" target="_blank" className="hero-cta-secondary">
             View on GitHub
@@ -697,7 +697,7 @@ export const AuthPage: React.FC = () => {
               <div className="sec-layer sec-layer-1">
                 <div className="sec-layer-label">Layer 1 — Identity</div>
                 <div className="sec-layer-title">Firebase Auth</div>
-                <div className="sec-layer-desc">Handles Google Sign-In. Controls which Firestore documents you can access. <strong style={{ color: "var(--t1)" }}>Does not protect secret content.</strong></div>
+                <div className="sec-layer-desc">Handles sign-in — Google or email &amp; password. Controls which Firestore documents you can access. <strong style={{ color: "var(--t1)" }}>Does not protect secret content.</strong></div>
               </div>
               <div className="sec-layer sec-layer-2">
                 <div className="sec-layer-label">Layer 2 — Hardware</div>
@@ -1011,9 +1011,9 @@ export const AuthPage: React.FC = () => {
           <h2 className="cta-h2 reveal reveal-delay-1">The tool that should<br />have always existed.</h2>
           <p className="cta-sub reveal reveal-delay-2">From the moment you first pasted an API key into a Notion page, this is what should have been there instead.</p>
           <div className="reveal reveal-delay-3">
-            <button className="google-btn" onClick={signIn} style={{ margin: "0 auto", fontSize: "15px", padding: "15px 28px" }} >
-              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-              Continue with Google — it's free
+            <button className="google-btn" onClick={() => setAuthOpen(true)} style={{ margin: "0 auto", fontSize: "15px", padding: "15px 28px" }} >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
+              Get started — it's free
             </button>
           </div>
           <div className="cta-note reveal reveal-delay-4">No credit card · No team plan · MIT licensed · Open source forever</div>
@@ -1041,6 +1041,9 @@ export const AuthPage: React.FC = () => {
           <span className="creator-text">Created by <a href="https://hariharen.site" target="_blank">Hariharen</a></span>
         </div>
       </footer>
+
+      {/* Sign-in overlay: Google or email/password + auth vs master-password explainer */}
+      {authOpen && <SignInOverlay onClose={() => setAuthOpen(false)} />}
     </div>
   );
 };

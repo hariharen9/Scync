@@ -6,6 +6,27 @@ Never put long explanations here — reference files and decisions only.
 
 ---
 
+## 2026-09-02 — Email/password sign-in + honest auth-vs-master-password UX
+
+- **Why**: Firebase now has Email/Password enabled; app only offered Google. Landing copy never explained that
+  the login is only auth and the vault master password is the real (unrecoverable) key.
+- **authStore** (`packages/ui/src/stores/authStore.ts`): `signIn` split into `signInWithGoogle()` (popup),
+  `signInWithEmail(email, pwd)` and `registerWithEmail(email, pwd)` (email trimmed/lowercased). Added exported
+  `getAuthErrorMessage()` mapping Firebase codes → honest copy ("made-up creds are unrecoverable", etc.).
+- **New `apps/web/src/components/SignInOverlay.tsx` + `.css`** — clean dedicated sign-in panel (portaled):
+  Google button; email/password tabs Sign in / Create account; 🎲 "generate a random email & password"
+  (CSPRNG, `.local` domain, per-field copy); numbered explainer: (1) made-up login allowed but must be saved,
+  nobody can reset it, (2) login is only auth, (3) vault Master Password is separate, never stored, forget it =
+  data gone, (4) vault is tied to the login that created it — always use the same one. Obvious green focus
+  rings per taste rules. Overlay mounts fresh per open (state resets naturally; avoids setState-in-effect lint).
+- **AuthPage** (`apps/web/src/pages/AuthPage.tsx`): all three CTAs (nav/hero/footer) now open the overlay
+  ("Get started — it's free"); security Layer 1 copy updated to "Google or email & password".
+- Validation: turbo typecheck, `web tsc -b`, eslint on changed web files — all clean. (Repo has PRE-EXISTING
+  eslint errors in UnlockPage.tsx, vite.config.ts, App.tsx — untouched, CI lint was already red.)
+- Manual QA needed: real Firebase flow (create email/password account → Setup → lock/unlock; sign in again).
+
+---
+
 ## 2026-09-02 — Bug-fix session (7 items, all verified by typecheck)
 
 1. **Firestore per-user ownership** (`firebase/firestore.rules`): `/users/{uid}` + all descendants now gated by
