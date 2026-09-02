@@ -82,20 +82,23 @@ orphans become uncategorized; signature takes `_moveSecretsTo` but ignores it), 
 `deleteUserAccountData(uid)` (one batch — **assumes <500 docs/user, no chunking**), and sharing:
 `createShare(uid, ShareConfig) → full URL` (`window.location.origin` else `https://scync.space`),
 `fetchUserShares`, `subscribeToUserShares`, `revokeShare`, `consumeShare(shareId, keyFragment) → DecryptedShare`
-(read → expiry/view checks → fire-and-forget `viewsUsed+1` updateDoc → decrypt).
+(**transactional**: read → expiry/view checks → client-side decrypt → atomic `viewsUsed+1`, so concurrent
+consumers can't over-deliver and a failed decrypt consumes no view).
 - Subscriptions are whole-collection `onSnapshot` with **no orderBy/where** (client-side filtering everywhere).
 - Composite indexes in `firebase/firestore.indexes.json` (status/service/type/environment × createdAt DESC) are **unused**.
 - Type model (types.ts): `ServiceName = string`; 14 `SecretType`s (API Key … 'Password', 'Recovery Codes', 'Other'); 8 `Environment`s; status `Active|Rotated|Expired|Revoked`; every sensitive entity has `Stored*` / `Decrypted*` pairs; `RecoveryCodeSet {codes: [{code, used, usedAt}]}` stored as JSON inside a secret's value; **"secret" ≠ "password"** (see §7).
 - Constants (constants.ts): `SERVICES` list, `SECRET_TYPES`, `ENVIRONMENTS`, `STATUSES`,
-  `SERVICE_COLORS` (**⚠ Tailwind class strings**, not hex), `STATUS_COLORS`, `PROJECT_COLORS` (hex map).
+  `SERVICE_COLORS` (hex accent map — single source of truth, fixed 2026-09-02), `STATUS_COLORS`, `PROJECT_COLORS` (hex map).
   `utils.getAttentionSecrets(secrets)` → expired / expiringSoon (≤30d) / rotationOverdue (>180d) / recoveryCodesLow (≤2) — Active-only except recoveryCodesLow.
 
 ### Firestore rules (firebase/firestore.rules)
-- `/shares/{shareId}`: create requires auth + `createdByUid == uid`; read **public** if not expired and
-  (`viewsAllowed == null` OR `viewsUsed < viewsAllowed`); update public only when diff keys are exactly
-  `['viewsUsed']` and `new == old + 1` (this is the unauthenticated view-counter increment); delete = creator only.
-- **Catch-all `/{document=**}: allow read, write if request.auth != null` — any signed-in user can read/write any
-  other user's docs; NO `uid` ownership check. Known weakness; plaintext metadata exposed to all authenticated users.
+- `/shares/{shareId}`: create requires auth + `createdByUid == uid`; read = creator auth OR public read while
+  not expired and (`viewsAllowed == null` OR `viewsUsed < viewsAllowed`); update public only when diff keys are
+  exactly `['viewsUsed']` and `new == old + 1` (unauthenticated view-counter increment, now issued inside a
+  `runTransaction`); delete = creator only.
+- **Per-user scoping (fixed 2026-09-02)**: `/users/{uid}` and all descendants are gated by
+  `request.auth.uid == uid` — no cross-user read/write. The old permissive catch-all
+  (`allow read, write if request.auth != null`) is gone. NOTE: requires `firebase deploy --only firestore:rules`.
 
 ## 4. Domain logic in core (small modules)
 
@@ -137,12 +140,15 @@ orphans become uncategorized; signature takes `_moveSecretsTo` but ignores it), 
 - **Hooks**: `useClipboard` (`copy(text)` → `hasCopied` 2 s **+ clears clipboard after 30 s if unchanged`);
   `useInactivityLock` (listens mousedown/mousemove/keypress/scroll/touchstart; `lock()` after
   `inactivityLockMinutes`; locks on window blur / visibility hidden when `windowBlurLock`).
-- **Known store bugs**: no store reset on auth/sign-out change (account deletion can leave `isLocked:false` +
-  old derivedKey → cross-account risk); `changeVaultPassword` returns false if post-commit biometric wipe/meta
-  fetch fails (data already migrated); `addBiometric(uid, …)` passes uid as the registerBiometrics **email** arg;
-  subscription arrays have no orderBy.
+- **Known store bugs**: `AuthGuard` now calls `reset()`/`resetSession()` on all stores whenever the auth user
+  changes (sign-in/sign-out/switch) — fixed 2026-09-02. Remaining: `changeVaultPassword` returns false if
+  post-commit biometric wipe/meta fetch fails (data already migrated); `addBiometric(uid, …)` passes uid as
+  the registerBiometrics **email** arg; subscription arrays have no orderBy.
 - `utils/portableVaultTemplate.ts` — `generatePortableVault(export, uid)` builds a self-contained,
-  self-decrypting **HTML** export (embedded base64 JSON, PBKDF2 unlock, decrypt + list secrets).
+  self-decrypting **HTML** export (embedded base64 JSON, PBKDF2 unlock with verifier-constant check) that
+  decrypts and lists **all five domains**: secrets (search + Copy Value/Notes), passwords (Copy Username/
+  Password/Notes), SSH keys (Copy Public/Private Key), TOTP (Copy Base32 Secret) and certificates
+  (Copy Cert PEM / Private Key). Plaintext is never rendered inline — copy-only (fixed 2026-09-02).
 
 ## 6. Barrel exports
 
@@ -200,7 +206,7 @@ orphans become uncategorized; signature takes `_moveSecretsTo` but ignores it), 
   http://localhost), else `shell.openExternal`. Global shortcut Ctrl+Shift+S re-shows window.
   **No single-instance lock.** `preload.ts` exposes `window.electronAPI {platform, isDesktop}` — currently
   **never consumed** (dead API). electron-builder: NSIS (win x64) + DMG (mac x64+arm64), web dist as extraResource `app`.
-- `apps/desktop/package.json` version is 1.0.0 while git tags go to v2.0.0 — installer filenames don't track tags.
+- All package manifests were aligned to `2.0.0` (2026-09-02) to match the latest git tag `v2.0.0`.
 
 ## 10. Build / CI / deploy
 
@@ -221,35 +227,31 @@ orphans become uncategorized; signature takes `_moveSecretsTo` but ignores it), 
 - Zero-build packages point `main` at `src/index.ts`; barrel exports; `Stored*`/`Decrypted*` type pairs;
   real-time via onSnapshot; non-extractable keys; clipboard hygiene where useClipboard is used.
 
-## 12. Known bugs / gotchas (verified — good first targets)
+## 12. Known bugs / gotchas (verified)
 
-1. **SERVICE_COLORS misuse**: core `constants.ts` `SERVICE_COLORS` are Tailwind class strings, but
-   `SecretCard`/`SecretDetail` consume them as CSS colors (`color:`, `${accentColor}18`) → invalid CSS →
-   silent fallback for built-in services. Dashboard defines its own local hex map (inconsistent sources).
-2. **Portable vault export silently drops SSH/TOTP/cert/password domains** — `exportVault` returns all five
-   lists, but SettingsModal's `fullExport` only carries `secrets` (+projects/services).
-3. **Firestore rules have no per-user ownership** (`request.auth.uid == uid` missing on `/users/{uid}/**`).
-4. **Password generator uses `Math.random()`** (PasswordModal) — not CSPRNG, no character-class guarantee.
-5. **Account-deletion/sign-out doesn't reset stores**; `deleteUserAccount` retry deletes whatever Google account
-   answers the re-auth popup.
-6. **changeVaultPassword** reports failure if post-batch biometric wipe/meta fetch throws (state/meta already committed).
-7. **Imports are non-atomic**: EnvImportModal has no try/catch around the write loop (can strand on spinner);
+Fixed 2026-09-02 (details in HANDOFF): Firestore per-user ownership rules; store reset on auth change;
+CSPRNG password generator; transactional share consumption; hex `SERVICE_COLORS` single source (Dashboard,
+SecretCard, SecretDetail); portable vault covers all five domains; manifests aligned to v2.0.0.
+
+Remaining:
+1. **Firestore rules are edited but NOT yet deployed** — run `firebase deploy --only firestore:rules`.
+2. **changeVaultPassword** reports failure if post-batch biometric wipe/meta fetch throws (state/meta already committed).
+3. **Imports are non-atomic**: EnvImportModal has no try/catch around the write loop (can strand on spinner);
    PasswordImportModal aborts mid-loop on first failure leaving partial imports. `.env` parser: no
    `export KEY=`, escapes, or multi-line values; "Keep Both" with duplicate keys → unbounded duplicates.
-8. **CommandBar copies secrets without useClipboard** → no 30 s clipboard clear.
-9. PasswordDashboard delete on last page can strand `currentPage > totalPages` (empty page while items exist).
-10. TOTP dashboards keep plaintext secrets in refs for dashboard lifetime; per-second `tick` console.warn spam;
-    delete uses `find(...)!` (potential crash between renders).
-11. SSH config generator: `IdentityFile ~/.ssh/<slug>` (no extension) vs exports named `<slug>.pem`/`.pub`.
-12. Certificate dashboard: private key has no copy button and is excluded from export.
-13. Share view counting: fire-and-forget increment **after** read → race can over-deliver; failed decrypt still
-    consumes a view. RecoveryCodeViewer allows copy while masked; Mark Used has no confirm.
-14. VaultGuard doesn't reset `hasMeta` on relock; meta-fetch errors route to the setup screen.
-15. Desktop: `sandbox:false`, `webSecurity:false`, no single-instance lock; preload API unused.
-16. AddEditModal re-seeds form when `storedSecrets` identity changes (subscription refresh during edit).
-17. MaskedValue copy-before-reveal is impossible by design; SecretDetail decrypts on open (plaintext in state
+4. **CommandBar copies secrets without useClipboard** → no 30 s clipboard clear.
+5. PasswordDashboard delete on last page can strand `currentPage > totalPages` (empty page while items exist).
+6. TOTP dashboards keep plaintext secrets in refs for dashboard lifetime; per-second `tick` console.warn spam;
+   delete uses `find(...)!` (potential crash between renders).
+7. SSH config generator: `IdentityFile ~/.ssh/<slug>` (no extension) vs exports named `<slug>.pem`/`.pub`.
+8. Certificate dashboard: private key has no copy button and is excluded from export.
+9. RecoveryCodeViewer allows copy while masked; Mark Used has no confirm.
+10. VaultGuard doesn't reset `hasMeta` on relock; meta-fetch errors route to the setup screen.
+11. Desktop: `sandbox:false`, `webSecurity:false`, no single-instance lock; preload API unused.
+12. AddEditModal re-seeds form when `storedSecrets` identity changes (subscription refresh during edit).
+13. MaskedValue copy-before-reveal is impossible by design; SecretDetail decrypts on open (plaintext in state
     even while masked) — broader exposure than SecretCard's reveal-on-demand.
-18. Modal chrome/input styles/icon-picker duplicated across AddProjectModal/AddServiceModal/SecretForm/others
+14. Modal chrome/input styles/icon-picker duplicated across AddProjectModal/AddServiceModal/SecretForm/others
     (no shared Modal base); Dropdown/DatePicker share portal/coords scaffolding; no Escape handling in modals;
     ConfirmModal has no exit animation and swallows onConfirm errors (stays open on rejection).
 

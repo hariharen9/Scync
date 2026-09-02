@@ -19,6 +19,7 @@ interface ShareState {
   // Internal
   setShares: (shares: ShareDocument[]) => void;
   setLoading: (loading: boolean) => void;
+  reset: () => void;
 }
 
 export const useShareStore = create<ShareState>((set, get) => ({
@@ -63,5 +64,7 @@ export const useShareStore = create<ShareState>((set, get) => ({
   },
   
   setShares: (shares: ShareDocument[]) => set({ activeShares: shares }),
-  setLoading: (loading: boolean) => set({ isLoadingShares: loading })
+  setLoading: (loading: boolean) => set({ isLoadingShares: loading }),
+
+  reset: () => set({ activeShares: [], isLoadingShares: false })
 }));

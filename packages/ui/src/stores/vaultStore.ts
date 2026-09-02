@@ -103,6 +103,7 @@ interface VaultState {
   addBiometric: (uid: string, password: string) => Promise<boolean>;
   removeBiometric: (uid: string, index: number) => Promise<boolean>;
   clearAllBiometrics: (uid: string) => Promise<boolean>;
+  reset: () => void;
 }
 
 export const useVaultStore = create<VaultState>((set, get) => ({
@@ -485,6 +486,19 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       console.error(err);
       return false;
     }
-  }
+  },
+
+  // Wipe ALL per-user vault state (key, ciphertext cache, meta). Called whenever the
+  // authenticated user changes so no plaintext-derived state leaks across accounts.
+  reset: () => set({
+    derivedKey: null,
+    isLocked: true,
+    storedSecrets: [],
+    storedSSHKeys: [],
+    storedTOTPs: [],
+    storedCertificates: [],
+    storedPasswords: [],
+    vaultMeta: null,
+  })
 }));
 

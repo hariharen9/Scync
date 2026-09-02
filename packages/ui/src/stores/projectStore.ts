@@ -14,6 +14,7 @@ interface ProjectState {
   deleteProject: (uid: string, projectId: string, moveSecretsTo: string | null) => Promise<void>;
   
   subscribeToProjects: (uid: string) => () => void;
+  reset: () => void;
 }
 
 export const useProjectStore = create<ProjectState>((set) => ({
@@ -39,5 +40,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
     return subscribeToProjects(uid, (projects) => {
       set({ projects });
     });
-  }
+  },
+
+  reset: () => set({ projects: [], selectedProjectId: null })
 }));

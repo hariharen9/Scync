@@ -106,7 +106,11 @@ export const SettingsModal: React.FC = () => {
         meta: exportData.meta,
         projects: projects,
         services: customServices,
-        secrets: exportData.secrets
+        secrets: exportData.secrets,
+        sshKeys: exportData.sshKeys || [],
+        totpTokens: exportData.totpTokens || [],
+        certificates: exportData.certificates || [],
+        passwords: exportData.passwords || []
       };
 
       const htmlContent = generatePortableVault(fullExport, user.uid);

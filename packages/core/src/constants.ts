@@ -22,27 +22,29 @@ export const STATUSES: readonly SecretStatus[] = [
   'Active', 'Rotated', 'Expired', 'Revoked'
 ];
 
+// Service accent colors (hex) used for chips, icons and charts.
+// Single source of truth — do not redefine per-component maps.
 export const SERVICE_COLORS: Record<ServiceName, string> = {
-  'Google': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'Anthropic': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'GitHub': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  'OpenRouter': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  'AWS': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500',
-  'Vercel': 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300',
-  'Stripe': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  'Cloudflare': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'Supabase': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  'OpenAI': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
-  'HuggingFace': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500',
-  'Twilio': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  'Netlify': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
-  'Railway': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  'Firebase': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'Azure': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'DigitalOcean': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  'GitLab': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  'Slack': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  'Other': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+  'AWS': '#f59e0b',
+  'GitHub': '#f0f6fc',
+  'Google': '#4285f4',
+  'Stripe': '#635bff',
+  'OpenAI': '#74aa9c',
+  'Vercel': '#ffffff',
+  'Supabase': '#3ecf8e',
+  'Anthropic': '#d4a27f',
+  'Cloudflare': '#f48120',
+  'HuggingFace': '#ffd21e',
+  'Twilio': '#f22f46',
+  'Netlify': '#00c7b7',
+  'Railway': '#a855f7',
+  'Firebase': '#ffca28',
+  'Azure': '#0089d6',
+  'DigitalOcean': '#0080ff',
+  'GitLab': '#fca326',
+  'Slack': '#4a154b',
+  'OpenRouter': '#9b6dff',
+  'Other': '#10b981',
 };
 
 export const STATUS_COLORS: Record<SecretStatus, string> = {

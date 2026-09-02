@@ -2,13 +2,36 @@ import React, { useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@scync/core';
 import { useAuthStore } from '../stores/authStore';
+import { useVaultStore } from '../stores/vaultStore';
+import { useUIStore } from '../stores/uiStore';
+import { useProjectStore } from '../stores/projectStore';
+import { useServiceStore } from '../stores/serviceStore';
+import { useShareStore } from '../stores/shareStore';
 import { FiLock } from 'react-icons/fi';
 
 interface AuthGuardProps { children: React.ReactNode; fallback: React.ReactNode; }
 
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children, fallback }) => {
   const { user, isLoading, setUser } = useAuthStore();
-  useEffect(() => { const u = onAuthStateChanged(auth, (fu) => { setUser(fu); }); return () => u(); }, [setUser]);
+  useEffect(() => {
+    let prevUid: string | null = null;
+    const u = onAuthStateChanged(auth, (fu) => {
+      const nextUid = fu?.uid ?? null;
+      // Whenever the authenticated user changes (sign-in, sign-out, account switch),
+      // wipe all per-user state so nothing (derived key, ciphertext cache, filters,
+      // selections) leaks from one account into another.
+      if (nextUid !== prevUid) {
+        useVaultStore.getState().reset();
+        useProjectStore.getState().reset();
+        useServiceStore.getState().reset();
+        useShareStore.getState().reset();
+        useUIStore.getState().resetSession();
+        prevUid = nextUid;
+      }
+      setUser(fu);
+    });
+    return () => u();
+  }, [setUser]);
 
   if (isLoading) {
     return (

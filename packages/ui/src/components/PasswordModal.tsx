@@ -75,12 +75,30 @@ export const PasswordModal: React.FC = () => {
   };
 
   const generatePassword = () => {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
-    let pwd = "";
-    for (let i = 0; i < 20; i++) {
-      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    const groups = [
+      'abcdefghijklmnopqrstuvwxyz',
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      '0123456789',
+      '!@#$%^&*()_+~`|}{[]:;?><,./-=',
+    ];
+    const all = groups.join('');
+    // CSPRNG index in [0, max)
+    const randomIndex = (max: number) => {
+      const buf = new Uint32Array(1);
+      crypto.getRandomValues(buf);
+      return buf[0] % max;
+    };
+
+    // Guarantee at least one character from every class, then fill to 20.
+    const picks = groups.map(g => g[randomIndex(g.length)]);
+    while (picks.length < 20) picks.push(all[randomIndex(all.length)]);
+
+    // Fisher–Yates shuffle using the same CSPRNG so class positions aren't predictable.
+    for (let i = picks.length - 1; i > 0; i--) {
+      const j = randomIndex(i + 1);
+      [picks[i], picks[j]] = [picks[j], picks[i]];
     }
-    setPassword(pwd);
+    setPassword(picks.join(''));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

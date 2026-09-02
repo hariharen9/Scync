@@ -9,6 +9,7 @@ interface ServiceState {
   updateService: (uid: string, serviceId: string, data: Partial<CustomService>) => Promise<void>;
   deleteService: (uid: string, serviceId: string) => Promise<void>;
   subscribeToServices: (uid: string) => () => void;
+  reset: () => void;
 }
 
 export const useServiceStore = create<ServiceState>((set) => ({
@@ -32,5 +33,7 @@ export const useServiceStore = create<ServiceState>((set) => ({
     return subscribeToServices(uid, (services) => {
       set({ customServices: services });
     });
-  }
+  },
+
+  reset: () => set({ customServices: [] })
 }));

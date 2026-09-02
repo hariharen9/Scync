@@ -97,6 +97,9 @@ export interface UIState {
   isMobileMenuOpen: boolean;
   toggleMobileMenu: () => void;
   closeMobileMenu: () => void;
+  // Reset session-scoped state (view, filters, modals) when the account changes.
+  // Persisted settings are intentionally NOT reset.
+  resetSession: () => void;
 }
 
 const defaultFilter: VaultFilter = {
@@ -173,6 +176,29 @@ export const useUIStore = create<UIState>((set) => ({
   
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),
+
+  resetSession: () => set({
+    activeView: 'dashboard',
+    selectedSecretId: null,
+    isAddModalOpen: false,
+    isEditModalOpen: false,
+    isEnvImportModalOpen: false,
+    isAddProjectModalOpen: false,
+    isAddServiceModalOpen: false,
+    isAddSSHModalOpen: false,
+    isAddTOTPModalOpen: false,
+    isAddCertModalOpen: false,
+    isAddPasswordModalOpen: false,
+    isPasswordImportModalOpen: false,
+    isAboutModalOpen: false,
+    isSettingsModalOpen: false,
+    isCommandBarOpen: false,
+    confirmConfig: null,
+    isMobileMenuOpen: false,
+    filter: defaultFilter,
+    sortBy: 'updatedAt',
+    sortOrder: 'desc',
+  }),
 
   setFilter: (filterUpdate) => set((state) => ({ filter: { ...state.filter, ...filterUpdate } })),
   clearFilters: () => set({ filter: defaultFilter }),

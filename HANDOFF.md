@@ -6,6 +6,33 @@ Never put long explanations here — reference files and decisions only.
 
 ---
 
+## 2026-09-02 — Bug-fix session (7 items, all verified by typecheck)
+
+1. **Firestore per-user ownership** (`firebase/firestore.rules`): `/users/{uid}` + all descendants now gated by
+   `request.auth.uid == uid`; removed the permissive catch-all. Shares: creator may always read own shares
+   (fixes Active Shares UI on expired/consumed links). ⚠ **Not deployed — run `firebase deploy --only firestore:rules`.**
+2. **Store reset on auth change**: added `reset()` to vault/project/service/share stores and `resetSession()` to
+   uiStore (settings preserved); `AuthGuard` invokes all on every auth-uid change (sign-in/out/switch). Fixes
+   cross-account derived-key/ciphertext leak.
+3. **CSPRNG password generator** (`PasswordModal`): `crypto.getRandomValues` + guaranteed one char per class +
+   Fisher–Yates shuffle.
+4. **Transactional share consumption** (`firestore.ts` `consumeShare`): now a `runTransaction` — read → validate →
+   client-side decrypt → atomic `viewsUsed+1`; wrong key aborts without consuming a view; concurrent consumers
+   can't both pass the view limit.
+5. **Hex SERVICE_COLORS single source**: `packages/core/src/constants.ts` `SERVICE_COLORS` converted from Tailwind
+   class strings to hex (Dashboard's proven palette); Dashboard local duplicate removed + fixed its custom-service
+   mapping bug (`s.color` name → `PROJECT_COLOR_MAP` hex). SecretCard/SecretDetail consumers now work.
+6. **Portable vault covers all five domains**: SettingsModal `fullExport` now embeds sshKeys/totpTokens/
+   certificates/passwords; `portableVaultTemplate.ts` rewritten — unlock verifies `Scync_VALID_v1`, decrypts every
+   domain, renders 5 sections with per-field copy buttons (DOM-built, plaintext never rendered inline). Smoke
+   tested in Node (script syntax + required IDs, populated & empty vaults).
+7. **Version alignment**: root/web/desktop/core/ui manifests → `2.0.0` (matches tag v2.0.0); package-lock root
+   entries bumped; `fs.realpath` 1.0.0 dep untouched.
+
+Validation: `pnpm typecheck` (core+ui) and `pnpm --filter web exec tsc -b` pass. AGENTS.md updated accordingly.
+
+---
+
 ## 2026-09-02 — Services section collapsible in Sidebar
 
 - **Change**: `packages/ui/src/components/Sidebar.tsx` — Services section is now a collapsible group

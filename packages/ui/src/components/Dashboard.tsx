@@ -3,7 +3,7 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
-import { getAttentionSecrets } from '@scync/core';
+import { getAttentionSecrets, SERVICE_COLORS } from '@scync/core';
 import type { StoredSecret } from '@scync/core';
 import {
   FiAlertTriangle, FiRefreshCw, FiPlus, FiKey,
@@ -14,14 +14,6 @@ import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { generateTOTPCode, getRemainingSeconds } from '@scync/core';
 import { ServiceIcon } from './ServiceIcon';
 
-const SERVICE_COLORS: Record<string, string> = {
-  'AWS': '#f59e0b', 'GitHub': '#f0f6fc', 'Google': '#4285f4', 'Stripe': '#635bff',
-  'OpenAI': '#74aa9c', 'Vercel': '#ffffff', 'Supabase': '#3ecf8e', 'Anthropic': '#d4a27f',
-  'Cloudflare': '#f48120', 'HuggingFace': '#ffd21e', 'Twilio': '#f22f46',
-  'Netlify': '#00c7b7', 'Railway': '#a855f7', 'Firebase': '#ffca28',
-  'Azure': '#0089d6', 'DigitalOcean': '#0080ff', 'GitLab': '#fca326',
-  'Slack': '#4a154b', 'OpenRouter': '#9b6dff', 'Other': '#10b981',
-};
 const ENV_COLORS: Record<string, string> = {
   'Production': '#ef4444', 'Staging': '#f59e0b', 'Development': '#3b82f6',
   'Work': '#60a5fa', 'Personal': '#8b5cf6', 'Local': '#71717a',
@@ -214,7 +206,11 @@ export const Dashboard: React.FC = () => {
   const { customServices } = useServiceStore();
   const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView, setSortState, clearFilters } = useUIStore();
 
-  const serviceColorMap = useMemo(() => { const map = { ...SERVICE_COLORS }; customServices.forEach(s => { map[s.name] = s.color; }); return map; }, [customServices]);
+  const serviceColorMap = useMemo(() => {
+    const map: Record<string, string> = { ...SERVICE_COLORS };
+    customServices.forEach(s => { map[s.name] = PROJECT_COLOR_MAP[s.color] ?? '#10b981'; });
+    return map;
+  }, [customServices]);
   const attention = useMemo(() => getAttentionSecrets(storedSecrets), [storedSecrets]);
   const activeCount = storedSecrets.filter(s => s.status === 'Active').length;
 

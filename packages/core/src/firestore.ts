@@ -663,7 +663,7 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
 
 // Zero-Knowledge Secret Sharing
 
-import { query, where, Timestamp } from 'firebase/firestore';
+import { query, where, Timestamp, runTransaction } from 'firebase/firestore';
 import { generateShareKey, exportShareKey, encrypt as encryptWithKey, importShareKey, decrypt as decryptWithKey } from './crypto';
 import type { ShareDocument, ShareConfig, DecryptedShare } from './types';
 
@@ -778,54 +778,60 @@ export async function revokeShare(shareId: string): Promise<void> {
 
 /**
  * Consume a share link (recipient side)
- * Reads the share, validates it, increments view count, and decrypts
+ * Reads the share, validates it, decrypts, and atomically increments the view count.
+ *
+ * The whole read → validate → decrypt → increment sequence runs inside a Firestore
+ * transaction, so concurrent consumers cannot both pass the view-limit gate, and a
+ * wrong/missing decryption key aborts the transaction WITHOUT consuming a view.
  */
 export async function consumeShare(shareId: string, keyFragment: string): Promise<DecryptedShare> {
-  const shareRef = doc(db, "shares", shareId);
-  
   // Import the decryption key from URL fragment
   const shareKey = await importShareKey(keyFragment);
-  
-  // First, read the document to get the encrypted data
-  const shareSnap = await getDoc(shareRef);
-  
-  if (!shareSnap.exists()) {
-    throw new Error('SHARE_NOT_FOUND');
-  }
-  
-  const data = shareSnap.data();
-  const now = new Date();
-  const expiresAt = data.expiresAt?.toDate() || new Date(0);
-  
-  // Check if expired
-  if (expiresAt < now) {
-    throw new Error('SHARE_EXPIRED');
-  }
-  
-  // Check if view limit reached BEFORE incrementing
-  if (data.viewsAllowed !== null && data.viewsUsed >= data.viewsAllowed) {
-    throw new Error('SHARE_CONSUMED');
-  }
-  
-  // Increment view count (fire and forget - don't wait for it)
-  // This is safe because we already validated the share is consumable
-  updateDoc(shareRef, {
-    viewsUsed: data.viewsUsed + 1
-  }).catch(err => {
-    // Silently fail if update fails (e.g., permission denied after consumption)
-    // The user already got the secret, which is what matters
-    console.warn('Failed to increment view count:', err);
+
+  const shareRef = doc(db, "shares", shareId);
+
+  return runTransaction(db, async (tx) => {
+    // First, read the document inside the transaction
+    const shareSnap = await tx.get(shareRef);
+
+    if (!shareSnap.exists()) {
+      throw new Error('SHARE_NOT_FOUND');
+    }
+
+    const data = shareSnap.data();
+    const now = new Date();
+    const expiresAt = data.expiresAt?.toDate() || new Date(0);
+
+    // Check if expired
+    if (expiresAt < now) {
+      throw new Error('SHARE_EXPIRED');
+    }
+
+    // Check if view limit reached BEFORE incrementing
+    const viewsAllowed = data.viewsAllowed !== undefined && data.viewsAllowed !== null
+      ? data.viewsAllowed
+      : null;
+    const viewsUsed = data.viewsUsed || 0;
+    if (viewsAllowed !== null && viewsUsed >= viewsAllowed) {
+      throw new Error('SHARE_CONSUMED');
+    }
+
+    // Decrypt client-side inside the transaction. If the key is wrong/missing this
+    // throws and the transaction aborts, so no view is burned on a failed decrypt.
+    const value = await decryptWithKey(shareKey, data.encValue);
+
+    // Atomically increment the view count
+    tx.update(shareRef, {
+      viewsUsed: viewsUsed + 1
+    });
+
+    return {
+      secretName: data.secretName,
+      service: data.service,
+      type: data.type,
+      value,
+      viewsRemaining: viewsAllowed !== null ? viewsAllowed - (viewsUsed + 1) : null,
+      expiresAt
+    };
   });
-  
-  // Decrypt the value
-  const value = await decryptWithKey(shareKey, data.encValue);
-  
-  return {
-    secretName: data.secretName,
-    service: data.service,
-    type: data.type,
-    value,
-    viewsRemaining: data.viewsAllowed !== null ? data.viewsAllowed - (data.viewsUsed + 1) : null,
-    expiresAt
-  };
 }
