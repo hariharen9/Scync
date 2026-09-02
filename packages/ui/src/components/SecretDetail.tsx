@@ -122,7 +122,7 @@ export const SecretDetail: React.FC = () => {
             <MetaRow icon={<FiHash size={13} />} label="Environment" value={secret.environment} />
             <MetaRow icon={<FiFolder size={13} />} label="Project" value={project?.name || 'Uncategorized'} />
             {secret.expiresOn && <MetaRow icon={<FiCalendar size={13} />} label={isExpired ? 'Expired On' : isExpiringSoon ? 'Expiring Soon' : 'Expires On'} value={secret.expiresOn.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} />}
-            {secret.lastRotated && <MetaRow icon={<FiRefreshCw size={13} />} label="Last Rotated" value={secret.lastRotated.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} />}
+            {secret.lastRotated && <MetaRow icon={<FiRefreshCw size={13} />} label="Created/Rotated" value={secret.lastRotated.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })} />}
           </div>
         </div>
 

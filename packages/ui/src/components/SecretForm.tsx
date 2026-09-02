@@ -232,7 +232,7 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <DatePicker label="Last Rotated (Optional)" value={formData.lastRotated} onChange={v => setFormData(p => ({ ...p, lastRotated: v }))} />
+        <DatePicker label="Created/Rotated (Optional)" value={formData.lastRotated} onChange={v => setFormData(p => ({ ...p, lastRotated: v }))} />
         <DatePicker label="Expires On (Optional)" value={formData.expiresOn} onChange={v => setFormData(p => ({ ...p, expiresOn: v }))} />
       </div>
 

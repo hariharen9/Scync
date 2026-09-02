@@ -95,7 +95,7 @@ export const AboutModal: React.FC = () => {
                   </div>
                   <div style={{ background: 'var(--color-surface-2)', padding: 12, border: '1px solid var(--color-border)' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>Lifecycle Tracking</div>
-                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>Know exactly when a key expires or when it was last rotated at a glance.</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>Know exactly when a key expires or when it was last Created/Rotated at a glance.</div>
                   </div>
                   <div style={{ background: 'var(--color-surface-2)', padding: 12, border: '1px solid var(--color-border)' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>Open & Auditable</div>

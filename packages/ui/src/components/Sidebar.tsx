@@ -4,7 +4,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
-import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey, FiShield, FiLink, FiAward, FiLock } from 'react-icons/fi';
+import { FiSearch, FiGrid, FiList, FiFolder, FiPlus, FiGithub, FiGlobe, FiEdit2, FiTrash2, FiKey, FiShield, FiLink, FiAward, FiLock, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
@@ -44,6 +44,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingProjectName, setEditingProjectName] = useState('');
   const [isActiveSharesOpen, setIsActiveSharesOpen] = useState(false);
+  const [servicesCollapsed, setServicesCollapsed] = useState(true);
 
   const handleNav = (view: UIState['activeView']) => {
     setActiveView(view);
@@ -110,6 +111,15 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
 
   const getServiceCount = (name: string) =>
     storedSecrets.filter(s => s.service === name).length;
+
+  // Union of every service name: services used by stored secrets + registered custom services
+  const serviceNames = [...new Set([...storedSecrets.map(s => s.service), ...customServices.map(s => s.name)])].sort();
+
+  // Auto-expand Services when a service filter becomes active elsewhere (e.g. the SecretList dropdown),
+  // so the active service highlight is never hidden behind the collapsed section.
+  React.useEffect(() => {
+    if (activeView === 'all' && filter.service) setServicesCollapsed(false);
+  }, [activeView, filter.service]);
 
   const navItems = [
     { id: 'dashboard' as const, icon: FiGrid, label: 'Dashboard' },
@@ -343,10 +353,24 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
 
         {/* ── Services ── */}
         <div style={{ height: 1, background: 'var(--color-border)', margin: '16px 0 12px' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', ...sectionLabel, marginBottom: 8 }}>
-          <span>Services</span>
+        <div
+          onClick={() => setServicesCollapsed(c => !c)}
+          title={servicesCollapsed ? 'Show services' : 'Hide services'}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            ...sectionLabel, marginBottom: servicesCollapsed ? 14 : 8,
+            cursor: 'pointer', userSelect: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {servicesCollapsed ? <FiChevronRight size={12} /> : <FiChevronDown size={12} />}
+            <span>Services</span>
+            {servicesCollapsed && serviceNames.length > 0 && (
+              <span style={countBadgeStyle}>{serviceNames.length}</span>
+            )}
+          </div>
           <button
-            onClick={openAddServiceModal}
+            onClick={e => { e.stopPropagation(); openAddServiceModal(); }}
             style={iconBtn()}
             title="Add service"
             onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'}
@@ -356,8 +380,9 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           </button>
         </div>
 
+        {!servicesCollapsed && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingBottom: 16 }}>
-          {[...new Set([...storedSecrets.map(s => s.service), ...customServices.map(s => s.name)])].sort().map(svc => {
+          {serviceNames.map(svc => {
             const isActive = activeView === 'all' && filter.service === svc;
             const isHovered = hoveredService === svc;
             const custom = customServices.find(cs => cs.name === svc);
@@ -401,6 +426,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Footer */}

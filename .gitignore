@@ -17,3 +17,5 @@ apps/desktop/release
 # Local Netlify folder
 .netlify
 .commandcode/taste/taste.md
+
+/.pnpm-store/
