@@ -13,7 +13,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status: Initial Release](https://img.shields.io/badge/Status-Initial%20Release-blue.svg)]()
-[![Platforms: Web · Desktop · PWA](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20Desktop%20%C2%B7%20PWA-blue.svg)]()
+[![Platforms: Web · PWA](https://img.shields.io/badge/Platforms-Web%20%C2%B7%20PWA-blue.svg)]()
 [![Encryption: AES-256-GCM](https://img.shields.io/badge/Encryption-AES--256--GCM-red.svg)]()
 [![Zero Knowledge](https://img.shields.io/badge/Architecture-Zero--Knowledge-purple.svg)]()
 
@@ -157,7 +157,7 @@ That's it. Everything else exists to make that loop faster and the secrets insid
   <tr>
     <td valign="top">
       <h3>🌐 Native feel. Zero bloat.</h3>
-      <p>Installable PWA for mobile/desktop. Lightning fast, lightweight, and always in sync across devices.</p>
+      <p>Installable PWA. Lightning fast, lightweight, and always in sync across devices.</p>
     </td>
     <td valign="top">
       <h3>🔍 Instant search & filtering</h3>
@@ -217,23 +217,21 @@ Scync is designed to be **Zero-Knowledge**, but for the ultimate level of privac
    - Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in your project credentials.
 
 3. **Deploy or Run Locally**:
-   - **Web**: `pnpm dev --filter web`
-   - **Desktop**: `pnpm build --filter web && pnpm dev --filter desktop`
-   - **Mobile**: `npx cap sync && npx cap open ios`
+   ```bash
+   pnpm dev
+   ```
 
 ### Project Structure
-Scync uses a Turborepo-managed monorepo. Platform-specific code lives in `apps/` while the shared core logic (Crypto, Store, UI components) lives in `packages/`.
+Scync uses a Turborepo-managed monorepo with the web app in `apps/web` and shared domain logic/UI in `packages/`.
 
 ### Tech Stack
 | Layer | Technology |
 |---|---|
 | **Language** | TypeScript (strict) |
-| **Framework** | React 18 + Vite |
+| **Framework** | React 18 + Vite (PWA) |
 | **State** | Zustand |
 | **Backend** | Firebase (Auth + Firestore) |
 | **Crypto** | Web Crypto API |
-| **Desktop** | Electron v28+ |
-| **Mobile** | Capacitor v5 |
 | **MonoRepo** | Turborepo + pnpm |
 
 </details>
@@ -246,7 +244,7 @@ Scync uses a Turborepo-managed monorepo. Platform-specific code lives in `apps/`
 
 **Vault password independence.** The vault password is cryptographically separate from your Google account. Neither alone can decrypt your secrets.
 
-**One codebase, three platforms.** No React Native. No separate mobile logic. One set of components that runs everywhere.
+**Universal PWA.** Responsive, lightweight, and installable directly from your browser on any device.
 
 **Speed is a feature.** The vault loads instantly. Search is synchronous. Copy takes one click. Performance is product, not infrastructure.
 

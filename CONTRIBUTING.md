@@ -41,9 +41,7 @@ First off, thank you for considering contributing to Scync! It's people like you
 
 Scync is a monorepo managed with **Turborepo** and **pnpm workspaces**.
 
-- `apps/web`: The core React web application (Vite).
-- `apps/desktop`: Electron wrapper for the desktop experience.
-- `apps/mobile`: Capacitor wrapper for iOS and Android.
+- `apps/web`: The core React web application (Vite PWA).
 - `packages/core`: Shared logic, types, and the zero-knowledge crypto engine.
 - `packages/ui`: Shared React components and design system (Tailwind CSS).
 

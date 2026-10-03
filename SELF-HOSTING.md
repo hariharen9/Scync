@@ -13,12 +13,11 @@ This guide will walk you through setting up your own Scync instance. Self-hostin
 7. [Step 4: Deploy Firestore Rules](#step-4-deploy-firestore-rules)
 8. [Step 5: Build and Deploy](#step-5-build-and-deploy)
 9. [Deployment Options](#deployment-options)
-10. [Desktop App (Electron)](#desktop-app-electron)
-11. [Mobile App (PWA)](#mobile-app-pwa)
-12. [Maintenance and Updates](#maintenance-and-updates)
-13. [Security Considerations](#security-considerations)
-14. [Troubleshooting](#troubleshooting)
-15. [Cost Estimation](#cost-estimation)
+10. [Progressive Web App (PWA)](#progressive-web-app-pwa)
+11. [Maintenance and Updates](#maintenance-and-updates)
+12. [Security Considerations](#security-considerations)
+13. [Troubleshooting](#troubleshooting)
+14. [Cost Estimation](#cost-estimation)
 
 ---
 
@@ -65,32 +64,27 @@ Before you begin, ensure you have:
 
 ## Architecture Overview
 
-Scync is a **monorepo** with three main components:
+Scync is a **monorepo** with the web application and shared packages:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    YOUR INFRASTRUCTURE                   │
 │                                                          │
 │  ┌──────────────────────────────────────────────────┐  │
-│  │  Web App (React + Vite)                          │  │
+│  │  Web App (React + Vite PWA)                      │  │
 │  │  Deployed to: Netlify / Vercel / Your Server    │  │
 │  └──────────────────┬───────────────────────────────┘  │
 │                     │                                    │
 │  ┌──────────────────▼───────────────────────────────┐  │
 │  │  Firebase Project (YOUR PROJECT)                 │  │
-│  │  - Authentication (Google Sign-In)               │  │
+│  │  - Authentication (Google / Email Sign-In)      │  │
 │  │  - Firestore (Encrypted secret storage)         │  │
 │  │  - Hosting (Optional CDN)                        │  │
-│  └──────────────────────────────────────────────────┘  │
-│                                                          │
-│  ┌──────────────────────────────────────────────────┐  │
-│  │  Desktop App (Electron) - Optional               │  │
-│  │  Built locally, runs on your machine             │  │
 │  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Key Point:** All encryption happens in the browser/app. Firebase only stores encrypted blobs.
+**Key Point:** All encryption happens in the browser / PWA. Firebase only stores encrypted blobs.
 
 ---
 
@@ -169,7 +163,7 @@ cd Scync
 pnpm install
 ```
 
-This installs all dependencies for the monorepo (web, desktop, packages).
+This installs all dependencies for the monorepo (web and packages).
 
 **Troubleshooting:**
 - If `pnpm` is not found, install it: `npm install -g pnpm`
@@ -510,54 +504,9 @@ The repository includes a `netlify.toml` file. To use it:
 
 ---
 
-## Desktop App (Electron)
+## Progressive Web App (PWA)
 
-### Build the Desktop App
-
-The Electron app wraps the web app for a native desktop experience.
-
-#### Prerequisites
-- Completed web app build (Step 5.2)
-
-#### Build for Windows
-
-```bash
-cd apps/desktop
-pnpm build:win
-```
-
-**Output:** `apps/desktop/release/Scync-Setup-1.0.0.exe`
-
-#### Build for macOS
-
-```bash
-cd apps/desktop
-pnpm build:mac
-```
-
-**Output:** `apps/desktop/release/Scync-1.0.0-arm64.dmg` (Apple Silicon)  
-**Output:** `apps/desktop/release/Scync-1.0.0-x64.dmg` (Intel)
-
-#### Build for Both
-
-```bash
-cd apps/desktop
-pnpm build:all
-```
-
-#### Distribute the Installer
-
-- Upload to GitHub Releases
-- Host on your own server
-- Share directly with users
-
-**Note:** The desktop app uses the same Firebase config as the web app. No additional configuration needed.
-
----
-
-## Mobile App (PWA)
-
-Scync uses a Progressive Web App (PWA) for mobile instead of native apps.
+Scync is a Progressive Web App (PWA) installable directly from the browser on mobile or desktop without native wrappers.
 
 ### Enable PWA Features
 

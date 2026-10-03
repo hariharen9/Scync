@@ -6,7 +6,7 @@ Scync is built with a **security-first, zero-knowledge architecture**. This docu
 
 The core principle of Scync is that **your data is yours**. 
 
-1. **Client-Side Only**: All encryption and decryption happen strictly on your device (browser, desktop, or mobile).
+1. **Client-Side Only**: All encryption and decryption happen strictly on your device (in the browser / PWA).
 2. **Server Blindness**: The Scync server (Firebase) only ever sees encrypted blobs. It never has access to your plaintext secrets, notes, or your vault password.
 3. **No Password Storage**: Your vault password is never sent to the server and is never stored in persistent storage (like LocalStorage). It lives only in volatile memory while the vault is unlocked.
 4. **Independent Identity**: Your vault password is separate from your Google/Firebase authentication. Even if your Google account is compromised, your vault remains encrypted and inaccessible without your vault password.

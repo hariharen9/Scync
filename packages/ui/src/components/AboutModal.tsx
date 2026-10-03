@@ -90,8 +90,8 @@ export const AboutModal: React.FC = () => {
                     <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>Secrets live in projects and environments, not a flat list. Search is instant and in-memory.</div>
                   </div>
                   <div style={{ background: 'var(--color-surface-2)', padding: 12, border: '1px solid var(--color-border)' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>One Codebase</div>
-                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>Built as a PWA that runs perfectly across Web, Windows (Electron), and Mobile (Capacitor).</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>Web & PWA</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--color-text-3)', lineHeight: 1.4 }}>Built as a progressive web app (PWA) that runs seamlessly in any modern browser on all devices.</div>
                   </div>
                   <div style={{ background: 'var(--color-surface-2)', padding: 12, border: '1px solid var(--color-border)' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', marginBottom: 4 }}>Lifecycle Tracking</div>

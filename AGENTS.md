@@ -7,19 +7,17 @@ section. (The old `SCYNC_ARCHITECTURE.md` was deleted on 2026-09-02 as supersede
 
 ## 0. What Scync Is
 
-Open-source **zero-knowledge secrets manager** for solo developers. Web (React PWA) + Electron
-desktop. Production web: scync.space (Netlify). Repo: github.com/hariharen9/Scync (MIT).
+Open-source **zero-knowledge secrets manager** for solo developers. Web (React PWA). Production web: scync.space (Netlify). Repo: github.com/hariharen9/Scync (MIT).
 Core loop: unlock vault → find secret → copy value. The Firebase backend only ever sees
 **encrypted blobs + plaintext metadata** — no server code, no Cloud Functions.
 
 ## 1. Repo layout (verified — no other packages exist)
 
 - `apps/web` — React 18 + Vite app (the product). PWA via vite-plugin-pwa.
-- `apps/desktop` — Electron 33 shell that serves the built `apps/web/dist` over a local HTTP server.
 - `packages/core` (`@scync/core`) — crypto, Firestore, types, domain logic. `"main": "src/index.ts"` (consumed directly by Vite, no build step). **Not React-aware.**
 - `packages/ui` (`@scync/ui`) — React components, Zustand stores, hooks, theme. `"main": "src/index.ts"`.
 - `firebase/` — `firestore.rules` + `firestore.indexes.json` (Firestore only; **no hosting config** — Netlify hosts).
-- There is **no** `apps/mobile`, **no** `packages/cli` (docs mention them; they don't exist).
+- There is **no** `apps/desktop`, **no** `apps/mobile`, **no** `packages/cli`.
 - Root env: `apps/web` reads env from repo root via `envDir: '../../'` → real config lives in **root `.env.local`** (Firebase keys + emulator flag). `apps/web/.env.example` is a leftover copy; root `.env.example` is canonical. Firebase emulators activate when `VITE_USE_EMULATORS === 'true'` (auth :9099, firestore :8080).
 
 Tech (from manifests): TS strict; React 18 + Vite 8; Tailwind v4 (`@tailwindcss/vite`); Zustand 4; Firebase 10; framer-motion 11; react-icons 5 + lucide-react; lenis (smooth scroll); core deps: node-forge, otpauth, qrcode; ui deps also: @tanstack/react-virtual (unused now), jsqr, tailwind-merge, clsx.
@@ -202,26 +200,16 @@ consumers can't over-deliver and a failed decrypt consumes no view).
 - PWA via vite-plugin-pwa (autoUpdate SW); `__APP_VERSION__` from git tag via `git describe --tags --abbrev=0`
   (empty in dev); theme applied in App.tsx.
 
-## 9. Desktop shell (apps/desktop)
+## 9. Platform Architecture (Pure Web / PWA)
 
-- `main.ts`: dev loads `http://localhost:5173` (hardcoded default, `VITE_DEV_SERVER_URL` override, file fallback);
-  prod finds the web build (`process.resourcesPath/app` | `../app`) and serves it over a **local HTTP server on
-  `127.0.0.1` with an ephemeral port** (listen(0)) with SPA fallback — this is what makes Firebase Google Auth
-  work (no file:// CORS issues). webPreferences: `nodeIntegration:false, contextIsolation:true` but
-  **`sandbox:false` AND `webSecurity:false`**. UA spoofing strips `Electron/x` + `Scync/x` tokens so Google Auth
-  popups work. Window-open/navigation allowlists are substring checks (firebaseapp.com, accounts.google.com,
-  http://localhost), else `shell.openExternal`. Global shortcut Ctrl+Shift+S re-shows window.
-  **No single-instance lock.** `preload.ts` exposes `window.electronAPI {platform, isDesktop}` — currently
-  **never consumed** (dead API). electron-builder: NSIS (win x64) + DMG (mac x64+arm64), web dist as extraResource `app`.
-- All package manifests were aligned to `2.0.0` (2026-09-02) to match the latest git tag `v2.0.0`.
+- Desktop wrapper (Electron) and native mobile wrappers were completely removed.
+- Web app (`apps/web`) is a modern Progressive Web App (PWA) with responsive design, keyboard shortcuts (`Cmd/Ctrl+K` CommandBar), and hardware-backed biometric unlock via WebAuthn PRF.
 
 ## 10. Build / CI / deploy
 
 - Turborepo + pnpm 9. Root scripts: `dev/build/test/typecheck/lint` (turbo run). Package scripts:
-  web `build` = `tsc -b && vite build`; desktop `build:electron` = tsc; core/ui have `test` (vitest run) + `typecheck`.
-  CI (PR→main): lint (web only) → typecheck (core+ui) → build (web). Release (`v*` tag): build web with 6
-  `VITE_FIREBASE_*` secrets → Windows NSIS x64 (unsigned, CSC_IDENTITY_AUTO_DISCOVERY:false) + macOS DMG
-  (unsigned) → GitHub release. Netlify: `pnpm build --filter web`, publish `apps/web/dist`, node 22 / pnpm 9.
+  web `build` = `tsc -b && vite build`; core/ui have `test` (vitest run) + `typecheck`.
+  CI (PR→main): lint (web only) → typecheck (core+ui) → build (web). Netlify: `pnpm build --filter web`, publish `apps/web/dist`, node 22 / pnpm 9.
 - `.gitignore` covers `.env.local`, dist, node_modules, .turbo, `.commandcode`.
 
 ## 11. Conventions & taste
@@ -254,11 +242,10 @@ Remaining:
 8. Certificate dashboard: private key has no copy button and is excluded from export.
 9. RecoveryCodeViewer allows copy while masked; Mark Used has no confirm.
 10. VaultGuard doesn't reset `hasMeta` on relock; meta-fetch errors route to the setup screen.
-11. Desktop: `sandbox:false`, `webSecurity:false`, no single-instance lock; preload API unused.
-12. AddEditModal re-seeds form when `storedSecrets` identity changes (subscription refresh during edit).
-13. MaskedValue copy-before-reveal is impossible by design; SecretDetail decrypts on open (plaintext in state
+11. AddEditModal re-seeds form when `storedSecrets` identity changes (subscription refresh during edit).
+12. MaskedValue copy-before-reveal is impossible by design; SecretDetail decrypts on open (plaintext in state
     even while masked) — broader exposure than SecretCard's reveal-on-demand.
-14. Modal chrome/input styles/icon-picker duplicated across AddProjectModal/AddServiceModal/SecretForm/others
+13. Modal chrome/input styles/icon-picker duplicated across AddProjectModal/AddServiceModal/SecretForm/others
     (no shared Modal base); Dropdown/DatePicker share portal/coords scaffolding; no Escape handling in modals;
     ConfirmModal has no exit animation and swallows onConfirm errors (stays open on rejection).
 

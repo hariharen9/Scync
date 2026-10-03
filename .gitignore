@@ -6,11 +6,6 @@ build
 .turbo
 *.log
 .DS_Store
-apps/mobile/android
-apps/mobile/ios
-apps/desktop/dist
-apps/desktop/dist-electron
-apps/desktop/release
 .vscode/
 *SPEC.md
 

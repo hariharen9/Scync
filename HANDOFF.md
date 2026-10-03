@@ -4,6 +4,16 @@ Purpose: short, dated record of what changed / was decided each working session,
 `AGENTS.md` (static reference) + the latest entries here. Append new entries at the TOP under a date heading.
 Never put long explanations here — reference files and decisions only.
 
+## 2026-10-03 — Removed Desktop completely (Pure Web / PWA only)
+
+- **Removed `apps/desktop/`**: Deleted the entire Electron 33 application (`apps/desktop`).
+- **Removed Desktop Release Workflow**: Deleted `.github/workflows/release.yml` (Electron Windows/Mac installers).
+- **Cleaned configurations**: Cleaned `.gitignore` (removed `apps/desktop` and `apps/mobile` entries); ran `pnpm install` which pruned all Electron and electron-builder dependencies from `pnpm-lock.yaml`.
+- **Cleaned UI & copy**:
+  - `packages/ui/src/components/AboutModal.tsx`: Updated "Built as a PWA that runs perfectly across Web, Windows (Electron), and Mobile (Capacitor)" to "Built as a progressive web app (PWA) that runs seamlessly in any modern browser on all devices."
+  - `apps/web/src/pages/AuthPage.tsx`: Removed "Web · Desktop · PWA" and desktop hotkey references in favor of Web/PWA and `Cmd/Ctrl+K`.
+  - `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `SELF-HOSTING.md`, and `AGENTS.md`: Purged all references to desktop builds, Electron, and phantom Capacitor mobile packages.
+
 ---
 
 ## 2026-09-02 — Email/password sign-in + honest auth-vs-master-password UX
