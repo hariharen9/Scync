@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

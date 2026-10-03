@@ -440,7 +440,7 @@ export const UnlockPage: React.FC = () => {
       } else {
         handleFailFlow();
       }
-    } catch (err) {
+    } catch {
       handleFailFlow();
     } finally {
       if (!isSuccess) {
@@ -467,7 +467,7 @@ export const UnlockPage: React.FC = () => {
       } else {
         handleFailFlow();
       }
-    } catch (err) {
+    } catch {
       handleFailFlow();
     } finally {
       if (!isSuccess) {

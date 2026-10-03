@@ -21,6 +21,7 @@ export * from './components/SecretForm';
 export * from './components/AddEditModal';
 export * from './components/EnvImportModal';
 export * from './components/AddProjectModal';
+export * from './components/EditProjectModal';
 export * from './components/DatePicker';
 export * from './components/AddServiceModal';
 export * from './components/ServiceIcon';

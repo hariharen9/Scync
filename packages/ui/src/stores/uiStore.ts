@@ -40,6 +40,8 @@ export interface UIState {
   isEditModalOpen: boolean;
   isEnvImportModalOpen: boolean;
   isAddProjectModalOpen: boolean;
+  isEditProjectModalOpen: boolean;
+  editingProjectId: string | null;
   isAddServiceModalOpen: boolean;
   isAddSSHModalOpen: boolean;
   isAddTOTPModalOpen: boolean;
@@ -67,6 +69,8 @@ export interface UIState {
   closeEnvImportModal: () => void;
   openAddProjectModal: () => void;
   closeAddProjectModal: () => void;
+  openEditProjectModal: (projectId: string) => void;
+  closeEditProjectModal: () => void;
   openAddServiceModal: () => void;
   closeAddServiceModal: () => void;
   openAddSSHModal: () => void;
@@ -120,6 +124,8 @@ export const useUIStore = create<UIState>((set) => ({
   isEditModalOpen: false,
   isEnvImportModalOpen: false,
   isAddProjectModalOpen: false,
+  isEditProjectModalOpen: false,
+  editingProjectId: null,
   isAddServiceModalOpen: false,
   isAddSSHModalOpen: false,
   isAddTOTPModalOpen: false,
@@ -147,6 +153,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeEnvImportModal: () => set({ isEnvImportModalOpen: false }),
   openAddProjectModal: () => set({ isAddProjectModalOpen: true }),
   closeAddProjectModal: () => set({ isAddProjectModalOpen: false }),
+  openEditProjectModal: (projectId) => set({ isEditProjectModalOpen: true, editingProjectId: projectId }),
+  closeEditProjectModal: () => set({ isEditProjectModalOpen: false, editingProjectId: null }),
   openAddServiceModal: () => set({ isAddServiceModalOpen: true }),
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
   openAddSSHModal: () => set({ isAddSSHModalOpen: true }),
@@ -184,6 +192,8 @@ export const useUIStore = create<UIState>((set) => ({
     isEditModalOpen: false,
     isEnvImportModalOpen: false,
     isAddProjectModalOpen: false,
+    isEditProjectModalOpen: false,
+    editingProjectId: null,
     isAddServiceModalOpen: false,
     isAddSSHModalOpen: false,
     isAddTOTPModalOpen: false,

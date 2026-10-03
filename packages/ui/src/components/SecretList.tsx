@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -10,8 +10,8 @@ import { useServiceStore } from '../stores/serviceStore';
 import { ServiceIcon } from './ServiceIcon';
 import { CustomServiceIcon } from './CustomServiceIcons';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
-import { FiKey, FiPlus, FiFilter, FiX, FiSearch, FiDownload } from 'react-icons/fi';
-import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES } from '@scync/core';
+import { FiKey, FiPlus, FiFilter, FiX, FiSearch, FiDownload, FiEdit2, FiCheck, FiShield } from 'react-icons/fi';
+import { SERVICES, SECRET_TYPES, ENVIRONMENTS, STATUSES, getAttentionSecrets } from '@scync/core';
 
 const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[] => [
   { value: '', label: placeholder },
@@ -20,11 +20,13 @@ const toOptions = (arr: readonly string[], placeholder: string): DropdownOption[
 
 export const SecretList: React.FC = () => {
   const { storedSecrets, decryptValue, unlock } = useVaultStore();
-  const { filter, setFilter, clearFilters, activeView, openAddModal, sortBy, sortOrder } = useUIStore();
+  const { filter, setFilter, clearFilters, activeView, openAddModal, openEditProjectModal, sortBy, sortOrder } = useUIStore();
   const [isExporting, setIsExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportPassword, setExportPassword] = useState('');
   const [exportError, setExportError] = useState('');
+  const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [exportResult, setExportResult] = useState<{ exported: number; failed: number } | null>(null);
   const { selectedProjectId, projects } = useProjectStore();
   const { customServices } = useServiceStore();
   const { user } = useAuthStore();
@@ -88,10 +90,37 @@ export const SecretList: React.FC = () => {
     ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color] ?? 'var(--color-text-2)'} /> })),
   ];
 
+  const currentProject = useMemo(() => {
+    return selectedProjectId ? projects.find(p => p.id === selectedProjectId) || null : null;
+  }, [projects, selectedProjectId]);
+
+  const projectSecrets = useMemo(() => {
+    return selectedProjectId ? storedSecrets.filter(s => s.projectId === selectedProjectId) : [];
+  }, [storedSecrets, selectedProjectId]);
+
+  const projectAttention = useMemo(() => {
+    return getAttentionSecrets(projectSecrets);
+  }, [projectSecrets]);
+
+  const projectHealthScore = useMemo(() => {
+    if (projectSecrets.length === 0) return 100;
+    let score = 100;
+    const total = projectSecrets.length;
+    score -= Math.min(40, (projectAttention.expired.length / total) * 80);
+    score -= Math.min(25, (projectAttention.expiringSoon.length / total) * 50);
+    score -= Math.min(20, (projectAttention.rotationOverdue.length / total) * 40);
+    score -= Math.min(25, (projectAttention.recoveryCodesLow.length / total) * 50);
+    const revokedOrExpired = projectSecrets.filter(s => s.status === 'Expired' || s.status === 'Revoked').length;
+    score -= Math.min(15, (revokedOrExpired / total) * 30);
+    return Math.max(0, Math.round(score));
+  }, [projectSecrets, projectAttention]);
+
   const handleExportClick = () => {
     if (!selectedProjectId) return;
     setExportPassword('');
     setExportError('');
+    setExportProgress(null);
+    setExportResult(null);
     setShowExportModal(true);
   };
 
@@ -99,6 +128,8 @@ export const SecretList: React.FC = () => {
     if (isExporting || !selectedProjectId || !user || !exportPassword) return;
     setIsExporting(true);
     setExportError('');
+    setExportProgress(null);
+    setExportResult(null);
     try {
       const isValid = await unlock(exportPassword, user.uid);
       if (!isValid) {
@@ -107,17 +138,32 @@ export const SecretList: React.FC = () => {
         return;
       }
 
-      const projectSecrets = storedSecrets.filter(s => s.projectId === selectedProjectId);
       let envContent = `# Exported from Scync - ${title}\n# Date: ${new Date().toISOString()}\n\n`;
-      for (const s of projectSecrets) {
-        const dec = await decryptValue(s.id);
-        if (dec) {
-          const keyName = s.name.toUpperCase().replace(/[\s-]+/g, '_').replace(/[^A-Z0-9_]/g, '');
-          const escapedValue = dec.value.replace(/"/g, '\\"').replace(/\n/g, '\\n');
-          envContent += `${keyName}="${escapedValue}"\n`;
+      let exported = 0;
+      let failed = 0;
+
+      for (let i = 0; i < projectSecrets.length; i++) {
+        const s = projectSecrets[i];
+        setExportProgress({ current: i + 1, total: projectSecrets.length });
+        try {
+          const dec = await decryptValue(s.id);
+          if (dec && dec.value !== undefined) {
+            const keyName = s.name.toUpperCase().replace(/[\s-]+/g, '_').replace(/[^A-Z0-9_]/g, '');
+            const escapedValue = dec.value.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+            envContent += `${keyName}="${escapedValue}"\n`;
+            exported++;
+          } else {
+            failed++;
+          }
+        } catch (e) {
+          console.error(`Failed to decrypt secret ${s.name}:`, e);
+          failed++;
         }
       }
-      
+
+      setExportResult({ exported, failed });
+      setExportPassword('');
+
       if (action === 'download') {
         const blob = new Blob([envContent], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -128,7 +174,7 @@ export const SecretList: React.FC = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        setShowExportModal(false);
+        setTimeout(() => setShowExportModal(false), 1600);
       } else {
         await navigator.clipboard.writeText(envContent);
         setHasCopied(true);
@@ -136,7 +182,7 @@ export const SecretList: React.FC = () => {
           setHasCopied(false);
           navigator.clipboard.writeText("");
         }, 30000);
-        setTimeout(() => setShowExportModal(false), 2000);
+        setTimeout(() => setShowExportModal(false), 1600);
       }
     } catch (err) {
       console.error('Failed to export env:', err);
@@ -149,7 +195,7 @@ export const SecretList: React.FC = () => {
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
             {title}
@@ -195,6 +241,96 @@ export const SecretList: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Project Detail Banner */}
+      {activeView === 'project' && currentProject && (
+        <div style={{
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          padding: '16px 20px',
+          marginBottom: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          animation: 'fadeUp 200ms ease-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              <div style={{
+                width: 40, height: 40, flexShrink: 0,
+                background: `${PROJECT_COLOR_MAP[currentProject.color]}18`,
+                border: `1px solid ${PROJECT_COLOR_MAP[currentProject.color]}40`,
+                display: 'grid', placeItems: 'center'
+              }}>
+                <ProjectIcon iconKey={currentProject.icon || 'FiFolder'} size={20} color={PROJECT_COLOR_MAP[currentProject.color]} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
+                    {currentProject.name}
+                  </h3>
+                  <button
+                    onClick={() => openEditProjectModal(currentProject.id)}
+                    title="Edit project details"
+                    style={{
+                      background: 'none', border: 'none', color: 'var(--color-text-3)',
+                      cursor: 'pointer', padding: '2px 4px', display: 'flex', alignItems: 'center', gap: 4,
+                      fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-sans)',
+                      transition: 'color 140ms'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--color-green)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-3)'}
+                  >
+                    <FiEdit2 size={12} />
+                    <span>Edit</span>
+                  </button>
+                </div>
+                {currentProject.description && (
+                  <p style={{ fontSize: 12, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-sans)' }}>
+                    {currentProject.description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Health Score Pill */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '6px 12px', background: 'var(--color-surface-2)',
+              border: '1px solid var(--color-border)', flexShrink: 0
+            }}>
+              <FiShield size={14} color={projectHealthScore >= 80 ? 'var(--color-green)' : projectHealthScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)'} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-3)' }}>
+                  Vault Health
+                </span>
+                <span style={{
+                  fontSize: 12, fontWeight: 800, fontFamily: 'var(--font-mono)',
+                  color: projectHealthScore >= 80 ? 'var(--color-green)' : projectHealthScore >= 50 ? 'var(--color-amber)' : 'var(--color-red)'
+                }}>
+                  {projectHealthScore} / 100
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, paddingTop: 10, borderTop: '1px solid var(--color-border)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+            <span style={{ color: 'var(--color-text-2)' }}>
+              <strong style={{ color: 'var(--color-text)' }}>{projectSecrets.length}</strong> secret{projectSecrets.length !== 1 ? 's' : ''}
+            </span>
+            <span style={{ color: projectAttention.expiringSoon.length > 0 ? 'var(--color-amber)' : 'var(--color-text-3)' }}>
+              <strong>{projectAttention.expiringSoon.length}</strong> expiring soon
+            </span>
+            <span style={{ color: projectAttention.rotationOverdue.length > 0 ? 'var(--color-red)' : 'var(--color-text-3)' }}>
+              <strong>{projectAttention.rotationOverdue.length}</strong> rotation overdue
+            </span>
+            <span style={{ color: 'var(--color-text-3)', marginLeft: 'auto' }}>
+              Created {new Date(currentProject.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Search & Filters */}
       <div style={{ marginBottom: 24 }}>
@@ -330,6 +466,7 @@ export const SecretList: React.FC = () => {
                     value={exportPassword}
                     onChange={e => { setExportPassword(e.target.value); setExportError(''); }}
                     onKeyDown={e => { if (e.key === 'Enter') confirmExportEnv('download'); }}
+                    disabled={isExporting}
                     style={{
                       width: '100%', padding: '10px 12px', background: 'var(--color-bg)', border: '1px solid var(--color-border)',
                       color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-mono)', transition: 'border-color 140ms'
@@ -338,6 +475,27 @@ export const SecretList: React.FC = () => {
                     onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
                   />
                   {exportError && <span style={{ fontSize: 11, color: 'var(--color-red)', marginTop: 4 }}>{exportError}</span>}
+
+                  {/* Export Progress */}
+                  {isExporting && exportProgress && (
+                    <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--color-border)', borderTopColor: 'var(--color-green)', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+                      <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--color-text-2)' }}>
+                        Decrypting {exportProgress.current} of {exportProgress.total}...
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Export Result */}
+                  {exportResult && (
+                    <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--color-green-bg)', border: '1px solid var(--color-green-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <FiCheck size={14} color="var(--color-green)" />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-green)', fontFamily: 'var(--font-sans)' }}>
+                        {exportResult.exported} secret{exportResult.exported !== 1 ? 's' : ''} exported
+                        {exportResult.failed > 0 ? ` (${exportResult.failed} failed)` : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

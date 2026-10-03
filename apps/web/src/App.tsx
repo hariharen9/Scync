@@ -8,25 +8,21 @@ import { ReactLenis } from 'lenis/react';
 
 const App: React.FC = () => {
   const { settings, openCommandBar, isCommandBarOpen, closeCommandBar } = useUIStore();
-  const [sharePageData, setSharePageData] = React.useState<{ shareId: string; keyFragment: string } | null>(null);
-
   // Check if this is a share consumption page
-  const isSharePage = window.location.pathname.startsWith('/share/');
+  const isSharePage = typeof window !== 'undefined' && window.location.pathname.startsWith('/share/');
 
-  // Handle hash fragment loading
-  React.useEffect(() => {
-    if (isSharePage) {
+  // Handle hash fragment loading eagerly
+  const [sharePageData] = React.useState<{ shareId: string; keyFragment: string } | null>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/share/')) {
       const pathParts = window.location.pathname.split('/');
       const shareId = pathParts[2];
       const keyFragment = window.location.hash.slice(1);
-
-      // console.log('[Scync] Share page detected:', { shareId, keyFragment: keyFragment ? keyFragment.substring(0, 10) + '...' : 'MISSING', fullHash: window.location.hash });
-
       if (shareId && keyFragment) {
-        setSharePageData({ shareId, keyFragment });
+        return { shareId, keyFragment };
       }
     }
-  }, [isSharePage]);
+    return null;
+  });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

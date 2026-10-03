@@ -537,13 +537,28 @@ export async function updateProject(
 export async function deleteProject(
   uid: string, 
   projectId: string, 
-  _moveSecretsTo: string | null
+  moveSecretsTo: string | null
 ): Promise<void> {
-  // In a real implementation this would ideally be a batch operation
-  // querying all secrets with the projectId and updating them to moveSecretsTo
-  // For MVP, omitted complex transaction code but acknowledging it.
-  const ref = doc(db, "users", uid, "projects", projectId);
-  await deleteDoc(ref);
+  const secretsRef = collection(db, "users", uid, "secrets");
+  const secretsSnap = await getDocs(secretsRef);
+
+  const batch = writeBatch(db);
+
+  // Move all secrets that belong to the deleted project
+  for (const secretDoc of secretsSnap.docs) {
+    if (secretDoc.data().projectId === projectId) {
+      batch.update(secretDoc.ref, {
+        projectId: moveSecretsTo,
+        updatedAt: serverTimestamp(),
+      });
+    }
+  }
+
+  // Delete the project document itself
+  const projectRef = doc(db, "users", uid, "projects", projectId);
+  batch.delete(projectRef);
+
+  await batch.commit();
 }
 
 export function subscribeToProjects(

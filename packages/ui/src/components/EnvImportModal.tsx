@@ -37,12 +37,14 @@ export const EnvImportModal: React.FC = () => {
   const [conflicts, setConflicts] = useState<ConflictRow[]>([]);
   const [targetEnv, setTargetEnv] = useState<Environment>('Development');
   const [targetProject, setTargetProject] = useState<string>('');
-  const [importResult, setImportResult] = useState({ imported: 0, skipped: 0 });
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [importResult, setImportResult] = useState({ imported: 0, skipped: 0, failed: 0 });
 
   const resetState = () => {
     setStep('input'); setIsDragging(false); setPasteContent('');
     setParsedRows([]); setConflicts([]); setTargetEnv('Development'); setTargetProject('');
-    setImportResult({ imported: 0, skipped: 0 });
+    setImportResult({ imported: 0, skipped: 0, failed: 0 });
+    setImportProgress(null);
   };
   const handleClose = () => { if (step === 'importing') return; closeEnvImportModal(); setTimeout(resetState, 300); };
 
@@ -107,36 +109,67 @@ export const EnvImportModal: React.FC = () => {
     const conflictMap = new Map<string, ConflictRow>();
     for (const c of resolvedConflicts) conflictMap.set(c.key, c);
 
+    const selectedRows = rows.filter(r => r.selected);
     let imported = 0;
     let skipped = 0;
+    let failed = 0;
 
-    for (const row of rows) {
-      if (!row.selected) continue;
+    for (let i = 0; i < selectedRows.length; i++) {
+      const row = selectedRows[i];
+      setImportProgress({ current: i + 1, total: selectedRows.length });
+
       const conflict = conflictMap.get(row.key);
 
       if (conflict) {
-        if (conflict.resolution === 'skip') { skipped++; continue; }
+        if (conflict.resolution === 'skip') {
+          skipped++;
+          continue;
+        }
         if (conflict.resolution === 'overwrite') {
-          await updateSecret(user.uid, conflict.existingId, {
-            name: row.key, value: row.value, service: 'Other', type: 'Other',
-            environment: targetEnv, status: 'Active', notes: 'Updated via .env import',
-            lastRotated: null, expiresOn: null, projectId: targetProject || null,
-          });
-          imported++;
+          try {
+            await updateSecret(user.uid, conflict.existingId, {
+              name: row.key,
+              value: row.value,
+              service: 'Other',
+              type: 'Other',
+              environment: targetEnv,
+              status: 'Active',
+              notes: 'Updated via .env import',
+              lastRotated: null,
+              expiresOn: null,
+              projectId: targetProject || null,
+            });
+            imported++;
+          } catch (err) {
+            console.error(`Failed to overwrite secret ${row.key}:`, err);
+            failed++;
+          }
           continue;
         }
         // 'keep' = import as new (fall through)
       }
 
-      await createSecret(user.uid, {
-        name: row.key, value: row.value, service: 'Other', type: 'Other',
-        environment: targetEnv, status: 'Active', notes: 'Imported from .env',
-        lastRotated: null, expiresOn: null, projectId: targetProject || null,
-      });
-      imported++;
+      try {
+        await createSecret(user.uid, {
+          name: row.key,
+          value: row.value,
+          service: 'Other',
+          type: 'Other',
+          environment: targetEnv,
+          status: 'Active',
+          notes: 'Imported from .env',
+          lastRotated: null,
+          expiresOn: null,
+          projectId: targetProject || null,
+        });
+        imported++;
+      } catch (err) {
+        console.error(`Failed to create secret ${row.key}:`, err);
+        failed++;
+      }
     }
 
-    setImportResult({ imported, skipped });
+    setImportResult({ imported, skipped, failed });
     setStep('success');
     setTimeout(handleClose, 2500);
   };
@@ -365,17 +398,31 @@ export const EnvImportModal: React.FC = () => {
                     <>
                       <div style={{ width: 48, height: 48, borderRadius: '50%', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-green)', animation: 'spin 1s linear infinite', marginBottom: 16 }} />
                       <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Encrypting & Syncing</h3>
-                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center', fontFamily: 'var(--font-sans)' }}>Processing secrets...</p>
+                      <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                        {importProgress ? `Processing ${importProgress.current} of ${importProgress.total} secrets...` : 'Processing secrets...'}
+                      </p>
                     </>
                   ) : (
                     <>
-                      <div style={{ width: 48, height: 48, background: 'var(--color-green-bg)', border: '1px solid var(--color-green-border)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
-                        <FiCheck size={24} color="var(--color-green)" />
+                      <div style={{
+                        width: 48, height: 48,
+                        background: importResult.failed > 0 && importResult.imported === 0 ? 'var(--color-red-bg)' : 'var(--color-green-bg)',
+                        border: `1px solid ${importResult.failed > 0 && importResult.imported === 0 ? 'var(--color-red-border)' : 'var(--color-green-border)'}`,
+                        display: 'grid', placeItems: 'center', marginBottom: 16
+                      }}>
+                        {importResult.failed > 0 && importResult.imported === 0 ? (
+                          <FiAlertCircle size={24} color="var(--color-red)" />
+                        ) : (
+                          <FiCheck size={24} color="var(--color-green)" />
+                        )}
                       </div>
-                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>Import Complete</h3>
+                      <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
+                        {importResult.failed > 0 && importResult.imported === 0 ? 'Import Failed' : 'Import Complete'}
+                      </h3>
                       <p style={{ fontSize: 12, color: 'var(--color-text-2)', marginTop: 6, textAlign: 'center', fontFamily: 'var(--font-sans)' }}>
                         {importResult.imported} secret{importResult.imported !== 1 ? 's' : ''} imported
                         {importResult.skipped > 0 ? `, ${importResult.skipped} skipped` : ''}
+                        {importResult.failed > 0 ? `, ${importResult.failed} failed` : ''}
                       </p>
                     </>
                   )}

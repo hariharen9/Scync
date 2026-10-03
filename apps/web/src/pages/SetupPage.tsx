@@ -229,7 +229,7 @@ export const SetupPage: React.FC = () => {
         });
         if (svgRef.current) svgRef.current.style.opacity = '0';
       }, 350);
-    } catch (err) {
+    } catch {
       setLoading(false);
     }
   };

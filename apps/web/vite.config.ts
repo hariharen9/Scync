@@ -22,7 +22,7 @@ const getVersion = () => {
     if (/^v\d+\.\d+\.\d+/.test(gitVersion)) {
       return gitVersion;
     }
-  } catch (e) {
+  } catch {
     // No tags found, don't show version in dev builds
   }
 
