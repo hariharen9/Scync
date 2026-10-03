@@ -8,7 +8,7 @@ import type {
   VaultMeta, BiometricMeta, SecretFormData, StoredSecret, DecryptedSecret, 
   Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP,
   StoredCertificate, StoredPassword, DecryptedPassword, PasswordFormData,
-  SecretVersion, SecretChangeType, LedgerAction, LedgerEntry
+  SecretVersion, SecretChangeType, LedgerAction, LedgerEntry, RecoveryKitMeta
 } from './types';
 
 // Vault Meta
@@ -30,7 +30,12 @@ export async function getVaultMeta(uid: string): Promise<VaultMeta | null> {
     salt: data.salt,
     verifier: data.verifier,
     createdAt: data.createdAt?.toDate() || new Date(),
-    biometrics: data.biometrics ?? (data.biometric ? [data.biometric] : [])
+    biometrics: data.biometrics ?? (data.biometric ? [data.biometric] : []),
+    recovery: data.recovery ? {
+      salt: data.recovery.salt,
+      encMasterPassword: data.recovery.encMasterPassword,
+      createdAt: data.recovery.createdAt?.toDate ? data.recovery.createdAt.toDate() : (data.recovery.createdAt ? new Date(data.recovery.createdAt) : new Date())
+    } : null
   };
 }
 
@@ -40,6 +45,22 @@ export async function updateVaultBiometrics(uid: string, biometrics: BiometricMe
     await updateDoc(ref, { biometrics: null, updatedAt: serverTimestamp() });
   } else {
     await updateDoc(ref, { biometrics, updatedAt: serverTimestamp() });
+  }
+}
+
+export async function updateVaultRecovery(uid: string, recovery: Omit<RecoveryKitMeta, 'createdAt'> | null): Promise<void> {
+  const ref = doc(db, "users", uid, "meta", "vault");
+  if (recovery === null) {
+    await updateDoc(ref, { recovery: null, updatedAt: serverTimestamp() });
+  } else {
+    await updateDoc(ref, {
+      recovery: {
+        salt: recovery.salt,
+        encMasterPassword: recovery.encMasterPassword,
+        createdAt: serverTimestamp()
+      },
+      updatedAt: serverTimestamp()
+    });
   }
 }
 
@@ -57,11 +78,12 @@ export async function changeVaultPassword(
 ): Promise<void> {
   const batch = writeBatch(db);
 
-  // 1. Update Vault Meta
+  // 1. Update Vault Meta (clears recovery as old password is no longer valid)
   const metaRef = doc(db, "users", uid, "meta", "vault");
   batch.update(metaRef, {
     salt: newSalt,
     verifier: newVerifier,
+    recovery: null,
     updatedAt: serverTimestamp()
   });
 

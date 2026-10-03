@@ -131,6 +131,7 @@ export const PasswordModal: React.FC = () => {
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }}
           />
           <motion.div
+            data-lenis-prevent="true"
             initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{ 
               position: 'relative', width: '100%', maxWidth: 460,
@@ -156,7 +157,7 @@ export const PasswordModal: React.FC = () => {
               <button onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: 'pointer', transition: 'all 140ms' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}><FiX size={14} /></button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto' }} className="hide-scrollbar">
+            <form onSubmit={handleSubmit} data-lenis-prevent="true" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', overscrollBehavior: 'contain' }} className="hide-scrollbar">
               <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name *</label>

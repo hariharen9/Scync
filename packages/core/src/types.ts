@@ -9,11 +9,18 @@ export interface BiometricMeta {
   encMasterPassword: EncryptedField;
 }
 
+export interface RecoveryKitMeta {
+  salt: string;
+  encMasterPassword: EncryptedField;
+  createdAt: Date;
+}
+
 export interface VaultMeta {
   salt: string;
   verifier: EncryptedField;
   createdAt: Date;
   biometrics: BiometricMeta[];
+  recovery?: RecoveryKitMeta | null;
 }
 
 export type SecretChangeType = 'created' | 'updated' | 'rotated' | 'restored';

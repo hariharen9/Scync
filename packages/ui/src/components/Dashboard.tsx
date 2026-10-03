@@ -202,10 +202,10 @@ const QuickSSH: React.FC = () => {
 };
 
 export const Dashboard: React.FC = () => {
-  const { storedSecrets } = useVaultStore();
+  const { storedSecrets, vaultMeta } = useVaultStore();
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
-  const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView, setSortState, clearFilters } = useUIStore();
+  const { openAddModal, openEnvImportModal, openAddProjectModal, setActiveView, setSortState, clearFilters, openRecoveryKitModal } = useUIStore();
 
   const serviceColorMap = useMemo(() => {
     const map: Record<string, string> = { ...SERVICE_COLORS };
@@ -263,6 +263,67 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Recovery Kit Banner for users who haven't configured it yet */}
+      {!vaultMeta?.recovery && (
+        <div style={{
+          ...card,
+          marginBottom: 16,
+          background: 'rgba(245, 158, 11, 0.05)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+          padding: '14px 18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 260, flex: 1 }}>
+            <div style={{
+              width: 32,
+              height: 32,
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#f59e0b',
+              flexShrink: 0,
+            }}>
+              <FiKey size={16} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Emergency Recovery Kit Not Configured
+                <span style={{ fontSize: 9, fontWeight: 800, padding: '1px 6px', background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Recommended
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0 0', fontSize: 12, color: 'var(--color-text-2)', lineHeight: 1.4 }}>
+                Generate an offline recovery key and printable kit so you never lose access to your vault if you forget your master password.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => openRecoveryKitModal()}
+            style={{
+              padding: '7px 14px',
+              background: '#f59e0b',
+              color: '#080808',
+              border: 'none',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              fontFamily: 'var(--font-sans)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <FiKey size={13} /> Set Up Recovery Kit
+          </button>
+        </div>
+      )}
 
       {/* Health Card */}
       <div style={{ ...card, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>

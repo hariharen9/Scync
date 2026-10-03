@@ -13,9 +13,10 @@ const floatData = [
 
 const marqueeItems = [
   'AES-256-GCM', 'Zero-Knowledge Architecture', 'PBKDF2-SHA256 \u00b7 310,000 iterations',
-  'Web Crypto API', 'In-Memory Decryption', 'MIT Licensed', 'Open Source',
+  'Emergency Recovery Kit', 'Web Crypto API', 'In-Memory Decryption', 'MIT Licensed', 'Open Source',
   'No Password Storage', 'Fresh IV Per Encrypt', 'Real-Time Sync',
-  '2FA Authenticator', 'SSH Key Manager', 'Cross-Platform', 'Non-Extractable Keys',
+  'Password Manager & CSV Import', 'Secret Versioning & Rollback', 'Vault Activity Ledger',
+  '2FA Authenticator', 'SSH Key Manager', 'SSL Certificate Manager', 'Non-Extractable Keys',
   'Firebase-Backed', 'Free Forever',
 ];
 
@@ -580,6 +581,38 @@ export const AuthPage: React.FC = () => {
               </div>
               <div className="feat-title">Zero-Knowledge Sharing</div>
               <div className="feat-desc">Share secrets via encrypted links. Decryption key in URL fragment <strong>never reaches the server</strong>. Set expiry times and view limits.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
+              </div>
+              <div className="feat-title">Emergency Recovery Kit</div>
+              <div className="feat-desc">Printable offline HTML kit containing an encrypted recovery phrase and QR code. Restore your vault if you ever forget your master password.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              </div>
+              <div className="feat-title">Passwords & CSV Import</div>
+              <div className="feat-desc">Dedicated vault for website credentials with resilient 1-click CSV migration from Bitwarden, 1Password, Chrome, Apple Keychain, and LastPass.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              </div>
+              <div className="feat-title">Versioning & Rollback</div>
+              <div className="feat-desc">Automatic point-in-time snapshots whenever secrets are modified or rotated. Inspect history and roll back previous values with 1 click.</div>
+            </div>
+
+            <div className="feat-card reveal reveal-delay-3">
+              <div className="feat-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+              </div>
+              <div className="feat-title">Vault Activity Ledger</div>
+              <div className="feat-desc">A real-time audit ledger right on your dashboard tracking every creation, secret rotation, version rollback, and shared link event.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">

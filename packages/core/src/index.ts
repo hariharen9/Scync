@@ -9,3 +9,4 @@ export * from './ssh';
 export * from './totp';
 export * from './certificates';
 export * from './passwordImport';
+export * from './recovery';

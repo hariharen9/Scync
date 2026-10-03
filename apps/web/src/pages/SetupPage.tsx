@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore, useVaultStore } from '@scync/ui';
-import { FiShield, FiLock, FiCheck, FiEye, FiEyeOff, FiAlertCircle } from 'react-icons/fi';
+import { generateSalt, deriveKey, createVerifier, setupVault, updateVaultRecovery, generateRecoveryKey, createRecoveryPayload, generateRecoveryKitHtml } from '@scync/core';
+import { FiShield, FiLock, FiCheck, FiEye, FiEyeOff, FiAlertCircle, FiKey, FiDownload, FiCopy, FiArrowRight } from 'react-icons/fi';
 import './SetupPage.css';
 
 export const SetupPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
-  const { initializeVault } = useVaultStore();
+  const { setDerivedKey } = useVaultStore();
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -13,6 +14,12 @@ export const SetupPage: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmedOnce, setConfirmedOnce] = useState(false);
+
+  // Step 3 (Emergency Recovery Kit) state
+  const [currentStep, setCurrentStep] = useState<2 | 3>(2);
+  const [generatedRecoveryKey, setGeneratedRecoveryKey] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const createdKeyRef = useRef<CryptoKey | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const constellationRef = useRef<HTMLDivElement>(null);
@@ -213,25 +220,70 @@ export const SetupPage: React.FC = () => {
     if (!user || loading) return;
     setLoading(true);
     try {
-      await initializeVault(password, user.uid);
+      const salt = generateSalt();
+      const key = await deriveKey(password, user.uid, salt);
+      const verifier = await createVerifier(key);
+      await setupVault(user.uid, salt, verifier);
+
+      // Generate and persist Emergency Recovery Kit
+      const recKey = generateRecoveryKey();
+      const { salt: recSalt, encMasterPassword } = await createRecoveryPayload(recKey, user.uid, password);
+      await updateVaultRecovery(user.uid, {
+        salt: recSalt,
+        encMasterPassword,
+      });
+
+      createdKeyRef.current = key;
+      setGeneratedRecoveryKey(recKey);
       setIsSuccess(true);
+
       const r = document.getElementById('constAvatar')?.getBoundingClientRect();
       if (r) spawnBurst(r.left + r.width / 2, r.top + r.height / 2);
 
-      // Final transitions
       setTimeout(() => {
-        nodeEls.current.forEach((n, i) => {
-          const cx = 140, cy = 140, nx = NODE_POS[i][0], ny = NODE_POS[i][1];
-          const dx = (cx - nx) * .45, dy = (cy - ny) * .45;
-          n.el.style.transition = `transform .5s var(--ease) ${i * 16}ms,opacity .4s ease ${i * 16}ms`;
-          n.el.style.transform = `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(0)`;
-          n.el.style.opacity = '0';
-        });
-        if (svgRef.current) svgRef.current.style.opacity = '0';
-      }, 350);
-    } catch {
+        setCurrentStep(3);
+        setLoading(false);
+      }, 500);
+    } catch (err) {
+      console.error("Vault creation error:", err);
       setLoading(false);
     }
+  };
+
+  const handleEnterVault = () => {
+    if (createdKeyRef.current) {
+      setDerivedKey(createdKeyRef.current);
+    }
+  };
+
+  const handleDownloadKit = async () => {
+    if (!generatedRecoveryKey || !user) return;
+    try {
+      const html = await generateRecoveryKitHtml({
+        userEmail: user.email || 'user',
+        userId: user.uid,
+        recoveryKey: generatedRecoveryKey,
+        createdAt: new Date(),
+      });
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `scync-emergency-recovery-kit-${(user.email || 'vault').split('@')[0]}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download recovery kit", err);
+    }
+  };
+
+  const handleCopyKey = () => {
+    if (!generatedRecoveryKey) return;
+    navigator.clipboard.writeText(generatedRecoveryKey);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
   };
 
   const allRequirementsMet = password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && isMatch;
@@ -256,14 +308,14 @@ export const SetupPage: React.FC = () => {
           <span>Sign in</span>
         </div>
         <div className="step-div" />
-        <div className="step active">
-          <div className="step-num">2</div>
+        <div className={`step ${currentStep > 2 ? 'done' : 'active'}`}>
+          <div className="step-num">{currentStep > 2 ? <FiCheck size={9} strokeWidth={3} /> : '2'}</div>
           <span>Vault password</span>
         </div>
         <div className="step-div" />
-        <div className="step">
+        <div className={`step ${currentStep === 3 ? 'active' : ''}`}>
           <div className="step-num">3</div>
-          <span>Done</span>
+          <span>Recovery Kit</span>
         </div>
       </div>
 
@@ -288,7 +340,9 @@ export const SetupPage: React.FC = () => {
           <div className="const-glow" style={{ opacity: isSuccess ? 0 : 1 }} />
 
           <div className="const-avatar" id="constAvatar" style={{ borderColor: isSuccess ? 'var(--green)' : '' }}>
-            {isSuccess ? (
+            {currentStep === 3 ? (
+              <FiKey size={26} color="var(--green)" />
+            ) : isSuccess ? (
               <FiShield size={28} color="var(--green)" />
             ) : (
               <img src="/logo.png" alt="Scync Logo" style={{ width: '140%', height: '140%', objectFit: 'contain' }} />
@@ -296,113 +350,213 @@ export const SetupPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Header */}
-        <div className="header-info" style={{ opacity: isSuccess ? 0 : 1 }}>
-          <div className="header-title">Create your vault password</div>
-          <div className="header-sub">This is the only key. It never leaves your device.</div>
-        </div>
+        {currentStep === 3 ? (
+          <>
+            <div className="header-info">
+              <div className="header-title" style={{ color: 'var(--green)' }}>Emergency Recovery Kit</div>
+              <div className="header-sub">Save your recovery key. This is your only fallback if you forget your password.</div>
+            </div>
 
-        {/* Controls */}
-        <div className="controls" style={{ opacity: isSuccess ? 0 : 1 }}>
-          <div className={`pf ${password ? 'has-val' : ''}`} onClick={() => passElRef.current?.focus()}>
-            <div className="pf-icon">
-              <FiLock size={13} strokeWidth={2} />
-            </div>
-            <div className="pf-dots">
-              {!password && <span className="ph">New vault password</span>}
-              {!revealed && password.split('').map((_, i) => (
-                <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
-              ))}
-              {revealed && password && <span className="rtxt">{password}</span>}
-            </div>
-            <input
-              ref={passElRef}
-              type={revealed ? "text" : "password"}
-              className="pf-real"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              autoComplete="new-password"
-              spellCheck={false}
-              autoFocus
-            />
-            <button className="pf-eye" onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }} tabIndex={-1}>
-              {revealed ? <FiEyeOff size={13} /> : <FiEye size={13} />}
-            </button>
-          </div>
+            <div className="controls" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{
+                background: 'var(--s1)',
+                border: '1px solid var(--b2)',
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--t2)' }}>
+                    Your Recovery Key
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyKey}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: copiedKey ? 'var(--green)' : 'var(--t1)',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontFamily: 'var(--font)',
+                    }}
+                  >
+                    {copiedKey ? <FiCheck size={12} /> : <FiCopy size={12} />}
+                    {copiedKey ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
 
-          {/* Strength Bar Row */}
-          <div className="strength-row" style={{ opacity: password ? 1 : 0 }}>
-            <div className="strength-bars">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className={`sbar ${i <= score ? key : ''}`} />
-              ))}
-            </div>
-            <div className={`strength-txt ${key}`}>{STRENGTH_LABELS[key]}</div>
-          </div>
+                <div style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 13,
+                  letterSpacing: '0.06em',
+                  color: 'var(--t1)',
+                  padding: '10px 12px',
+                  background: 'var(--s2)',
+                  border: '1px solid var(--b3)',
+                  textAlign: 'center',
+                  wordBreak: 'break-all',
+                  userSelect: 'all',
+                }}>
+                  {generatedRecoveryKey}
+                </div>
+              </div>
 
-          {/* Requirements */}
-          <div className="reqs">
-            <div className={`req ${password.length >= 8 ? 'met' : ''}`}>
-              <div className="req-dot" /> 8+ characters
-            </div>
-            <div className={`req ${/[A-Z]/.test(password) ? 'met' : ''}`}>
-              <div className="req-dot" /> Uppercase letter
-            </div>
-            <div className={`req ${/[0-9]/.test(password) ? 'met' : ''}`}>
-              <div className="req-dot" /> Number
-            </div>
-            <div className={`req ${/[^A-Za-z0-9]/.test(password) ? 'met' : ''}`}>
-              <div className="req-dot" /> Symbol
-            </div>
-          </div>
+              <button
+                type="button"
+                onClick={handleDownloadKit}
+                style={{
+                  padding: '10px 14px',
+                  background: 'transparent',
+                  border: '1px solid var(--b2)',
+                  color: 'var(--t1)',
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--s2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <FiDownload size={13} />
+                Download Emergency Sheet (.html)
+              </button>
 
-          {/* Confirm Field */}
-          <div className={`pf ${isMatch ? 'match' : isMismatch ? 'mismatch' : ''}`} style={{ marginTop: 4 }} onClick={() => document.getElementById('p2')?.focus()}>
-            <div className="pf-icon">
-              <FiCheck size={13} strokeWidth={2.5} />
-            </div>
-            <div className="pf-dots">
-              {!confirm && <span className="ph">Confirm vault password</span>}
-              {confirm.split('').map((_, i) => (
-                <div key={i} className={`pd ${i === confirm.length - 1 ? 'last' : ''} ${isMatch ? 'match-col' : ''}`} />
-              ))}
-            </div>
-            <input
-              id="p2"
-              type="password"
-              className="pf-real"
-              value={confirm}
-              onChange={e => { setConfirm(e.target.value); setConfirmedOnce(true); }}
-              autoComplete="new-password"
-              spellCheck={false}
-            />
-            <div className={`pf-status ${confirm ? 'show' : ''}`}>
-              {isMatch && <FiCheck size={13} strokeWidth={2.5} color="var(--green)" />}
-              {isMismatch && <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 800 }}>×</div>}
-            </div>
-          </div>
+              <button
+                type="button"
+                className="cbtn ready"
+                onClick={handleEnterVault}
+                style={{ marginTop: 4 }}
+              >
+                <span className="btxt">Enter Vault</span>
+                <FiArrowRight size={13} strokeWidth={2.5} />
+              </button>
 
-          <div className={`confirm-status ${isMatch || isMismatch ? 'show' : ''} ${isMatch ? 'ok' : 'bad'}`}>
-            {isMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
-          </div>
+              <div className="zk" style={{ marginTop: 2 }}>
+                Keep this key safe offline. You can also view or regenerate this from Settings anytime.
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="header-info" style={{ opacity: isSuccess ? 0 : 1 }}>
+              <div className="header-title">Create your vault password</div>
+              <div className="header-sub">This is the only key. It never leaves your device.</div>
+            </div>
 
-          <button className={`cbtn ${allRequirementsMet ? 'ready' : ''} ${loading ? 'loading' : ''} ${isSuccess ? 'done' : ''}`} onClick={doCreate} disabled={!allRequirementsMet || loading}>
-            {isSuccess ? (
-              <><FiCheck size={14} strokeWidth={2.5} /><span>Vault Created</span></>
-            ) : (
-              <>
-                <FiShield className="bico" size={13} strokeWidth={2.5} />
-                <span className="btxt">Create Vault</span>
-                <div className="spin" />
-              </>
-            )}
-          </button>
+            {/* Controls */}
+            <div className="controls" style={{ opacity: isSuccess ? 0 : 1 }}>
+              <div className={`pf ${password ? 'has-val' : ''}`} onClick={() => passElRef.current?.focus()}>
+                <div className="pf-icon">
+                  <FiLock size={13} strokeWidth={2} />
+                </div>
+                <div className="pf-dots">
+                  {!password && <span className="ph">New vault password</span>}
+                  {!revealed && password.split('').map((_, i) => (
+                    <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
+                  ))}
+                  {revealed && password && <span className="rtxt">{password}</span>}
+                </div>
+                <input
+                  ref={passElRef}
+                  type={revealed ? "text" : "password"}
+                  className="pf-real"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  spellCheck={false}
+                  autoFocus
+                />
+                <button className="pf-eye" onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }} tabIndex={-1}>
+                  {revealed ? <FiEyeOff size={13} /> : <FiEye size={13} />}
+                </button>
+              </div>
 
-          <div className="zk">
-            <b>There is no password recovery.</b> Write it down somewhere safe.<br />
-            <a onClick={signOut}>← Back to sign in</a>
-          </div>
-        </div>
+              {/* Strength Bar Row */}
+              <div className="strength-row" style={{ opacity: password ? 1 : 0 }}>
+                <div className="strength-bars">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className={`sbar ${i <= score ? key : ''}`} />
+                  ))}
+                </div>
+                <div className={`strength-txt ${key}`}>{STRENGTH_LABELS[key]}</div>
+              </div>
+
+              {/* Requirements */}
+              <div className="reqs">
+                <div className={`req ${password.length >= 8 ? 'met' : ''}`}>
+                  <div className="req-dot" /> 8+ characters
+                </div>
+                <div className={`req ${/[A-Z]/.test(password) ? 'met' : ''}`}>
+                  <div className="req-dot" /> Uppercase letter
+                </div>
+                <div className={`req ${/[0-9]/.test(password) ? 'met' : ''}`}>
+                  <div className="req-dot" /> Number
+                </div>
+                <div className={`req ${/[^A-Za-z0-9]/.test(password) ? 'met' : ''}`}>
+                  <div className="req-dot" /> Symbol
+                </div>
+              </div>
+
+              {/* Confirm Field */}
+              <div className={`pf ${isMatch ? 'match' : isMismatch ? 'mismatch' : ''}`} style={{ marginTop: 4 }} onClick={() => document.getElementById('p2')?.focus()}>
+                <div className="pf-icon">
+                  <FiCheck size={13} strokeWidth={2.5} />
+                </div>
+                <div className="pf-dots">
+                  {!confirm && <span className="ph">Confirm vault password</span>}
+                  {confirm.split('').map((_, i) => (
+                    <div key={i} className={`pd ${i === confirm.length - 1 ? 'last' : ''} ${isMatch ? 'match-col' : ''}`} />
+                  ))}
+                </div>
+                <input
+                  id="p2"
+                  type="password"
+                  className="pf-real"
+                  value={confirm}
+                  onChange={e => { setConfirm(e.target.value); setConfirmedOnce(true); }}
+                  autoComplete="new-password"
+                  spellCheck={false}
+                />
+                <div className={`pf-status ${confirm ? 'show' : ''}`}>
+                  {isMatch && <FiCheck size={13} strokeWidth={2.5} color="var(--green)" />}
+                  {isMismatch && <div style={{ color: 'var(--red)', fontSize: 13, fontWeight: 800 }}>×</div>}
+                </div>
+              </div>
+
+              <div className={`confirm-status ${isMatch || isMismatch ? 'show' : ''} ${isMatch ? 'ok' : 'bad'}`}>
+                {isMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </div>
+
+              <button className={`cbtn ${allRequirementsMet ? 'ready' : ''} ${loading ? 'loading' : ''} ${isSuccess ? 'done' : ''}`} onClick={doCreate} disabled={!allRequirementsMet || loading}>
+                {isSuccess ? (
+                  <><FiCheck size={14} strokeWidth={2.5} /><span>Vault Created</span></>
+                ) : (
+                  <>
+                    <FiShield className="bico" size={13} strokeWidth={2.5} />
+                    <span className="btxt">Create Vault</span>
+                    <div className="spin" />
+                  </>
+                )}
+              </button>
+
+              <div className="zk">
+                <b>There is no password recovery.</b> Write it down somewhere safe.<br />
+                <a onClick={signOut}>← Back to sign in</a>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="foot">

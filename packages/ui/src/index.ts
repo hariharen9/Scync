@@ -33,6 +33,7 @@ export * from './components/AboutModal';
 export * from './components/ConfirmModal';
 export * from './hooks/useInactivityLock';
 export * from './components/SettingsModal';
+export * from './components/RecoveryKitModal';
 export { SSHManagerDashboard } from './components/SSHManagerDashboard';
 export { SSHKeyModal } from './components/SSHKeyModal';
 

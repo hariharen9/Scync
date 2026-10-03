@@ -169,7 +169,29 @@ That's it. Everything else exists to make that loop faster and the secrets insid
       <h3>🛡️ Zero-Knowledge architecture</h3>
       <p>Enforced by math. Your plaintext data never leaves your device. Not "we promise," architecturally impossible.</p>
     </td>
+    <td valign="top">
+      <h3>🆘 Master Password Recovery Kit</h3>
+      <p>Zero-knowledge printable and offline HTML recovery sheet with an emergency key and QR code fallback if you ever forget your master password.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>🔑 Passwords Vault & CSV Migrations</h3>
+      <p>Dedicated website logins vault with resilient CSV migration from Bitwarden, 1Password, Chrome, Apple Keychain, and LastPass.</p>
+    </td>
+    <td valign="top">
+      <h3>🕒 Secret Versioning & Rollback</h3>
+      <p>Automatic point-in-time snapshots whenever secrets are modified or rotated, with instant 1-click rollback to previous values.</p>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>📜 Vault Activity Ledger</h3>
+      <p>Real-time audit trail and event ledger directly on the dashboard tracking secret creation, updates, rotations, and shares.</p>
+    </td>
     <td width="50%" valign="top">
+      <h3>🎨 85+ Developer Service Presets</h3>
+      <p>Instant visual recognition with curated brand colors and icons for AWS, GitHub, Stripe, OpenAI, Vercel, Supabase, and dozens more.</p>
     </td>
   </tr>
 </table>
@@ -213,8 +235,8 @@ Scync is designed to be **Zero-Knowledge**, but for the ultimate level of privac
 
 2. **Configure Firebase**:
    - Create a project in the Firebase Console.
-   - Enable **Google Auth** and **Firestore**.
-   - Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in your project credentials.
+   - Enable **Authentication** (Google Auth and Email/Password) and **Firestore**.
+   - Copy root `.env.example` to `.env.local` and fill in your Firebase credentials.
 
 3. **Deploy or Run Locally**:
    ```bash
@@ -242,7 +264,7 @@ Scync uses a Turborepo-managed monorepo with the web app in `apps/web` and share
 
 **Zero-knowledge by default.** The server never receives plaintext. Ever. If this principle is violated once, the entire value proposition fails.
 
-**Vault password independence.** The vault password is cryptographically separate from your Google account. Neither alone can decrypt your secrets.
+**Vault password independence.** The vault password is cryptographically separate from your Google or email login. Neither alone can decrypt your secrets.
 
 **Universal PWA.** Responsive, lightweight, and installable directly from your browser on any device.
 
@@ -278,11 +300,10 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 
 To be explicit about scope (and to prevent well-intentioned PRs that miss the point):
 
-- ❌ Not a password manager — no browser autofill, no username/URL triplets as the primary model
-- ❌ Not a team tool — no sharing, no RBAC, no audit logs, no SSO
+- ❌ Not a browser autofill extension — Scync includes a dedicated credentials vault and CSV importer, but does not inject forms into external browser tabs
+- ❌ Not an enterprise team platform — no multi-seat RBAC, team workspaces, or enterprise SSO (though zero-knowledge link sharing and personal vault activity ledgers are built-in)
 - ❌ Not a CI/CD injector — Doppler owns that space; Scync doesn't compete
 - ❌ Not a secrets rotation engine — it tracks rotation dates, it doesn't call APIs to rotate keys
-- ❌ Not a browser extension — no form injection
 - ❌ Not a subscription product — free, open source, MIT licensed, forever
 
 ---

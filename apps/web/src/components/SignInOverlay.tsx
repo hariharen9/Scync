@@ -233,8 +233,8 @@ export const SignInOverlay: React.FC<SignInOverlayProps> = ({ onClose }) => {
             <div className="sio-info-num">!</div>
             <div className="sio-info-body">
               <strong>Your Vault Master Password is the real key.</strong> You'll create it on the next screen. It is
-              different from this login, never sent or stored, and it encrypts your secrets. If you forget it,
-              <strong> your data is unrecoverable</strong> — there is no “forgot master password”.
+              different from this login, never sent or stored, and encrypts your secrets. If you forget it and lose
+              your <strong>Emergency Recovery Kit</strong>, your data is unrecoverable.
             </div>
           </div>
           <div className="sio-info-item">

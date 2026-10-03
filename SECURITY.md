@@ -39,9 +39,9 @@ Scync implements the modern **WebAuthn PRF (Pseudo-Random Function) extension** 
 5. **Security Boundary**: The "unwrapped" password is never persisted. If you change your Master Password, Scync automatically invalidates and wipes all biometric metadata to prevent key-reuse attacks.
 
 ## ⚠️ Single Point of Failure
-Because Scync is zero-knowledge, **your vault password is the single point of failure.** 
-- **If you lose your vault password, your data cannot be recovered.** We do not have a "Forgot Password" feature because we don't have your keys.
-- **If you lose your recovery codes** (generated during setup), you will be locked out of your vault permanently if you forget your password.
+Because Scync is zero-knowledge, **your vault password is the cryptographic boundary.** 
+- **If you lose your vault password, your data cannot be recovered without your Emergency Recovery Kit.** We do not have a server-side "Forgot Password" feature because we never possess your keys.
+- **Your offline Emergency Recovery Kit** (generated during vault setup or in Settings) contains a cryptographically derived emergency key and recovery phrase that can unwrap and restore your vault access. Keep this kit saved or printed in a secure physical location.
 
 ## 🚨 Reporting a Vulnerability
 

@@ -6,6 +6,15 @@ import { FiShield, FiCloudOff, FiCheckSquare, FiX } from 'react-icons/fi';
 export const AboutModal: React.FC = () => {
   const { isAboutModalOpen, closeAboutModal } = useUIStore();
 
+  React.useEffect(() => {
+    if (!isAboutModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeAboutModal();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAboutModalOpen, closeAboutModal]);
+
   return (
     <AnimatePresence>
       {isAboutModalOpen && (
@@ -16,6 +25,7 @@ export const AboutModal: React.FC = () => {
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
           />
           <motion.div
+            data-lenis-prevent="true"
             initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             style={{ position: 'relative', width: '100%', maxWidth: 600, background: 'var(--color-surface)', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 32px)', fontFamily: 'var(--font-sans)' }}
@@ -39,7 +49,7 @@ export const AboutModal: React.FC = () => {
             </div>
 
             {/* Content */}
-            <div style={{ padding: '24px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div data-lenis-prevent="true" style={{ padding: '24px 20px', overflowY: 'auto', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: 24 }}>
               
               {/* Intro */}
               <div style={{ paddingBottom: 16, borderBottom: '1px solid var(--color-border)' }}>

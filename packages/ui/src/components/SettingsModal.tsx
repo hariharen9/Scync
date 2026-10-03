@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiShield, FiLock, FiDownload, FiCheck, FiAlertTriangle, FiEye, FiEyeOff, FiLoader, FiSettings, FiTrash2, FiPlus } from 'react-icons/fi';
+import { FiX, FiShield, FiLock, FiDownload, FiCheck, FiAlertTriangle, FiEye, FiEyeOff, FiLoader, FiSettings, FiTrash2, FiPlus, FiKey } from 'react-icons/fi';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
@@ -15,7 +15,7 @@ const btnPrimaryStyle: React.CSSProperties = { width: '100%', padding: '10px 16p
 const btnOutlineStyle: React.CSSProperties = { padding: '8px 12px', background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text)', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 0.2s' };
 
 export const SettingsModal: React.FC = () => {
-  const { isSettingsModalOpen, closeSettingsModal, settings, updateSettings } = useUIStore();
+  const { isSettingsModalOpen, closeSettingsModal, settings, updateSettings, openRecoveryKitModal } = useUIStore();
   const { changeVaultPassword, exportVault } = useVaultStore();
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
@@ -226,6 +226,17 @@ export const SettingsModal: React.FC = () => {
     }, 200);
   };
 
+  React.useEffect(() => {
+    if (!isSettingsModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSettingsModalOpen, isSubmitting]);
+
   const timerOptions = [
     { value: '5', label: '5 minutes' },
     { value: '15', label: '15 minutes (Default)' },
@@ -238,7 +249,14 @@ export const SettingsModal: React.FC = () => {
       {isSettingsModalOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} onClick={handleClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }} />
-          <motion.div initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }} style={{ position: 'relative', width: '100%', maxWidth: 460, background: 'var(--color-surface)', border: '1px solid var(--color-border-2)', boxShadow: '0 24px 64px rgba(0,0,0,.7)', overflow: 'hidden' }}>
+          <motion.div
+            data-lenis-prevent="true"
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            style={{ position: 'relative', width: '100%', maxWidth: 460, background: 'var(--color-surface)', border: '1px solid var(--color-border-2)', boxShadow: '0 24px 64px rgba(0,0,0,.7)', overflow: 'hidden' }}
+          >
             
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--color-border)' }}>
@@ -254,7 +272,7 @@ export const SettingsModal: React.FC = () => {
               <button disabled={isSubmitting} onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.5 : 1 }}><FiX size={14} /></button>
             </div>
 
-            <div style={{ padding: 18, minHeight: 360, maxHeight: '80vh', overflowY: 'auto' }}>
+            <div data-lenis-prevent="true" style={{ padding: 18, minHeight: 360, maxHeight: '80vh', overflowY: 'auto', overscrollBehavior: 'contain' }}>
               
               {/* Tabs */}
               <div style={{ display: 'flex', gap: 16, marginBottom: 24, borderBottom: '1px solid var(--color-border)' }}>
@@ -467,6 +485,47 @@ export const SettingsModal: React.FC = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Emergency Recovery Kit */}
+                  <div style={{ padding: 16, border: '1px solid var(--color-border)', borderRadius: 4, background: 'var(--color-surface-2)', marginTop: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                        <FiKey /> Emergency Recovery Kit
+                      </h3>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        padding: '2px 6px',
+                        borderRadius: 2,
+                        background: vaultMeta?.recovery ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: vaultMeta?.recovery ? 'var(--color-green)' : '#f59e0b',
+                        border: `1px solid ${vaultMeta?.recovery ? 'var(--color-green-border)' : 'rgba(245, 158, 11, 0.3)'}`,
+                      }}>
+                        {vaultMeta?.recovery ? 'Active' : 'Not Configured'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                      Generate an offline emergency kit with a master recovery key. If you ever forget your master password, this kit is the only way to recover your vault.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => openRecoveryKitModal()}
+                      style={{
+                        ...btnOutlineStyle,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: vaultMeta?.recovery ? 'transparent' : 'var(--color-green)',
+                        color: vaultMeta?.recovery ? 'var(--color-text)' : 'var(--color-bg)',
+                        border: vaultMeta?.recovery ? '1px solid var(--color-border)' : '1px solid var(--color-green-border)',
+                      }}
+                    >
+                      <FiKey size={13} />
+                      {vaultMeta?.recovery ? 'View or Regenerate Recovery Kit' : 'Set Up Emergency Recovery Kit'}
+                    </button>
                   </div>
                 </motion.div>
               )}

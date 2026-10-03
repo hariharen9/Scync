@@ -7,7 +7,7 @@ Here's a prioritized, realistic roadmap — grouped by what actually moves the n
 These aren't features, they're holes that make the app unreliable today:
 
 - [x] **Resilient / Atomic imports** — EnvImport and PasswordImport both implemented with per-item try/catch, live progress bar, and detailed success/failure report (no loop stranding)
-- **Master password recovery option** — even a "export recovery kit" (encrypted with a secondary passphrase) so a forgotten password isn't total data loss
+- [x] **Master password recovery option** — Zero-knowledge Emergency Recovery Kit (`SCYNC-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX`), printable/offline standalone HTML recovery sheet with embedded QR code, setup flow generation, and unlock page recovery fallback
 - **Test coverage** — currently only one crypto test. Add store tests, import parser tests, share flow tests
 
 ---

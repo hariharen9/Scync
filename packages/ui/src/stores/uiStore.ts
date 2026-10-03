@@ -50,6 +50,7 @@ export interface UIState {
   isPasswordImportModalOpen: boolean;
   isAboutModalOpen: boolean;
   isSettingsModalOpen: boolean;
+  isRecoveryKitModalOpen: boolean;
   isCommandBarOpen: boolean;
   confirmConfig: ConfirmConfig | null;
   
@@ -87,6 +88,8 @@ export interface UIState {
   closeAboutModal: () => void;
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
+  openRecoveryKitModal: () => void;
+  closeRecoveryKitModal: () => void;
   openCommandBar: () => void;
   closeCommandBar: () => void;
   openConfirmModal: (config: ConfirmConfig) => void;
@@ -134,6 +137,7 @@ export const useUIStore = create<UIState>((set) => ({
   isPasswordImportModalOpen: false,
   isAboutModalOpen: false,
   isSettingsModalOpen: false,
+  isRecoveryKitModalOpen: false,
   isCommandBarOpen: false,
   confirmConfig: null,
   isMobileMenuOpen: false,
@@ -171,6 +175,8 @@ export const useUIStore = create<UIState>((set) => ({
   closeAboutModal: () => set({ isAboutModalOpen: false }),
   openSettingsModal: () => set({ isSettingsModalOpen: true, isMobileMenuOpen: false }),
   closeSettingsModal: () => set({ isSettingsModalOpen: false }),
+  openRecoveryKitModal: () => set({ isRecoveryKitModalOpen: true }),
+  closeRecoveryKitModal: () => set({ isRecoveryKitModalOpen: false }),
   openCommandBar: () => set({ isCommandBarOpen: true, isMobileMenuOpen: false }),
   closeCommandBar: () => set({ isCommandBarOpen: false }),
   openConfirmModal: (config) => set({ confirmConfig: config }),
@@ -202,6 +208,7 @@ export const useUIStore = create<UIState>((set) => ({
     isPasswordImportModalOpen: false,
     isAboutModalOpen: false,
     isSettingsModalOpen: false,
+    isRecoveryKitModalOpen: false,
     isCommandBarOpen: false,
     confirmConfig: null,
     isMobileMenuOpen: false,

@@ -5,7 +5,7 @@ import './UnlockPage.css';
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
-  const { vaultMeta, verifyPassword, verifyBiometrics, setDerivedKey } = useVaultStore();
+  const { vaultMeta, verifyPassword, verifyBiometrics, setDerivedKey, recoverVault } = useVaultStore();
   const { openConfirmModal } = useUIStore();
 
   const [password, setPassword] = useState('');
@@ -18,6 +18,12 @@ export const UnlockPage: React.FC = () => {
   const [clockStr, setClockStr] = useState('');
   const [dateStr, setDateStr] = useState('');
   const [lockoutTimer, setLockoutTimer] = useState(0);
+
+  // Emergency Recovery Kit state
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryKey, setRecoveryKey] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
 
   const passElRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -476,6 +482,27 @@ export const UnlockPage: React.FC = () => {
     }
   };
 
+  const handleRecovery = async () => {
+    if (!recoveryKey.trim() || !user || recoveryLoading || isSuccess) return;
+    setRecoveryLoading(true);
+    setRecoveryError('');
+
+    try {
+      const res = await recoverVault(user.uid, recoveryKey.trim());
+      if (res && res.derivedKey) {
+        handleSuccessFlow(res.derivedKey);
+      } else {
+        setRecoveryError('Invalid recovery key or corrupted recovery record.');
+      }
+    } catch (err) {
+      setRecoveryError(err instanceof Error ? err.message : 'Failed to recover vault.');
+    } finally {
+      if (!isSuccess) {
+        setRecoveryLoading(false);
+      }
+    }
+  };
+
   const handleSignOut = () => {
     openConfirmModal({
       title: 'Sign Out',
@@ -548,122 +575,258 @@ export const UnlockPage: React.FC = () => {
 
         {/* Controls */}
         <div className="controls" id="controlsLayer">
-          <div className={`pf ${errorText ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} onClick={() => passElRef.current?.focus()}>
-            <div className="pf-icon">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="1" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-            </div>
+          {isRecovering ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+              <div style={{
+                fontSize: 11,
+                fontFamily: 'var(--mono)',
+                color: 'var(--amber)',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                Emergency Recovery Kit
+              </div>
 
-            <div className="pf-dots">
-              {password.length === 0 && <span className="ph">Enter vault password</span>}
-              {!revealed && password.split('').map((_, i) => (
-                <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
-              ))}
-              {revealed && password.length > 0 && (
-                <span className="rtxt">{password}</span>
+              <div className={`pf ${recoveryError ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} style={{ padding: '0 12px' }}>
+                <input
+                  type="text"
+                  placeholder="SCYNC-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                  value={recoveryKey}
+                  onChange={e => {
+                    setRecoveryKey(e.target.value.toUpperCase());
+                    setRecoveryError('');
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleRecovery();
+                    }
+                  }}
+                  disabled={recoveryLoading || isSuccess}
+                  spellCheck={false}
+                  autoFocus
+                  style={{
+                    width: '100%',
+                    height: 46,
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.05em',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              {recoveryError && (
+                <div className="err show" style={{ marginTop: 2 }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>{recoveryError}</span>
+                </div>
               )}
-            </div>
 
-            <input
-              ref={passElRef}
-              type={revealed ? "text" : "password"}
-              className="pf-real"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setErrorText(''); }}
-              onKeyDown={handleKeyDown}
-              autoComplete="current-password"
-              spellCheck={false}
-            />
-
-            <button
-              className="pf-eye"
-              type="button"
-              tabIndex={-1}
-              onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {revealed ? (
+              <button
+                className={`ubtn ${recoveryLoading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
+                disabled={!recoveryKey.trim() || recoveryLoading || isSuccess}
+                onClick={handleRecovery}
+                type="button"
+                style={{ marginTop: 4 }}
+              >
+                {isSuccess ? (
                   <>
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 0 1-4.24-4.24" />
-                    <path d="M6.51 6.51A10 10 0 0 0 1 12s4 8 11 8c2.12 0 4.09-.62 5.73-1.66" />
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Vault Recovered</span>
                   </>
                 ) : (
                   <>
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
+                    <span className="btxt">{recoveryLoading ? 'Decrypting Recovery Key...' : 'Recover Vault'}</span>
+                    <div className="spin" />
                   </>
                 )}
-              </svg>
-            </button>
-          </div>
+              </button>
 
-          <div className="pbar">
-            <div className="pbar-inner" style={{ width: `${passPct * 100}%`, background: pbarBg }} />
-          </div>
-
-          <div className={`err ${errorText ? 'show' : ''}`}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{errorText}</span>
-          </div>
-
-          <div className={`pips ${attempts > 0 ? 'show' : ''}`}>
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className={`pip ${i < attempts ? 'used' : ''}`} />
-            ))}
-          </div>
-
-          <button
-            ref={ubtnRef}
-            className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
-            disabled={password.length === 0 || loading || isSuccess || lockoutTimer > 0}
-            onClick={doUnlock}
-            type="button"
-          >
-            {isSuccess ? (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span>Vault Unlocked</span>
-              </>
-            ) : (
-              <>
-                <svg className="bico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <rect x="3" y="11" width="18" height="11" rx="1" />
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <span className="btxt">{lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : 'Unlock Vault'}</span>
-                <div className="spin" />
-              </>
-            )}
-          </button>
-
-          {vaultMeta?.biometrics && vaultMeta.biometrics.length > 0 && (
-            <>
-              <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
               <button
-                className={`bbtn ${biometricLoading ? 'scanning' : ''}`}
-                onClick={doBio}
-                disabled={biometricLoading || loading || isSuccess || lockoutTimer > 0}
+                type="button"
+                onClick={() => {
+                  setIsRecovering(false);
+                  setRecoveryError('');
+                  setRecoveryKey('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--t2)',
+                  fontSize: 11,
+                  fontFamily: 'var(--mono)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  padding: '6px 0',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--t2)'}
+              >
+                ← Return to Password Unlock
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className={`pf ${errorText ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} onClick={() => passElRef.current?.focus()}>
+                <div className="pf-icon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="1" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+
+                <div className="pf-dots">
+                  {password.length === 0 && <span className="ph">Enter vault password</span>}
+                  {!revealed && password.split('').map((_, i) => (
+                    <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
+                  ))}
+                  {revealed && password.length > 0 && (
+                    <span className="rtxt">{password}</span>
+                  )}
+                </div>
+
+                <input
+                  ref={passElRef}
+                  type={revealed ? "text" : "password"}
+                  className="pf-real"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setErrorText(''); }}
+                  onKeyDown={handleKeyDown}
+                  autoComplete="current-password"
+                  spellCheck={false}
+                />
+
+                <button
+                  className="pf-eye"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    {revealed ? (
+                      <>
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 0 1-4.24-4.24" />
+                        <path d="M6.51 6.51A10 10 0 0 0 1 12s4 8 11 8c2.12 0 4.09-.62 5.73-1.66" />
+                      </>
+                    ) : (
+                      <>
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </>
+                    )}
+                  </svg>
+                </button>
+              </div>
+
+              <div className="pbar">
+                <div className="pbar-inner" style={{ width: `${passPct * 100}%`, background: pbarBg }} />
+              </div>
+
+              <div className={`err ${errorText ? 'show' : ''}`}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{errorText}</span>
+              </div>
+
+              <div className={`pips ${attempts > 0 ? 'show' : ''}`}>
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className={`pip ${i < attempts ? 'used' : ''}`} />
+                ))}
+              </div>
+
+              <button
+                ref={ubtnRef}
+                className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
+                disabled={password.length === 0 || loading || isSuccess || lockoutTimer > 0}
+                onClick={doUnlock}
                 type="button"
               >
-                <div className="fp">
-                  <div className="fp-scan-line" />
-                  <Fingerprint size={22} strokeWidth={1.6} />
-                </div>
-                <span className="btxt-b">Use Biometrics</span>
-                <div className="bspin" />
+                {isSuccess ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Vault Unlocked</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="bico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <rect x="3" y="11" width="18" height="11" rx="1" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span className="btxt">{lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : 'Unlock Vault'}</span>
+                    <div className="spin" />
+                  </>
+                )}
               </button>
+
+              {vaultMeta?.biometrics && vaultMeta.biometrics.length > 0 && (
+                <>
+                  <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
+                  <button
+                    className={`bbtn ${biometricLoading ? 'scanning' : ''}`}
+                    onClick={doBio}
+                    disabled={biometricLoading || loading || isSuccess || lockoutTimer > 0}
+                    type="button"
+                  >
+                    <div className="fp">
+                      <div className="fp-scan-line" />
+                      <Fingerprint size={22} strokeWidth={1.6} />
+                    </div>
+                    <span className="btxt-b">Use Biometrics</span>
+                    <div className="bspin" />
+                  </button>
+                </>
+              )}
+
+              {vaultMeta?.recovery ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRecovering(true);
+                    setErrorText('');
+                    setRecoveryError('');
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--t2)',
+                    fontSize: 11,
+                    fontFamily: 'var(--mono)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: '4px 0',
+                    transition: 'color 0.2s',
+                    marginTop: 4,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--green3)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--t2)'}
+                >
+                  Forgot master password? Recover with Emergency Kit
+                </button>
+              ) : (
+                <div className="zk">Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.</div>
+              )}
             </>
           )}
-
-          <div className="zk">Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.</div>
 
           <button className="so" onClick={handleSignOut} type="button">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

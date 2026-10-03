@@ -124,6 +124,7 @@ export const PasswordImportModal: React.FC = () => {
             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }}
           />
           <motion.div
+            data-lenis-prevent="true"
             initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             style={{ 
               position: 'relative', width: '100%', maxWidth: 460,
@@ -151,7 +152,7 @@ export const PasswordImportModal: React.FC = () => {
               )}
             </div>
 
-            <div style={{ padding: 18, overflowY: 'auto', flex: 1 }} className="hide-scrollbar">
+            <div data-lenis-prevent="true" style={{ padding: 18, overflowY: 'auto', overscrollBehavior: 'contain', flex: 1 }} className="hide-scrollbar">
               {error && (
                 <div style={{ padding: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--color-red)', fontSize: 12, display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
                   <FiAlertCircle size={14} style={{ flexShrink: 0 }} /> 

@@ -36,7 +36,11 @@ import {
   updatePassword as coreUpdatePassword,
   deletePassword as coreDeletePassword,
   subscribeToPasswords,
-  decryptPasswordItem
+  decryptPasswordItem,
+  generateRecoveryKey,
+  createRecoveryPayload,
+  recoverMasterPassword,
+  updateVaultRecovery
 } from '@scync/core';
 
 interface VaultState {
@@ -105,6 +109,9 @@ interface VaultState {
   addBiometric: (uid: string, password: string) => Promise<boolean>;
   removeBiometric: (uid: string, index: number) => Promise<boolean>;
   clearAllBiometrics: (uid: string) => Promise<boolean>;
+  createRecoveryKit: (uid: string, masterPasswordPlain: string) => Promise<string>;
+  recoverVault: (uid: string, recoveryKey: string) => Promise<{ masterPassword: string; derivedKey: CryptoKey } | null>;
+  clearRecoveryKit: (uid: string) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -506,6 +513,51 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       await updateVaultBiometrics(uid, null);
       const meta = await getVaultMeta(uid);
       set({ vaultMeta: meta });
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  },
+
+  createRecoveryKit: async (uid: string, masterPasswordPlain: string) => {
+    const recoveryKey = generateRecoveryKey();
+    const payload = await createRecoveryPayload(recoveryKey, uid, masterPasswordPlain);
+    await updateVaultRecovery(uid, payload);
+    const updatedMeta = await getVaultMeta(uid);
+    set({ vaultMeta: updatedMeta });
+    return recoveryKey;
+  },
+
+  recoverVault: async (uid: string, recoveryKey: string) => {
+    try {
+      const meta = await getVaultMeta(uid);
+      if (!meta || !meta.recovery) throw new Error("No recovery kit configured for this vault");
+
+      const masterPassword = await recoverMasterPassword(
+        recoveryKey,
+        uid,
+        meta.recovery.salt,
+        meta.recovery.encMasterPassword
+      );
+
+      const derivedKey = await deriveKey(masterPassword, uid, meta.salt);
+      const isValid = await checkVerifier(derivedKey, meta.verifier);
+      if (!isValid) throw new Error("Recovery key was valid but vault verification failed");
+
+      set({ derivedKey, isLocked: false, vaultMeta: meta });
+      return { masterPassword, derivedKey };
+    } catch (err) {
+      console.error("Vault recovery failed:", err);
+      return null;
+    }
+  },
+
+  clearRecoveryKit: async (uid: string) => {
+    try {
+      await updateVaultRecovery(uid, null);
+      const updatedMeta = await getVaultMeta(uid);
+      set({ vaultMeta: updatedMeta });
       return true;
     } catch (err) {
       console.error(err);
