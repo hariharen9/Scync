@@ -9,7 +9,7 @@ import { DatePicker } from './DatePicker';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
-import { FiKey, FiFileText, FiEye, FiEyeOff, FiList } from 'react-icons/fi';
+import { FiKey, FiFileText, FiEye, FiEyeOff, FiList, FiPlus } from 'react-icons/fi';
 import type { RecoveryCodeSet } from '@scync/core';
 
 interface SecretFormProps {
@@ -159,8 +159,9 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
     ...projects.map(p => ({ value: p.id, label: p.name, icon: <ProjectIcon iconKey={p.icon || 'FiFolder'} size={13} color={PROJECT_COLOR_MAP[p.color] ?? 'var(--color-text-2)'} /> })),
   ];
   const serviceOptions: DropdownOption[] = [
+    { value: '__ADD_NEW__', label: '+ Add Custom Service...', icon: <FiPlus size={12} color="var(--color-green)" /> },
     ...SERVICES.map(s => ({ value: s, label: s, icon: <ServiceIcon service={s} size={13} className="text-current" /> })),
-    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color] ?? 'var(--color-text-2)'} />, description: 'Custom' })),
+    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FiServer'} serviceName={s.name} size={13} color={PROJECT_COLOR_MAP[s.color] ?? 'var(--color-text-2)'} />, description: 'Custom' })),
   ];
 
   return (
@@ -226,7 +227,19 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <Dropdown label="Project" labelAction={{ label: '+ New', onClick: openAddProjectModal }} options={projectOptions} value={formData.projectId || ''} onChange={v => setFormData(p => ({ ...p, projectId: v || null }))} />
-        <Dropdown label="Service" labelAction={{ label: '+ New', onClick: openAddServiceModal }} options={serviceOptions} value={formData.service} onChange={v => setFormData(p => ({ ...p, service: v }))} />
+        <Dropdown
+          label="Service"
+          labelAction={{ label: '+ New', onClick: openAddServiceModal }}
+          options={serviceOptions}
+          value={formData.service}
+          onChange={v => {
+            if (v === '__ADD_NEW__') {
+              openAddServiceModal();
+            } else {
+              setFormData(p => ({ ...p, service: v }));
+            }
+          }}
+        />
         <Dropdown label="Type" options={toOptions(SECRET_TYPES)} value={formData.type} onChange={v => setFormData(p => ({ ...p, type: v as any }))} />
         <Dropdown label="Environment" options={toOptions(ENVIRONMENTS)} value={formData.environment} onChange={v => setFormData(p => ({ ...p, environment: v as any }))} />
       </div>

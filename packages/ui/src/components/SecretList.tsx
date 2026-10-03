@@ -81,7 +81,7 @@ export const SecretList: React.FC = () => {
   const serviceOptions: DropdownOption[] = [
     { value: '', label: 'Services' },
     ...SERVICES.map(s => ({ value: s, label: s, icon: <ServiceIcon service={s} size={13} className="text-current" /> })),
-    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FaAmazon'} size={13} color={PROJECT_COLOR_MAP[s.color] ?? 'var(--color-text-2)'} /> })),
+    ...customServices.map(s => ({ value: s.name, label: s.name, icon: <CustomServiceIcon iconKey={s.icon || 'FiServer'} serviceName={s.name} size={13} color={PROJECT_COLOR_MAP[s.color] ?? 'var(--color-text-2)'} /> })),
   ];
 
   const projectOptions: DropdownOption[] = [

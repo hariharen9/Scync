@@ -104,7 +104,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           }}>
             {(() => {
               const custom = customServices.find(s => s.name === secret.service);
-              if (custom) return <CustomServiceIcon iconKey={custom.icon || 'FaAmazon'} size={10} color="currentcolor" />;
+              if (custom) return <CustomServiceIcon iconKey={custom.icon || 'FiServer'} serviceName={custom.name} size={10} color="currentcolor" />;
               return <ServiceIcon service={secret.service} size={10} className="text-current" />;
             })()}
             {secret.service}
