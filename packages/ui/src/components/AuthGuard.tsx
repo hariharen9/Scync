@@ -7,6 +7,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useShareStore } from '../stores/shareStore';
+import { useLedgerStore } from '../stores/ledgerStore';
 import { FiLock } from 'react-icons/fi';
 
 interface AuthGuardProps { children: React.ReactNode; fallback: React.ReactNode; }
@@ -25,6 +26,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children, fallback }) => {
         useProjectStore.getState().reset();
         useServiceStore.getState().reset();
         useShareStore.getState().reset();
+        useLedgerStore.getState().reset();
         useUIStore.getState().resetSession();
         prevUid = nextUid;
       }

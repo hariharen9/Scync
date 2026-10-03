@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { 
-  type StoredSecret, type SecretFormData, type DecryptedSecret, type VaultMeta,
-  deriveKey, createSecret, updateSecret, deleteSecret,
+  type StoredSecret, type SecretFormData, type DecryptedSecret, type VaultMeta, type SecretChangeType,
+  deriveKey, createSecret, updateSecret, deleteSecret, restoreSecretVersion,
   decryptSecret as coreDecryptSecret,
   subscribeToSecrets,
   getVaultMeta,
@@ -65,8 +65,10 @@ interface VaultState {
   changeVaultPassword: (uid: string, oldPassword: string, newPassword: string) => Promise<boolean>;
   
   createSecret: (uid: string, formData: SecretFormData) => Promise<void>;
-  updateSecret: (uid: string, id: string, formData: SecretFormData) => Promise<void>;
-  deleteSecret: (uid: string, id: string) => Promise<void>;
+  updateSecret: (uid: string, id: string, formData: SecretFormData, changeType?: SecretChangeType) => Promise<void>;
+  deleteSecret: (uid: string, id: string, secretName?: string, service?: string) => Promise<void>;
+  restoreSecretVersion: (uid: string, secretId: string, versionNumber: number) => Promise<void>;
+  decryptVersionValue: (secretId: string, versionNumber: number) => Promise<string | null>;
   decryptValue: (secretId: string) => Promise<DecryptedSecret | null>;
   
   createSSHKey: (uid: string, data: Omit<StoredSSHKey, 'id' | 'createdAt' | 'updatedAt' | 'encPrivateKey'> & { privateKey: string }) => Promise<void>;
@@ -230,14 +232,37 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     await createSecret(uid, derivedKey, formData);
   },
   
-  updateSecret: async (uid: string, id: string, formData: SecretFormData) => {
-    const { derivedKey } = get();
+  updateSecret: async (uid: string, id: string, formData: SecretFormData, changeType?: SecretChangeType) => {
+    const { derivedKey, storedSecrets } = get();
     if (!derivedKey) throw new Error("Vault is locked");
-    await updateSecret(uid, derivedKey, id, formData);
+    const existing = storedSecrets.find(s => s.id === id);
+    await updateSecret(uid, derivedKey, id, formData, existing, changeType);
+  },
+
+  restoreSecretVersion: async (uid: string, secretId: string, versionNumber: number) => {
+    const { derivedKey, storedSecrets } = get();
+    if (!derivedKey) throw new Error("Vault is locked");
+    const existing = storedSecrets.find(s => s.id === secretId);
+    if (!existing) throw new Error("Secret not found");
+    await restoreSecretVersion(uid, derivedKey, secretId, versionNumber, existing);
+  },
+
+  decryptVersionValue: async (secretId: string, versionNumber: number) => {
+    const { derivedKey, storedSecrets } = get();
+    if (!derivedKey) return null;
+    const secret = storedSecrets.find(s => s.id === secretId);
+    if (!secret || !secret.versions) return null;
+    const version = secret.versions.find(v => v.version === versionNumber);
+    if (!version) return null;
+    try {
+      return await decrypt(derivedKey, version.encValue);
+    } catch {
+      return null;
+    }
   },
   
-  deleteSecret: async (uid: string, id: string) => {
-    await deleteSecret(uid, id);
+  deleteSecret: async (uid: string, id: string, secretName?: string, service?: string) => {
+    await deleteSecret(uid, id, secretName, service);
   },
   
   decryptValue: async (secretId: string) => {

@@ -5,6 +5,7 @@ export * from './stores/uiStore';
 export * from './stores/projectStore';
 export * from './stores/serviceStore';
 export * from './stores/shareStore';
+export * from './stores/ledgerStore';
 
 export * from './components/AuthGuard';
 export * from './components/ErrorBoundary';
@@ -17,6 +18,7 @@ export * from './components/SecretList';
 export * from './components/Sidebar';
 export * from './components/SecretDetail';
 export * from './components/Dashboard';
+export * from './components/VaultLedger';
 export * from './components/SecretForm';
 export * from './components/AddEditModal';
 export * from './components/EnvImportModal';

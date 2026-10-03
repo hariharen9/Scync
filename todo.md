@@ -6,7 +6,7 @@ Here's a prioritized, realistic roadmap — grouped by what actually moves the n
 
 These aren't features, they're holes that make the app unreliable today:
 
-- **Atomic imports** — EnvImport and PasswordImport should batch-write or rollback on failure
+- [x] **Resilient / Atomic imports** — EnvImport and PasswordImport both implemented with per-item try/catch, live progress bar, and detailed success/failure report (no loop stranding)
 - **Master password recovery option** — even a "export recovery kit" (encrypted with a secondary passphrase) so a forgotten password isn't total data loss
 - **Test coverage** — currently only one crypto test. Add store tests, import parser tests, share flow tests
 
@@ -40,11 +40,11 @@ Right now it's strictly solo. Even a simple "shared project vault" where two use
 - **Duplicate detector** — same secret stored twice
 - **Have I Been Pwned** integration — check if a password appears in breach data (k-anonymity API, still zero-knowledge)
 
-### 6. `.env` Environments Sync
-Right now `.env` import is one-way. Add **export to `.env`** filtered by project + environment. Huge QoL for switching between dev/staging/prod.
+### 6. `.env` Environments Sync [COMPLETED]
+- [x] **Export to `.env`** filtered by project + environment with per-item decrypt progress and error handling. Huge QoL for switching between dev/staging/prod.
 
-### 7. Audit Log
-Client-side log of: when a secret was revealed, copied, edited, shared. Stored encrypted, never leaves the vault. Useful for compliance-conscious devs.
+### 7. Audit Log / Activity Ledger [COMPLETED]
+- [x] **Vault Activity Ledger** on Dashboard logging all rotations, rollbacks, creations, updates, deletions, shares, and imports/exports with live category filtering and search.
 
 ### 8. Secret Templates
 Pre-built forms for common services — AWS (Access Key ID + Secret), Stripe (publishable + secret), GitHub PAT, etc. Instead of a blank form, guided entry with field validation.
@@ -63,7 +63,7 @@ Export a TOTP entry as a QR code to re-scan in another authenticator. Currently 
 |---|---|
 | **Keyboard-first navigation** | Devs live on keyboards — full arrow-key + shortcut vault browsing |
 | **Markdown in notes** | Secret notes currently plain text; markdown rendering would be useful for storing setup instructions |
-| **Secret versioning** | Keep last N values of a rotated secret, not just the current one |
+| **Secret versioning [DONE]** | Keep last N values of a rotated secret, inspect past keys, and rollback with one click |
 | **SSH key agent integration** | Load a key into `ssh-agent` directly from the desktop app |
 | **Certificate auto-renewal alerts** | Already store expiry dates — just surface them more aggressively |
 | **Offline mode** | Currently requires Firebase connectivity. A local-first cache (IndexedDB of encrypted blobs) would make it usable offline |
@@ -75,7 +75,7 @@ Export a TOTP entry as a QR code to re-scan in another authenticator. Currently 
 
 If I had to pick **three** in order:
 
-1. **`.env` export** — lowest effort, highest immediate utility, rounds out the import feature
+1. **`.env` export** [DONE] — lowest effort, highest immediate utility, rounds out the import feature
 2. **CLI** — connects the vault to real workflows, makes it a tool rather than a website
 3. **Expiry push notifications** — the rotation tracking is useless if you don't get reminded
 

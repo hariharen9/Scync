@@ -53,7 +53,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
       confirmText: 'Delete Secret',
       danger: true,
       onConfirm: async () => {
-        await deleteSecret(user.uid, secret.id);
+        await deleteSecret(user.uid, secret.id, secret.name, secret.service);
         selectSecret(null); // Clear selection if deleted
       }
     });

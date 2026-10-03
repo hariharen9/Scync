@@ -4,6 +4,7 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import { useProjectStore } from '../stores/projectStore';
+import { useLedgerStore } from '../stores/ledgerStore';
 import { Dropdown } from './Dropdown';
 import { FiUploadCloud, FiCheck, FiAlertCircle, FiCode, FiX, FiAlertTriangle } from 'react-icons/fi';
 import { ENVIRONMENTS, type Environment } from '@scync/core';
@@ -170,6 +171,13 @@ export const EnvImportModal: React.FC = () => {
     }
 
     setImportResult({ imported, skipped, failed });
+    if (imported > 0) {
+      useLedgerStore.getState().logEvent(user.uid, {
+        action: 'env_imported',
+        title: `Imported ${imported} secrets (.env)`,
+        details: `${targetEnv} · ${targetProject ? 'Project' : 'Uncategorized'}`,
+      });
+    }
     setStep('success');
     setTimeout(handleClose, 2500);
   };

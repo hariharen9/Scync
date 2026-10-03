@@ -13,6 +13,7 @@ import {
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { generateTOTPCode, getRemainingSeconds } from '@scync/core';
 import { ServiceIcon } from './ServiceIcon';
+import { VaultLedger } from './VaultLedger';
 
 const ENV_COLORS: Record<string, string> = {
   'Production': '#ef4444', 'Staging': '#f59e0b', 'Development': '#3b82f6',
@@ -393,6 +394,11 @@ export const Dashboard: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column' }}>{recentSecrets.map((s, i) => <TimelineItem key={s.id} secret={s} isLast={i === recentSecrets.length - 1} />)}</div>
           ) : <p style={{ fontSize: 12.5, color: 'var(--color-text-3)', textAlign: 'center', padding: '24px 0' }}>No activity yet.</p>}
         </div>
+      </div>
+
+      {/* Vault Activity Ledger */}
+      <div style={{ marginBottom: 16 }}>
+        <VaultLedger limit={30} />
       </div>
 
       {/* Empty State */}

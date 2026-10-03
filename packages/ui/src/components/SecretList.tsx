@@ -3,6 +3,7 @@ import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useAuthStore } from '../stores/authStore';
+import { useLedgerStore } from '../stores/ledgerStore';
 import { SecretCard } from './SecretCard';
 import { Dropdown, type DropdownOption } from './Dropdown';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -163,6 +164,14 @@ export const SecretList: React.FC = () => {
 
       setExportResult({ exported, failed });
       setExportPassword('');
+
+      if (exported > 0 && user) {
+        useLedgerStore.getState().logEvent(user.uid, {
+          action: 'env_exported',
+          title: `Exported ${exported} secrets (.env)`,
+          details: `${title} · ${action === 'download' ? 'Downloaded file' : 'Copied to clipboard'}`,
+        });
+      }
 
       if (action === 'download') {
         const blob = new Blob([envContent], { type: 'text/plain;charset=utf-8' });

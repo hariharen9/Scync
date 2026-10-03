@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore,
+import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUIStore, useLedgerStore,
          Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, EditProjectModal, AddServiceModal, AboutModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal, CertificateDashboard, CertificateModal, PasswordDashboard, PasswordModal, PasswordImportModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -29,7 +29,8 @@ export const VaultPage: React.FC = () => {
     const unsubPasswords = useVaultStore.getState().subscribeToPasswords(user.uid);
     const unsubProjects = subscribeToProjects(user.uid);
     const unsubServices = useServiceStore.getState().subscribeToServices(user.uid);
-    return () => { unsubSecrets(); unsubSSHKeys(); unsubTOTPs(); unsubCerts(); unsubPasswords(); unsubProjects(); unsubServices(); };
+    const unsubLedger = useLedgerStore.getState().subscribeToLedger(user.uid);
+    return () => { unsubSecrets(); unsubSSHKeys(); unsubTOTPs(); unsubCerts(); unsubPasswords(); unsubProjects(); unsubServices(); unsubLedger(); };
   }, [user, subscribeToSecrets, subscribeToSSHKeys, subscribeToProjects]);
 
   return (

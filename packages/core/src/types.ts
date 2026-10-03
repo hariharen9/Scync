@@ -16,6 +16,16 @@ export interface VaultMeta {
   biometrics: BiometricMeta[];
 }
 
+export type SecretChangeType = 'created' | 'updated' | 'rotated' | 'restored';
+
+export interface SecretVersion {
+  version: number;
+  encValue: EncryptedField;
+  createdAt: Date;
+  changeType?: SecretChangeType;
+  note?: string;
+}
+
 export interface StoredSecret {
   id: string;
   name: string;
@@ -31,11 +41,14 @@ export interface StoredSecret {
   updatedAt: Date;
   projectId: string | null;
   remainingCodes: number | null;
+  version?: number;
+  versions?: SecretVersion[];
 }
 
 export interface DecryptedSecret extends Omit<StoredSecret, 'encValue' | 'encNotes'> {
   value: string;
   notes: string;
+  versions?: SecretVersion[];
 }
 
 export interface SecretFormData {
@@ -267,3 +280,31 @@ export interface PasswordFormData {
   notes: string;
   category: string;
 }
+
+// Vault Activity Ledger
+export type LedgerAction = 
+  | 'secret_created'
+  | 'secret_updated'
+  | 'secret_rotated'
+  | 'secret_restored'
+  | 'secret_deleted'
+  | 'secret_revealed'
+  | 'secret_copied'
+  | 'secret_shared'
+  | 'env_exported'
+  | 'env_imported'
+  | 'password_created'
+  | 'password_imported';
+
+export interface LedgerEntry {
+  id: string;
+  action: LedgerAction;
+  title: string;
+  details?: string;
+  entityId?: string;
+  entityName?: string;
+  service?: string;
+  version?: number;
+  timestamp: Date;
+}
+

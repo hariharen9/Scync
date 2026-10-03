@@ -7,7 +7,8 @@ import { encrypt, decrypt } from './crypto';
 import type { 
   VaultMeta, BiometricMeta, SecretFormData, StoredSecret, DecryptedSecret, 
   Project, EncryptedField, CustomService, StoredSSHKey, StoredTOTP,
-  StoredCertificate, StoredPassword, DecryptedPassword, PasswordFormData
+  StoredCertificate, StoredPassword, DecryptedPassword, PasswordFormData,
+  SecretVersion, SecretChangeType, LedgerAction, LedgerEntry
 } from './types';
 
 // Vault Meta
@@ -76,11 +77,26 @@ export async function changeVaultPassword(
     const newEncValue = await encrypt(newKey, valuePlaintext);
     const newEncNotes = notesPlaintext ? await encrypt(newKey, notesPlaintext) : null;
     
-    batch.update(secretRef, {
+    const updateData: Record<string, any> = {
       encValue: newEncValue,
       encNotes: newEncNotes,
       updatedAt: serverTimestamp()
-    });
+    };
+
+    if (secret.versions && secret.versions.length > 0) {
+      const reEncryptedVersions: SecretVersion[] = [];
+      for (const v of secret.versions) {
+        const vPlain = await decrypt(oldKey, v.encValue);
+        const vEnc = await encrypt(newKey, vPlain);
+        reEncryptedVersions.push({
+          ...v,
+          encValue: vEnc
+        });
+      }
+      updateData.versions = reEncryptedVersions;
+    }
+
+    batch.update(secretRef, updateData);
   }
 
   // 3. Re-encrypt all SSH keys
@@ -318,6 +334,13 @@ export async function createSecret(
   const encValue = await encrypt(key, formData.value);
   const encNotes = formData.notes ? await encrypt(key, formData.notes) : null;
 
+  const initialVersion: SecretVersion = {
+    version: 1,
+    encValue,
+    createdAt: new Date(),
+    changeType: 'created',
+  };
+
   const storedSecret: StoredSecret = {
     id: newRef.id,
     name: formData.name,
@@ -332,7 +355,9 @@ export async function createSecret(
     createdAt: new Date(), 
     updatedAt: new Date(),
     projectId: formData.projectId || null,
-    remainingCodes: formData.remainingCodes || null
+    remainingCodes: formData.remainingCodes || null,
+    version: 1,
+    versions: [initialVersion]
   };
 
   await setDoc(newRef, {
@@ -340,18 +365,59 @@ export async function createSecret(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+
+  await logLedgerEvent(uid, {
+    action: 'secret_created',
+    title: `Created ${formData.name}`,
+    details: `${formData.type} · ${formData.environment}`,
+    entityId: newRef.id,
+    entityName: formData.name,
+    service: formData.service,
+    version: 1,
+  });
 }
 
 export async function updateSecret(
   uid: string, 
   key: CryptoKey, 
   id: string, 
-  formData: SecretFormData
+  formData: SecretFormData,
+  previousSecret?: StoredSecret,
+  explicitChangeType?: SecretChangeType
 ): Promise<void> {
   const ref = doc(db, "users", uid, "secrets", id);
   
   const encValue = await encrypt(key, formData.value);
   const encNotes = formData.notes ? await encrypt(key, formData.notes) : null;
+
+  const currentVersion = previousSecret?.version || 1;
+  let versions: SecretVersion[] = previousSecret?.versions ? [...previousSecret.versions] : [
+    {
+      version: currentVersion,
+      encValue: previousSecret?.encValue || encValue,
+      createdAt: previousSecret?.updatedAt || new Date(),
+      changeType: 'created',
+    }
+  ];
+
+  const isRotation = explicitChangeType === 'rotated' || (formData.lastRotated && formData.lastRotated.getTime() !== previousSecret?.lastRotated?.getTime());
+  const isRestored = explicitChangeType === 'restored';
+  
+  let changeType: SecretChangeType = 'updated';
+  if (isRestored) changeType = 'restored';
+  else if (isRotation) changeType = 'rotated';
+
+  const nextVersion = currentVersion + 1;
+  versions.push({
+    version: nextVersion,
+    encValue,
+    createdAt: new Date(),
+    changeType,
+  });
+
+  if (versions.length > 10) {
+    versions = versions.slice(versions.length - 10);
+  }
 
   await updateDoc(ref, {
     name: formData.name,
@@ -365,13 +431,75 @@ export async function updateSecret(
     expiresOn: formData.expiresOn,
     projectId: formData.projectId || null,
     remainingCodes: formData.remainingCodes || null,
+    version: nextVersion,
+    versions,
     updatedAt: serverTimestamp()
+  });
+
+  const ledgerAction: LedgerAction = changeType === 'rotated' 
+    ? 'secret_rotated' 
+    : changeType === 'restored' 
+    ? 'secret_restored' 
+    : 'secret_updated';
+
+  const actionTitle = changeType === 'rotated'
+    ? `Rotated ${formData.name}`
+    : changeType === 'restored'
+    ? `Restored ${formData.name} to v${nextVersion}`
+    : `Updated ${formData.name}`;
+
+  await logLedgerEvent(uid, {
+    action: ledgerAction,
+    title: actionTitle,
+    details: `${formData.service} · v${nextVersion}`,
+    entityId: id,
+    entityName: formData.name,
+    service: formData.service,
+    version: nextVersion,
   });
 }
 
-export async function deleteSecret(uid: string, id: string): Promise<void> {
+export async function restoreSecretVersion(
+  uid: string,
+  key: CryptoKey,
+  secretId: string,
+  targetVersionNumber: number,
+  storedSecret: StoredSecret
+): Promise<void> {
+  const targetVer = storedSecret.versions?.find(v => v.version === targetVersionNumber);
+  if (!targetVer) throw new Error(`Version ${targetVersionNumber} not found`);
+
+  const plainValue = await decrypt(key, targetVer.encValue);
+  const plainNotes = storedSecret.encNotes ? await decrypt(key, storedSecret.encNotes) : "";
+
+  const formData: SecretFormData = {
+    name: storedSecret.name,
+    service: storedSecret.service,
+    type: storedSecret.type,
+    environment: storedSecret.environment,
+    status: 'Active',
+    value: plainValue,
+    notes: plainNotes,
+    lastRotated: new Date(),
+    expiresOn: storedSecret.expiresOn,
+    projectId: storedSecret.projectId,
+    remainingCodes: storedSecret.remainingCodes,
+  };
+
+  await updateSecret(uid, key, secretId, formData, storedSecret, 'restored');
+}
+
+export async function deleteSecret(uid: string, id: string, secretName?: string, service?: string): Promise<void> {
   const ref = doc(db, "users", uid, "secrets", id);
   await deleteDoc(ref);
+  await logLedgerEvent(uid, {
+    action: 'secret_deleted',
+    title: `Deleted ${secretName || 'secret'}`,
+    details: service || '',
+    entityId: id,
+    entityName: secretName,
+    service: service,
+  });
 }
 
 export function subscribeToSecrets(
@@ -383,6 +511,15 @@ export function subscribeToSecrets(
   return onSnapshot(secretsRef, (snapshot) => {
     const secrets = snapshot.docs.map(doc => {
       const data = doc.data();
+      const rawVersions = Array.isArray(data.versions) ? data.versions : [];
+      const versions: SecretVersion[] = rawVersions.map((v: any) => ({
+        version: v.version || 1,
+        encValue: v.encValue,
+        createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : (v.createdAt ? new Date(v.createdAt) : new Date()),
+        changeType: v.changeType || 'updated',
+        note: v.note || undefined,
+      }));
+
       return {
         ...data,
         id: doc.id,
@@ -390,7 +527,9 @@ export function subscribeToSecrets(
         updatedAt: data.updatedAt?.toDate() || new Date(),
         lastRotated: data.lastRotated?.toDate() || null,
         expiresOn: data.expiresOn?.toDate() || null,
-        remainingCodes: data.remainingCodes ?? null
+        remainingCodes: data.remainingCodes ?? null,
+        version: data.version || (versions.length > 0 ? versions[versions.length - 1].version : 1),
+        versions: versions.length > 0 ? versions : undefined,
       } as StoredSecret;
     });
     callback(secrets);
@@ -662,7 +801,11 @@ export async function deleteUserAccountData(uid: string): Promise<void> {
   const passSnap = await getDocs(collection(db, "users", uid, "passwords"));
   passSnap.forEach(doc => batch.delete(doc.ref));
 
-  // 8. Delete vault meta
+  // 8. Delete all ledger events
+  const ledgerSnap = await getDocs(collection(db, "users", uid, "ledger"));
+  ledgerSnap.forEach(doc => batch.delete(doc.ref));
+
+  // 9. Delete vault meta
   const metaRef = doc(db, "users", uid, "meta", "vault");
   batch.delete(metaRef);
 
@@ -850,3 +993,56 @@ export async function consumeShare(shareId: string, keyFragment: string): Promis
     };
   });
 }
+
+// ─── Vault Activity Ledger ───
+
+export async function logLedgerEvent(
+  uid: string,
+  entry: Omit<LedgerEntry, 'id' | 'timestamp'>
+): Promise<void> {
+  try {
+    const colRef = collection(db, "users", uid, "ledger");
+    const newRef = doc(colRef);
+    await setDoc(newRef, {
+      id: newRef.id,
+      action: entry.action,
+      title: entry.title,
+      details: entry.details || '',
+      entityId: entry.entityId || '',
+      entityName: entry.entityName || '',
+      service: entry.service || '',
+      version: entry.version ?? null,
+      timestamp: serverTimestamp(),
+    });
+  } catch (err) {
+    console.warn("Failed to write to ledger:", err);
+  }
+}
+
+export function subscribeToLedger(
+  uid: string,
+  onUpdate: (entries: LedgerEntry[]) => void
+): () => void {
+  const colRef = collection(db, "users", uid, "ledger");
+  return onSnapshot(colRef, (snapshot) => {
+    const entries: LedgerEntry[] = [];
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data();
+      entries.push({
+        id: data.id || docSnap.id,
+        action: data.action,
+        title: data.title || '',
+        details: data.details || '',
+        entityId: data.entityId || '',
+        entityName: data.entityName || '',
+        service: data.service || '',
+        version: data.version ?? undefined,
+        timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : (data.timestamp ? new Date(data.timestamp) : new Date()),
+      });
+    });
+    // Sort descending by timestamp
+    entries.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    onUpdate(entries);
+  });
+}
+

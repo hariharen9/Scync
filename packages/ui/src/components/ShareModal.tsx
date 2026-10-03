@@ -4,6 +4,7 @@ import { FiX, FiCopy, FiCheck, FiAlertTriangle, FiLink, FiClock, FiEye, FiShield
 import { useShareStore } from '../stores/shareStore';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
+import { useLedgerStore } from '../stores/ledgerStore';
 import type { StoredSecret, ShareConfig } from '@scync/core';
 
 interface ShareModalProps {
@@ -44,6 +45,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, secret 
       
       const url = await createShare(user.uid, config);
       setGeneratedUrl(url);
+
+      useLedgerStore.getState().logEvent(user.uid, {
+        action: 'secret_shared',
+        title: `Shared ${secret.name}`,
+        details: `${expiryHours}h expiry · ${viewsAllowed ? `${viewsAllowed} views` : 'unlimited'}`,
+        entityId: secret.id,
+        entityName: secret.name,
+        service: secret.service,
+      });
     } catch (error) {
       console.error('Failed to create share:', error);
       alert('Failed to create share link');
