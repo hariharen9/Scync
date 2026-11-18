@@ -1,7 +1,45 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore, useVaultStore, useUIStore } from '@scync/ui';
-import { Fingerprint } from 'lucide-react';
+import { ArrowRight, Fingerprint, KeyRound, Lock, ShieldCheck } from 'lucide-react';
+import { UserAvatar } from '../components/UserAvatar';
 import './UnlockPage.css';
+
+const OUTER_NODES = 12;
+const INNER_NODES = 6;
+const OUTER_RADIUS = 132;
+const INNER_RADIUS = 78;
+const MESH_CENTER = 140;
+
+const polar = (index: number, count: number, radius: number): [number, number] => {
+  const angle = -Math.PI / 2 + (index / count) * Math.PI * 2;
+  return [
+    MESH_CENTER + Math.cos(angle) * radius,
+    MESH_CENTER + Math.sin(angle) * radius,
+  ];
+};
+
+const NODE_POS: [number, number][] = [
+  ...Array.from({ length: OUTER_NODES }, (_, i) => polar(i, OUTER_NODES, OUTER_RADIUS)),
+  ...Array.from({ length: INNER_NODES }, (_, i) => polar(i, INNER_NODES, INNER_RADIUS)),
+];
+
+type MeshEdgeDef = { i: number; j: number; kind: 'ring' | 'spoke' };
+
+const MESH_EDGES: MeshEdgeDef[] = (() => {
+  const edges: MeshEdgeDef[] = [];
+
+  for (let i = 0; i < OUTER_NODES; i++) {
+    edges.push({ i, j: (i + 1) % OUTER_NODES, kind: 'ring' });
+  }
+  for (let i = 0; i < INNER_NODES; i++) {
+    edges.push({ i: OUTER_NODES + i, j: OUTER_NODES + ((i + 1) % INNER_NODES), kind: 'ring' });
+  }
+  for (let i = 0; i < INNER_NODES; i++) {
+    edges.push({ i: OUTER_NODES + i, j: (i * 2) % OUTER_NODES, kind: 'spoke' });
+  }
+
+  return edges;
+})();
 
 export const UnlockPage: React.FC = () => {
   const { user, signOut } = useAuthStore();
@@ -29,28 +67,27 @@ export const UnlockPage: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const constellationRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const edgesLayerRef = useRef<SVGGElement>(null);
   const ubtnRef = useRef<HTMLButtonElement>(null);
 
   // Store node states for vanilla-js rendering
   const nodeEls = useRef<{ el: HTMLDivElement; x: number; y: number; active: boolean }[]>([]);
-  const edgesRef = useRef<{ i: number; j: number; d: number; drawn: boolean; lineEl: SVGLineElement | null }[]>([]);
+  const edgesRef = useRef<{
+    i: number;
+    j: number;
+    d: number;
+    drawn: boolean;
+    lineEl: SVGLineElement | null;
+    kind: 'ring' | 'spoke';
+  }[]>([]);
   const lastNodeCount = useRef(0);
 
-  const NODE_POS = [
-    // Outer Ring
-    [140, 10], [232, 48], [270, 140], [232, 232],
-    [140, 270], [48, 232], [10, 140], [48, 48],
-    // Inner Ring
-    [140, 65], [193, 87], [215, 140], [193, 193],
-    [140, 215], [87, 193], [65, 140], [87, 87]
-  ];
-
   const MSGS = [
-    'Incorrect password.',
-    'Still wrong. Check caps lock.',
-    'Wrong. Zero-knowledge — no recovery.',
+    'Incorrect password. Try again.',
+    'Still incorrect. Check caps lock.',
+    'Incorrect. Without the Emergency Kit, this vault cannot be recovered.',
     'Vault remains locked.',
-    'One more and vault locks out.',
+    'Final attempt. One more failure will sign you out.',
   ];
 
   // --- Lockout Countdown ---
@@ -77,6 +114,7 @@ export const UnlockPage: React.FC = () => {
 
   // --- Canvas Animation ---
   useEffect(() => {
+    if (window.matchMedia('(max-width: 900px)').matches) return;
     const cv = canvasRef.current;
     if (!cv) return;
     const ctx = cv.getContext('2d');
@@ -171,7 +209,7 @@ export const UnlockPage: React.FC = () => {
     nodeEls.current = [];
     NODE_POS.forEach(([x, y], i) => {
       const el = document.createElement('div');
-      el.className = 'cnode';
+      el.className = `cnode ${i < OUTER_NODES ? 'cnode-outer' : 'cnode-inner'}`;
       el.style.left = x + 'px';
       el.style.top = y + 'px';
       el.style.transition = `background .25s ease ${i * 20}ms, border-color .25s ease, box-shadow .25s ease, transform .25s var(--ease)`;
@@ -179,16 +217,12 @@ export const UnlockPage: React.FC = () => {
       nodeEls.current.push({ el, x, y, active: false });
     });
 
-    // Create Edges array
-    edgesRef.current = [];
-    for (let i = 0; i < NODE_POS.length; i++) {
-      for (let j = i + 1; j < NODE_POS.length; j++) {
-        const dx = NODE_POS[i][0] - NODE_POS[j][0];
-        const dy = NODE_POS[i][1] - NODE_POS[j][1];
-        const d = Math.hypot(dx, dy);
-        if (d < 160) edgesRef.current.push({ i, j, d, drawn: false, lineEl: null });
-      }
-    }
+    // Create the structured ring/spoke edges
+    edgesRef.current = MESH_EDGES.map(edge => {
+      const dx = NODE_POS[edge.i][0] - NODE_POS[edge.j][0];
+      const dy = NODE_POS[edge.i][1] - NODE_POS[edge.j][1];
+      return { ...edge, d: Math.hypot(dx, dy), drawn: false, lineEl: null };
+    });
 
     // Handle initial password (autofill)
     const target = nodesForLength(password.length);
@@ -211,8 +245,8 @@ export const UnlockPage: React.FC = () => {
     line.setAttribute('x2', String(x2)); line.setAttribute('y2', String(y2));
     line.setAttribute('stroke-dasharray', String(edge.d));
     line.setAttribute('stroke-dashoffset', String(edge.d));
-    line.className.baseVal = 'const-line';
-    svgRef.current?.appendChild(line);
+    line.className.baseVal = `const-line const-line-${edge.kind}`;
+    edgesLayerRef.current?.appendChild(line);
     edge.lineEl = line;
     edge.drawn = true;
     requestAnimationFrame(() => line.classList.add('draw'));
@@ -252,7 +286,7 @@ export const UnlockPage: React.FC = () => {
       }
     });
     if (svgRef.current) {
-      svgRef.current.querySelectorAll('line').forEach(l => l.remove());
+      svgRef.current.querySelectorAll('line.const-line').forEach(l => l.remove());
     }
     edgesRef.current.forEach(e => { e.lineEl = null; e.drawn = false; });
   }, []);
@@ -271,7 +305,7 @@ export const UnlockPage: React.FC = () => {
         nodeEls.current[i].active = false;
         nodeEls.current[i].el.classList.remove('active');
       }
-      if (svgRef.current) svgRef.current.querySelectorAll('line').forEach(l => l.remove());
+      if (svgRef.current) svgRef.current.querySelectorAll('line.const-line').forEach(l => l.remove());
       edgesRef.current.forEach(e => { e.lineEl = null; e.drawn = false; });
       for (let i = 0; i < target; i++) activateNode(i);
     }
@@ -280,14 +314,18 @@ export const UnlockPage: React.FC = () => {
 
   // Focus effect
   useEffect(() => {
-    setTimeout(() => passElRef.current?.focus(), 500);
+    const compact = window.matchMedia('(max-width: 900px)').matches;
+    const focusTimer = compact ? null : window.setTimeout(() => passElRef.current?.focus(), 500);
     const handleKD = (e: KeyboardEvent) => {
       if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey && document.activeElement?.tagName !== 'INPUT') {
         passElRef.current?.focus();
       }
     };
     document.addEventListener('keydown', handleKD);
-    return () => document.removeEventListener('keydown', handleKD);
+    return () => {
+      if (focusTimer) window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', handleKD);
+    };
   }, []);
 
   const spawnBurst = () => {
@@ -417,7 +455,7 @@ export const UnlockPage: React.FC = () => {
     lastNodeCount.current = 0;
 
     if (nextAttempts >= 5) {
-      setErrorText("IDENTITY THEFT IS NOT A JOKE, Dipshit! KICKING YOU OUT BEFORE YOU HURT YOURSELF...");
+      setErrorText('Too many failed attempts. Signing you out to protect this vault.');
       setTimeout(() => {
         signOut();
       }, 4000);
@@ -426,7 +464,7 @@ export const UnlockPage: React.FC = () => {
 
     if (nextAttempts === 3) {
       setLockoutTimer(60);
-      setErrorText("SECURITY LOCKOUT: TAKE A 60S BREAK AND THINK ABOUT YOUR LIFE CHOICES.");
+      setErrorText('Security lockout: wait 60 seconds before trying again.');
     } else {
       setErrorText(MSGS[Math.min(nextAttempts - 1, MSGS.length - 1)]);
     }
@@ -518,352 +556,391 @@ export const UnlockPage: React.FC = () => {
   // UI helpers
   const passPct = Math.min(password.length / 20, 1);
   const pbarBg = password.length < 5 ? 'rgba(255,255,255,.08)' : password.length < 12 ? '#10b981' : '#34d399';
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const firstName = displayName.split(/\s+/)[0] || 'there';
+  const userEmail = user?.email || '';
 
   return (
-    <div className="unlock-page-root">
+    <div className="unlock-page-root" data-lenis-prevent>
       <canvas ref={canvasRef} className="bgCanvas" />
+      <div className="unlock-noise" aria-hidden="true" />
       <div className={`flash ${isSuccess ? 'on' : ''}`} id="flash" />
 
-      <div className="logo">
-        <div className="logo-box">
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" stroke="#555" strokeWidth="1.5" />
-            <circle cx="10" cy="10" r="2" fill="#10b981" />
-          </svg>
-        </div>
-        Scync
-      </div>
+      <header className="unlock-topbar">
+        <a className="unlock-brand" href="/" aria-label="Scync home">
+          <span className="unlock-brand-mark">
+            <img src="/logo.png" alt="" />
+          </span>
+          <span className="unlock-brand-word">SCYNC</span>
+        </a>
 
-      <div className="clock-wrap">
-        <div className="clock">{clockStr || '00:00:00'}</div>
-        <div className="clock-date">{dateStr || '---'}</div>
-      </div>
-
-      <div className="page">
-        {/* Constellation */}
-        <div className="constellation" ref={constellationRef}>
-          <svg className="const-svg" ref={svgRef} viewBox="0 0 280 280" />
-          <div className="const-glow" />
-
-          <div className="const-avatar" id="constAvatar">
-            {user?.photoURL ? (
-              <img src={user.photoURL} alt="Avatar" />
-            ) : (
-              <svg viewBox="0 0 76 76" fill="none">
-                <rect width="76" height="76" fill="#141414" />
-                <path d="M38 18c-8.3 0-15 6.7-15 15s6.7 15 15 15 15-6.7 15-15-6.7-15-15-15z" fill="#222" />
-                <path d="M12 72c0-14.4 11.6-26 26-26s26 11.6 26 26" stroke="#222" strokeWidth="12" strokeLinecap="round" />
-              </svg>
-            )}
-          </div>
-          <div className="const-badge" id="constBadge">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="#060606">
-              <rect x="3" y="11" width="18" height="11" rx="1" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#060606" strokeWidth="2.5" fill="none" />
-            </svg>
+        <div className="unlock-topbar-meta">
+          <span className={`unlock-session ${isSuccess ? 'is-open' : ''}`}>
+            <span className="unlock-session-dot" />
+            {isSuccess ? 'Vault unlocked' : 'Session locked'}
+          </span>
+          <div className="unlock-clock">
+            <span className="unlock-clock-time">{clockStr || '00:00:00'}</span>
+            <span className="unlock-clock-date">{dateStr || '---'}</span>
           </div>
         </div>
+      </header>
 
-        {/* User Info */}
-        <div className="user-info" id="userInfo">
-          <div className="user-name">{user?.displayName || user?.email || 'User'}</div>
-          <div className="vault-tag" id="vaultTag">
-            <div className="vtdot" id="vtdot" />
-            <span id="vtxt">Vault is locked</span>
-          </div>
-        </div>
-
-        {/* Controls */}
-        <div className="controls" id="controlsLayer">
-          {isRecovering ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
-              <div style={{
-                fontSize: 11,
-                fontFamily: 'var(--mono)',
-                color: 'var(--amber)',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6
-              }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                Emergency Recovery Kit
-              </div>
-
-              <div className={`pf ${recoveryError ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} style={{ padding: '0 12px' }}>
-                <input
-                  type="text"
-                  placeholder="SCYNC-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
-                  value={recoveryKey}
-                  onChange={e => {
-                    setRecoveryKey(e.target.value.toUpperCase());
-                    setRecoveryError('');
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleRecovery();
-                    }
-                  }}
-                  disabled={recoveryLoading || isSuccess}
-                  spellCheck={false}
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    height: 46,
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#fff',
-                    fontFamily: 'var(--mono)',
-                    fontSize: 12,
-                    letterSpacing: '0.05em',
-                    outline: 'none',
-                  }}
-                />
-              </div>
-
-              {recoveryError && (
-                <div className="err show" style={{ marginTop: 2 }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <span>{recoveryError}</span>
-                </div>
-              )}
-
-              <button
-                className={`ubtn ${recoveryLoading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
-                disabled={!recoveryKey.trim() || recoveryLoading || isSuccess}
-                onClick={handleRecovery}
-                type="button"
-                style={{ marginTop: 4 }}
-              >
-                {isSuccess ? (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>Vault Recovered</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="btxt">{recoveryLoading ? 'Decrypting Recovery Key...' : 'Recover Vault'}</span>
-                    <div className="spin" />
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRecovering(false);
-                  setRecoveryError('');
-                  setRecoveryKey('');
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--t2)',
-                  fontSize: 11,
-                  fontFamily: 'var(--mono)',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  padding: '6px 0',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--t2)'}
-              >
-                ← Return to Password Unlock
-              </button>
+      <main className="unlock-split">
+        <section className="unlock-form-panel" aria-labelledby="unlock-title">
+          <div className="unlock-form-wrap">
+            <div className="unlock-form-kicker">
+              <span>//</span>
+              <Lock size={11} />
+              Vault access
             </div>
-          ) : (
-            <>
-              <div className={`pf ${errorText ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} onClick={() => passElRef.current?.focus()}>
-                <div className="pf-icon">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="1" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                </div>
 
-                <div className="pf-dots">
-                  {password.length === 0 && <span className="ph">Enter vault password</span>}
-                  {!revealed && password.split('').map((_, i) => (
-                    <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
-                  ))}
-                  {revealed && password.length > 0 && (
-                    <span className="rtxt">{password}</span>
+            <h1 className="unlock-form-title" id="unlock-title">
+              {isSuccess ? 'Vault unlocked.' : 'Unlock your vault.'}
+            </h1>
+            <p className="unlock-form-lede">
+              {isSuccess
+                ? 'Opening your encrypted workspace…'
+                : `Welcome back, ${firstName}. Use your master password or biometrics.`}
+            </p>
+
+            <div className="controls" id="controlsLayer">
+              {isRecovering ? (
+                <div className="unlock-recovery">
+                  <div className="unlock-recovery-label">
+                    <ShieldCheck size={13} />
+                    Emergency Recovery Kit
+                  </div>
+
+                  <div className={`unlock-recovery-field ${recoveryError ? 'has-error' : ''}`}>
+                    <input
+                      type="text"
+                      placeholder="SCYNC-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX"
+                      value={recoveryKey}
+                      onChange={e => {
+                        setRecoveryKey(e.target.value.toUpperCase());
+                        setRecoveryError('');
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleRecovery();
+                        }
+                      }}
+                      disabled={recoveryLoading || isSuccess}
+                      spellCheck={false}
+                      autoFocus
+                      aria-label="Emergency recovery kit key"
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {recoveryError && (
+                    <div className="unlock-error" role="alert">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span>{recoveryError}</span>
+                    </div>
                   )}
-                </div>
 
-                <input
-                  ref={passElRef}
-                  type={revealed ? "text" : "password"}
-                  className="pf-real"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setErrorText(''); }}
-                  onKeyDown={handleKeyDown}
-                  autoComplete="current-password"
-                  spellCheck={false}
-                />
-
-                <button
-                  className="pf-eye"
-                  type="button"
-                  tabIndex={-1}
-                  onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    {revealed ? (
+                  <button
+                    className={`ubtn ${recoveryLoading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
+                    disabled={!recoveryKey.trim() || recoveryLoading || isSuccess}
+                    onClick={handleRecovery}
+                    type="button"
+                  >
+                    {isSuccess ? (
                       <>
-                        <line x1="1" y1="1" x2="23" y2="23" />
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 0 1-4.24-4.24" />
-                        <path d="M6.51 6.51A10 10 0 0 0 1 12s4 8 11 8c2.12 0 4.09-.62 5.73-1.66" />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Vault recovered</span>
                       </>
                     ) : (
                       <>
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
+                        <span className="btxt">{recoveryLoading ? 'Decrypting recovery key…' : 'Recover vault'}</span>
+                        <div className="spin" />
                       </>
                     )}
-                  </svg>
-                </button>
-              </div>
+                  </button>
 
-              <div className="pbar">
-                <div className="pbar-inner" style={{ width: `${passPct * 100}%`, background: pbarBg }} />
-              </div>
-
-              <div className={`err ${errorText ? 'show' : ''}`}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                <span>{errorText}</span>
-              </div>
-
-              <div className={`pips ${attempts > 0 ? 'show' : ''}`}>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`pip ${i < attempts ? 'used' : ''}`} />
-                ))}
-              </div>
-
-              <button
-                ref={ubtnRef}
-                className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
-                disabled={password.length === 0 || loading || isSuccess || lockoutTimer > 0}
-                onClick={doUnlock}
-                type="button"
-              >
-                {isSuccess ? (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>Vault Unlocked</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="bico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <rect x="3" y="11" width="18" height="11" rx="1" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    <span className="btxt">{lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : 'Unlock Vault'}</span>
-                    <div className="spin" />
-                  </>
-                )}
-              </button>
-
-              {vaultMeta?.biometrics && vaultMeta.biometrics.length > 0 && (
-                <>
-                  <div className="or"><div className="or-l" /><div className="or-t">or</div><div className="or-l" /></div>
                   <button
-                    className={`bbtn ${biometricLoading ? 'scanning' : ''}`}
-                    onClick={doBio}
-                    disabled={biometricLoading || loading || isSuccess || lockoutTimer > 0}
+                    type="button"
+                    className="unlock-recovery-back"
+                    onClick={() => {
+                      setIsRecovering(false);
+                      setRecoveryError('');
+                      setRecoveryKey('');
+                    }}
+                  >
+                    ← Return to password unlock
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="unlock-field">
+                    <div className="unlock-label-row">
+                      <label className="unlock-label" htmlFor="vault-password">Master password</label>
+                      <span className="unlock-hint">Decrypted locally</span>
+                    </div>
+
+                    <div className={`pf ${errorText ? 'error' : ''} ${isSuccess ? 'ok' : ''}`} onClick={() => passElRef.current?.focus()}>
+                      <div className="pf-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="1" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        </svg>
+                      </div>
+
+                      <div className="pf-dots">
+                        {password.length === 0 && <span className="ph">Enter vault password</span>}
+                        {!revealed && password.split('').map((_, i) => (
+                          <div key={i} className={`pd ${i === password.length - 1 ? 'last' : ''}`} />
+                        ))}
+                        {revealed && password.length > 0 && (
+                          <span className="rtxt">{password}</span>
+                        )}
+                      </div>
+
+                      <input
+                        id="vault-password"
+                        ref={passElRef}
+                        type={revealed ? 'text' : 'password'}
+                        className="pf-real"
+                        value={password}
+                        onChange={e => {
+                          setPassword(e.target.value);
+                          setErrorText('');
+                        }}
+                        onKeyDown={handleKeyDown}
+                        autoComplete="current-password"
+                        spellCheck={false}
+                        aria-label="Vault master password"
+                      />
+
+                      <button
+                        className="pf-eye"
+                        type="button"
+                        tabIndex={-1}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setRevealed(!revealed);
+                        }}
+                        aria-label={revealed ? 'Hide password' : 'Show password'}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          {revealed ? (
+                            <>
+                              <line x1="1" y1="1" x2="23" y2="23" />
+                              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 0 1-4.24-4.24" />
+                              <path d="M6.51 6.51A10 10 0 0 0 1 12s4 8 11 8c2.12 0 4.09-.62 5.73-1.66" />
+                            </>
+                          ) : (
+                            <>
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </>
+                          )}
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pbar">
+                    <div className="pbar-inner" style={{ width: `${passPct * 100}%`, background: pbarBg }} />
+                  </div>
+
+                  <div className={`err ${errorText ? 'show' : ''}`} role="alert" aria-live="polite">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>{errorText}</span>
+                  </div>
+
+                  <div className={`pips ${attempts > 0 ? 'show' : ''}`}>
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className={`pip ${i < attempts ? 'used' : ''}`} />
+                    ))}
+                  </div>
+
+                  <button
+                    ref={ubtnRef}
+                    className={`ubtn ${loading ? 'loading' : ''} ${isSuccess ? 'ok' : ''}`}
+                    disabled={password.length === 0 || loading || isSuccess || lockoutTimer > 0}
+                    onClick={doUnlock}
                     type="button"
                   >
-                    <div className="fp">
-                      <div className="fp-scan-line" />
-                      <Fingerprint size={22} strokeWidth={1.6} />
-                    </div>
-                    <span className="btxt-b">Use Biometrics</span>
-                    <div className="bspin" />
+                    {isSuccess ? (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>Vault unlocked</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="btxt">{lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : 'Unlock vault'}</span>
+                        {lockoutTimer === 0 && <ArrowRight className="bico" size={15} />}
+                        <div className="spin" />
+                      </>
+                    )}
                   </button>
+
+                  {vaultMeta?.biometrics && vaultMeta.biometrics.length > 0 && (
+                    <>
+                      <div className="or">
+                        <div className="or-l" />
+                        <div className="or-t">or</div>
+                        <div className="or-l" />
+                      </div>
+                      <button
+                        className={`bbtn ${biometricLoading ? 'scanning' : ''}`}
+                        onClick={doBio}
+                        disabled={biometricLoading || loading || isSuccess || lockoutTimer > 0}
+                        type="button"
+                      >
+                        <div className="fp">
+                          <div className="fp-scan-line" />
+                          <Fingerprint size={22} strokeWidth={1.6} />
+                        </div>
+                        <span className="btxt-b">Use biometrics</span>
+                        <div className="bspin" />
+                      </button>
+                    </>
+                  )}
+
+                  {vaultMeta?.recovery ? (
+                    <button
+                      type="button"
+                      className="unlock-recovery-link"
+                      onClick={() => {
+                        setIsRecovering(true);
+                        setErrorText('');
+                        setRecoveryError('');
+                      }}
+                    >
+                      Forgot master password? <span>Recover with Emergency Kit</span>
+                    </button>
+                  ) : (
+                    <div className="zk">
+                      Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.
+                    </div>
+                  )}
                 </>
               )}
 
-              {vaultMeta?.recovery ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRecovering(true);
-                    setErrorText('');
-                    setRecoveryError('');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--t2)',
-                    fontSize: 11,
-                    fontFamily: 'var(--mono)',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: '4px 0',
-                    transition: 'color 0.2s',
-                    marginTop: 4,
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = 'var(--green3)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--t2)'}
-                >
-                  Forgot master password? Recover with Emergency Kit
+              <div className="unlock-form-footer">
+                <button className="so" onClick={handleSignOut} type="button">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  Sign out
                 </button>
-              ) : (
-                <div className="zk">Zero-knowledge vault. Lost passwords <b>cannot</b> be recovered.</div>
-              )}
-            </>
-          )}
+                <span className="unlock-form-footnote">Your key never leaves this device</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          <button className="so" onClick={handleSignOut} type="button">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Sign out
-          </button>
-        </div>
-      </div>
+        <section className="unlock-identity" aria-label="Vault identity">
+          <div className="unlock-identity-bg" aria-hidden="true" />
+          <div className="unlock-identity-inner">
+            <div className="unlock-kicker">
+              <span>//</span>
+              Vault identity
+            </div>
+            <h2 className="unlock-headline">
+              Sealed <span>by design.</span>
+            </h2>
 
-      {/* Footer */}
-      <div className="foot">
-        <div className="fi">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-          AES-256-GCM
-        </div>
-        <div className="fsep" />
-        <div className="fi">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-          </svg>
-          Zero-knowledge
-        </div>
-        <div className="fsep" />
-        <div className="fi">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="1" />
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          </svg>
-          PBKDF2 · 310k
-        </div>
-      </div>
+            <div className="unlock-constellation-wrap">
+              <div className="constellation" ref={constellationRef}>
+                <svg className="const-svg" ref={svgRef} viewBox="0 0 280 280" aria-hidden="true">
+                  <circle className="mesh-ring mesh-ring-outer" cx="140" cy="140" r="132" />
+                  <circle className="mesh-ring mesh-ring-dashed" cx="140" cy="140" r="105" />
+                  <circle className="mesh-ring mesh-ring-inner" cx="140" cy="140" r="78" />
+                  <circle className="mesh-ring mesh-ring-core" cx="140" cy="140" r="52" />
+                  {MESH_EDGES.map((edge, i) => (
+                    <line
+                      key={`${edge.kind}-${i}`}
+                      className={`mesh-edge mesh-edge-${edge.kind}`}
+                      x1={NODE_POS[edge.i][0]}
+                      y1={NODE_POS[edge.i][1]}
+                      x2={NODE_POS[edge.j][0]}
+                      y2={NODE_POS[edge.j][1]}
+                    />
+                  ))}
+                  <g ref={edgesLayerRef} />
+                </svg>
+                <div className="const-glow" />
+
+                <div className="const-avatar" id="constAvatar">
+                  <UserAvatar user={user} />
+                </div>
+                <div className="const-badge" id="constBadge">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="#060606">
+                    <rect x="3" y="11" width="18" height="11" rx="1" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#060606" strokeWidth="2.5" fill="none" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="user-info" id="userInfo">
+              <div className="user-name">{displayName}</div>
+              {userEmail && userEmail !== displayName && <div className="user-email">{userEmail}</div>}
+              <div className="vault-tag" id="vaultTag" role="status" aria-live="polite">
+                <div className="vtdot" id="vtdot" />
+                <span id="vtxt">Vault is locked</span>
+              </div>
+            </div>
+
+            <p className="unlock-brief">
+              Your master password decrypts this vault inside your browser. It is never sent,
+              stored, or recoverable by Scync.
+            </p>
+
+            <div className="unlock-facts">
+              <div><ShieldCheck size={13} /><span>Local decryption</span></div>
+              <div><Fingerprint size={13} /><span>Biometrics optional</span></div>
+              <div><KeyRound size={13} /><span>Emergency kit recovery</span></div>
+            </div>
+
+            <div className="unlock-trust">
+              <div className="fi">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                AES-256-GCM
+              </div>
+              <div className="fsep" />
+              <div className="fi">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                </svg>
+                Zero-knowledge
+              </div>
+              <div className="fsep" />
+              <div className="fi">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="1" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                PBKDF2 · 310k
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

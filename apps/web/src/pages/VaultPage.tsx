@@ -3,6 +3,7 @@ import { useAuthStore, useVaultStore, useProjectStore, useServiceStore, useUISto
          Sidebar, Dashboard, SecretList, SecretDetail, AddEditModal, EnvImportModal, AddProjectModal, EditProjectModal, AddServiceModal, AboutModal, SettingsModal, useInactivityLock, SSHManagerDashboard, SSHKeyModal, TOTPDashboard, TOTPAddModal, CertificateDashboard, CertificateModal, PasswordDashboard, PasswordModal, PasswordImportModal, RecoveryKitModal } from '@scync/ui';
 import { FiLock, FiPlus, FiUpload, FiMenu, FiX, FiInfo, FiSettings } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
+import { UserAvatar } from '../components/UserAvatar';
 
 export const VaultPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -126,19 +127,10 @@ export const VaultPage: React.FC = () => {
 
             {/* User avatar */}
             <div className="hidden sm:flex items-center">
-              {user?.photoURL ? (
-                <img src={user.photoURL} alt="" style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid var(--color-border-2)' }} />
-              ) : (
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: 'var(--color-surface-3)', border: '1px solid var(--color-border-2)',
-                  display: 'grid', placeItems: 'center',
-                  fontSize: 11, fontWeight: 700, color: 'var(--color-text)',
-                  fontFamily: 'var(--font-sans)'
-                }}>
-                  {user?.email?.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar
+                user={user}
+                style={{ width: 28, height: 28, border: '1px solid var(--color-border-2)' }}
+              />
             </div>
 
             <button

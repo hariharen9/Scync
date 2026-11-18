@@ -202,8 +202,15 @@ consumers can't over-deliver and a failed decrypt consumes no view).
   and the vault is tied to the login that created it. Email/password must be enabled in Firebase Console
   (Auth → Sign-in method).
 - **SetupPage** (vault creation: password ≥8 chars + uppercase + digit + confirm; warns there is no password
-  recovery; **no portable-vault import option**), **UnlockPage** (password + biometric unlock; in-memory 5-attempt
-  lockout — attempt 3 → 60 s wait, attempt 5 → auto sign-out; **no forgot-password/resetVault anywhere**).
+  recovery; **no portable-vault import option**), **UnlockPage** (standalone split unlock gate:
+  identity/constellation/avatar left, password/biometrics/recovery form right. The mesh is a structured
+  12-node outer ring + 6-node inner ring with radial spokes, persistent base edges, and password-length
+  activation. Mobile is a one-viewport composition: compact mesh + identity above the form, form panel
+  scrolls internally only on very short screens. Password + biometric unlock; in-memory 5-attempt lockout —
+  attempt 3 → 60 s wait, attempt 5 → auto sign-out; **no forgot-password/resetVault anywhere**).
+- **UserAvatar** (`src/components/UserAvatar.tsx` + `.css`): shared avatar for the unlock gate and vault
+  header. Uses `referrerPolicy="no-referrer"` and falls back to display-name/email initials if the Google
+  photo is missing or fails to load.
 - PWA via vite-plugin-pwa (autoUpdate SW; manifest `start_url: /app`, `scope: /`); `__APP_VERSION__` from git tag via `git describe --tags --abbrev=0`
   (empty in dev); theme applied in App.tsx.
 

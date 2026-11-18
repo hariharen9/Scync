@@ -1,15 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './LandingPage.css';
 
-const floatData = [
-  { service: 'ANTHROPIC', name: 'Claude API Key', color: '#d4a27a', x: '8%', y: '20%', delay: '0s', dur: '7s' },
-  { service: 'GITHUB', name: 'Personal Token', color: '#aaa', x: '82%', y: '15%', delay: '1.5s', dur: '9s' },
-  { service: 'OPENAI', name: 'Project Key', color: '#10b981', x: '5%', y: '70%', delay: '3s', dur: '8s' },
-  { service: 'STRIPE', name: 'Secret Key', color: '#818cf8', x: '80%', y: '72%', delay: '0.8s', dur: '10s' },
-  { service: 'NETLIFY', name: 'API Token', color: '#38bdf8', x: '18%', y: '85%', delay: '2s', dur: '7.5s' },
-  { service: 'AWS', name: 'Access Key', color: '#f59e0b', x: '74%', y: '45%', delay: '4s', dur: '9.5s' },
-];
-
 const marqueeItems = [
   'AES-256-GCM', 'Zero-Knowledge Architecture', 'PBKDF2-SHA256 \u00b7 310,000 iterations',
   'Emergency Recovery Kit', 'Web Crypto API', 'In-Memory Decryption', 'MIT Licensed', 'Open Source',
@@ -19,16 +10,22 @@ const marqueeItems = [
   'Firebase-Backed', 'Free Forever',
 ];
 
-const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys', 'SSL certificates', 'tokens', 'credentials', 'OAuth secrets'];
-const badPlaces = ['Notion', 'Notes', 'Slack DMs', 'Screenshots', '.env files', 'Discord', 'Email', 'text files'];
+const words = ['API keys', 'secrets', 'passwords', '2FA codes', 'SSH keys', 'certificates', 'tokens', 'credentials', 'OAuth tokens'];
+const badPlaces = ['Notion', 'Notes', 'Slack', 'Email', 'dotfiles', 'Docs', 'Chat', 'Sheets'];
+
+const heroSecrets = [
+  { service: 'STRIPE', name: 'Payments API', value: 'sk_live_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', color: '#818cf8', initial: 'S' },
+  { service: 'ANTHROPIC', name: 'Claude API key', value: 'sk-ant-\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', color: '#d4a27a', initial: 'A' },
+  { service: 'GITHUB', name: 'Deploy token', value: 'ghp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', color: '#9aa19e', initial: 'G' },
+];
 
 export const LandingPage: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
-  const wordRef = useRef<HTMLSpanElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const heroGridRef = useRef<HTMLDivElement>(null);
-  const placeRef = useRef<HTMLSpanElement>(null);
+
+  const [wordIndex, setWordIndex] = React.useState(0);
+  const [place, setPlace] = React.useState({ index: 0, striking: false });
   
   // Live Mockup States
   const [mockSearch, setMockSearch] = React.useState('');
@@ -75,38 +72,24 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let idx = 0;
-    const iv = setInterval(() => { idx = (idx + 1) % words.length; const el = wordRef.current; if (!el) return; el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; el.style.transition = 'opacity 250ms ease, transform 250ms ease'; setTimeout(() => { if (!el) return; el.innerHTML = words[idx] + '<span class="cursor"></span>'; el.style.opacity = '1'; el.style.transform = 'translateY(0)'; }, 280); }, 2800);
-    return () => clearInterval(iv);
+    const id = window.setInterval(() => {
+      setWordIndex(i => (i + 1) % words.length);
+    }, 2800);
+    return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {
-    let idx = 0;
-    const interval = setInterval(() => {
-      const el = placeRef.current;
-      if (!el) return;
-
-      // Start strike animation
-      el.classList.add('striking');
-
-      setTimeout(() => {
-        if (!el) return;
-        idx = (idx + 1) % badPlaces.length;
-        el.textContent = badPlaces[idx];
-
-        // Short delay while struck, then release
-        setTimeout(() => {
-          if (el) el.classList.remove('striking');
-        }, 200);
-      }, 350);
+    let swapTimer = 0;
+    const id = window.setInterval(() => {
+      setPlace(p => ({ ...p, striking: true }));
+      swapTimer = window.setTimeout(() => {
+        setPlace(p => ({ index: (p.index + 1) % badPlaces.length, striking: false }));
+      }, 380);
     }, 3800);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const h = () => { if (heroGridRef.current) heroGridRef.current.style.transform = `translateY(${window.scrollY * 0.3}px)`; };
-    window.addEventListener('scroll', h, { passive: true });
-    return () => window.removeEventListener('scroll', h);
+    return () => {
+      window.clearInterval(id);
+      window.clearTimeout(swapTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -201,75 +184,186 @@ export const LandingPage: React.FC = () => {
 
 
       <section className="hero">
-        <div className="hero-grid" ref={heroGridRef}></div>
-        <div className="hero-glow-center"></div>
-        <div className="hero-scan"></div>
+        <div className="hero-grid" aria-hidden="true" />
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-scan" aria-hidden="true" />
 
-
-        <div className="hero-float-cards" id="floatCards">
-          {floatData.map((d, i) => (
-            <div key={i} className="float-card" style={{ left: d.x, top: d.y, animationDelay: d.delay, animationDuration: d.dur }}>
-              <div className="float-card-dot" style={{ background: d.color }}></div>
-              <div>
-                <div className="float-card-service" style={{ color: d.color }}>{d.service}</div>
-                <div style={{ fontSize: "11px", color: "var(--t2)", fontWeight: "600", letterSpacing: "-.01em", fontFamily: "var(--font)" }}>{d.name}</div>
-              </div>
-              <div className="float-card-val">••••••••••••</div>
+        <div className="hero-inner">
+          <div className="hero-copy">
+            <div className="hero-kicker">
+              <span className="hero-kicker-bracket">//</span>
+              <span className="hero-kicker-dot" />
+              <span>Zero-knowledge secrets manager</span>
+              <span className="hero-kicker-sep" />
+              <span className="hero-kicker-soft">Open source</span>
             </div>
-          ))}
+
+            <h1 className="hero-title">
+              <span className="hero-title-line">
+                Stop pasting
+                <span className="hero-caret" aria-hidden="true" />
+              </span>
+
+              <span className="hero-reel">
+                {words.map((word, i) => (
+                  <span
+                    key={word}
+                    className={`hero-reel-word ${i === wordIndex ? 'is-active' : ''}`}
+                    aria-hidden={i !== wordIndex}
+                  >
+                    {word}
+                  </span>
+                ))}
+              </span>
+
+              <span className="hero-title-line hero-place-line">
+                into{' '}
+                <span className="hero-place">
+                  {badPlaces.map((badPlace, i) => (
+                    <span
+                      key={badPlace}
+                      className={`hero-place-word ${i === place.index ? 'is-active' : ''} ${i === place.index && place.striking ? 'is-striking' : ''}`}
+                      aria-hidden={i !== place.index}
+                    >
+                      {badPlace}
+                      <span className="hero-place-period">.</span>
+                    </span>
+                  ))}
+                </span>
+              </span>
+            </h1>
+
+            <p className="hero-lede">
+              Every API key, token, and environment secret in one encrypted vault.
+              Synced to every device, sealed from the server, and never pasted into
+              Notion again.
+            </p>
+
+            <div className="hero-actions">
+              <a className="hero-primary" href="/app">
+                Open your vault
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                  <line x1="4" y1="12" x2="20" y2="12" />
+                  <polyline points="13 5 20 12 13 19" />
+                </svg>
+              </a>
+              <a className="hero-secondary" href="https://github.com/hariharen9/Scync" target="_blank" rel="noreferrer">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.2-3.37-1.2-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.03 10.03 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+                </svg>
+                View on GitHub
+              </a>
+            </div>
+
+            <div className="hero-proof">
+              <span className="hero-proof-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                AES-256-GCM
+              </span>
+              <span className="hero-proof-sep" />
+              <span className="hero-proof-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+                Zero-knowledge
+              </span>
+              <span className="hero-proof-sep" />
+              <span className="hero-proof-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <polyline points="16 18 22 12 16 6" />
+                  <polyline points="8 6 2 12 8 18" />
+                </svg>
+                MIT licensed
+              </span>
+              <span className="hero-proof-sep" />
+              <span className="hero-proof-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="1" />
+                  <path d="M8 21h8M12 17v4" />
+                </svg>
+                Web · PWA
+              </span>
+            </div>
+          </div>
+
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-visual-glow" />
+
+            <div className="vault-frame">
+              <div className="vault-frame-bar">
+                <span className="vault-frame-dot" />
+                <span>SCYNC / VAULT</span>
+                <span className="vault-frame-status">SEALED</span>
+              </div>
+
+              <div className="vault-frame-search">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="7" />
+                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
+                </svg>
+                <span>Search secrets…</span>
+                <kbd>⌘K</kbd>
+              </div>
+
+              <div className="vault-frame-list">
+                {heroSecrets.map((secret, i) => (
+                  <div className={`vault-secret ${i === 0 ? 'is-active' : ''}`} key={secret.service}>
+                    <span
+                      className="vault-secret-initial"
+                      style={{ color: secret.color, borderColor: `${secret.color}44` }}
+                    >
+                      {secret.initial}
+                    </span>
+                    <span className="vault-secret-info">
+                      <span className="vault-secret-service">{secret.service}</span>
+                      <span className="vault-secret-name">{secret.name}</span>
+                    </span>
+                    <span className="vault-secret-value">{secret.value}</span>
+                    <span className="vault-secret-copy">
+                      {i === 0 ? (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="9" y="9" width="11" height="11" rx="1" />
+                          <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+                        </svg>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="vault-frame-footer">
+                <span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  AES-256-GCM
+                </span>
+                <span>CLIENT-SIDE</span>
+              </div>
+            </div>
+
+            <div className="vault-float vault-float-top">
+              <span className="vault-float-dot" />
+              ZERO-KNOWLEDGE
+            </div>
+            <div className="vault-float vault-float-bottom">
+              <span className="vault-float-check">✓</span>
+              Copied · clears in 30s
+            </div>
+          </div>
         </div>
 
-        <div className="hero-badge">
-          <div className="hero-badge-dot"></div>
-          Open source · Zero-knowledge · Free forever
-        </div>
-
-        <h1 className="hero-h1">
-          Stop pasting
-          <span className="line-green" ref={wordRef}>API keys<span className="cursor"></span></span>
-          into <span className="notion-morph" ref={placeRef}>Notion</span>.
-        </h1>
-
-        <p className="hero-sub">
-          Scync is the secrets manager built for developers who are tired of losing credentials across Slack DMs, .env files, and screenshots. One vault. Every device. Server never sees a thing.
-        </p>
-
-        <div className="hero-cta">
-          <a className="google-btn" href="/app" id="hero-google-btn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
-            Get started — it's free
-          </a>
-          <a href="https://github.com/hariharen9/Scync" target="_blank" className="hero-cta-secondary">
-            View on GitHub
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
-          </a>
-        </div>
-
-        <div className="hero-trust">
-          <div className="trust-item">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-            AES-256-GCM
-          </div>
-          <div className="trust-sep"></div>
-          <div className="trust-item">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
-            Zero-knowledge
-          </div>
-          <div className="trust-sep"></div>
-          <div className="trust-item">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
-            MIT licensed
-          </div>
-          <div className="trust-sep"></div>
-          <div className="trust-item">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
-            Web · PWA
-          </div>
-        </div>
-
-        <div className="scroll-indicator">
-          <span className="scroll-text">Scroll</span>
-          <div className="scroll-line"></div>
+        <div className="hero-scroll">
+          <span>Scroll to explore</span>
+          <div className="hero-scroll-line" />
         </div>
       </section>
 

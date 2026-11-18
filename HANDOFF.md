@@ -17,6 +17,20 @@ Never put long explanations here — reference files and decisions only.
   identity/zero-knowledge explainer, the three-step auth/master-key/recovery flow, and the CSPRNG
   credential generator; right side carries Google + email/password, mode tabs, generated-credential
   handoff, show/hide, copy, and errors. Removed the superseded `SignInOverlay` component and CSS.
+- **Auth spacing**: loosened label/field/divider/tab/footnote spacing across the form; the form now scrolls
+  internally on shorter viewports instead of compressing.
+- **Unlock gate redesign**: split layout matching the auth gate — identity/constellation/avatar left,
+  password/biometrics/recovery form right. Brighter palette, centered form, stronger disabled states,
+  professional lockout copy, and a shared internal scroll container.
+- **Vault sigil mesh**: replaced the dense random node web with a structured 12-node outer ring + 6-node
+  inner ring, radial spokes, persistent base edges, orbit rings, and a rotating dashed orbit. Password
+  length still lights nodes/edges; success still animates the full sigil.
+- **One-viewport mobile unlock**: compact mesh + identity sit above the form; form/controls use the
+  available height so the page has no scroll at 390×844 or 390×667. Secondary identity copy is hidden on
+  mobile; the form panel scrolls internally only on very short screens.
+- **Avatar fallback**: new shared `UserAvatar` (`src/components/UserAvatar.tsx`) with
+  `referrerPolicy="no-referrer"`, broken-image handling, and initials derived from display name/email.
+  Used by the unlock gate and the vault header.
 - **Routing**: `public/_redirects` maps `/app`, `/app/*`, and `/share/*` to `app.html`; the catch-all stays
   `index.html`. A Vite plugin mirrors the rewrites in dev/preview. `/` is noindex-free marketing; `/app`
   and `/share/*` are noindex/robots-disallowed.
