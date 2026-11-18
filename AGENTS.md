@@ -183,8 +183,8 @@ consumers can't over-deliver and a failed decrypt consumes no view).
   (`src/landing/main.tsx` → `LandingPage`); `app.html` serves the vault (`src/app/main.tsx` → `App`).
   `public/_redirects` maps `/app` and `/app/*` to `app.html`, `/share/*` to `app.html`, and the
   catch-all to `index.html`. A small Vite plugin mirrors those rewrites in dev/preview. The landing
-  bundle has no Firebase or `@scync/ui` dependency; its CTAs link to `/app`. The app gate is
-  `SignInPage` (`SignInOverlay`), which returns to `/` on close.
+  bundle has no Firebase or `@scync/ui` dependency; its CTAs link to `/app`. The app gate is the
+  standalone split `SignInPage`; it links back to `/`.
 - **App shell**: `App.tsx`: pathname `/share/...` → public `ShareConsumePage`
   (`shareId = path.split('/')[2]`, key from `location.hash`); else
   `ErrorBoundary > ReactLenis > AuthGuard(fallback=SignInPage) > VaultGuard(setupFallback=SetupPage,
@@ -194,14 +194,13 @@ consumers can't over-deliver and a failed decrypt consumes no view).
 - **VaultPage**: registers ALL subscriptions once per user (secrets, ssh, totp, certs, passwords, projects,
   services); renders content by `activeView`; `selectedSecretId` → animated detail panel (sticky desktop /
   draggable bottom-sheet mobile); renders all modals; footer.
-- **LandingPage** (marketing landing, `src/landing/LandingPage.tsx`). Independent of the app build: all three
-  CTAs (nav/hero/footer) link to `/app`; it does not import Firebase. The **`SignInOverlay`**
-  (`apps/web/src/components/SignInOverlay.tsx`, portaled, CSS in SignInOverlay.css) lives in the app
-  entry and provides Google + email/password Sign-in / Create-account tabs, a "generate a random email
-  & password" helper (CSPRNG), and an explicit explainer — made-up login is allowed & must be saved (no
-  recovery), the login is only auth, and the Vault Master Password (next screen) is the real,
-  unrecoverable key; vault is tied to the login that created it. Email/password must be enabled in
-  Firebase Console (Auth → Sign-in method).
+- **SignInPage** (standalone app gate at `/app`, `src/pages/SignInPage.tsx` + `.css`). Two-column split:
+  left = brand/positioning, three-step explainer, and a CSPRNG credential generator; right = the auth form.
+  Google + email/password (Sign in / Create account), random email+password helper that fills the form,
+  show/hide password, generated-credential copy buttons, inline errors. It is a full page, not a modal or
+  portal. The login is only auth; the Vault Master Password (next screen) is the real, unrecoverable key,
+  and the vault is tied to the login that created it. Email/password must be enabled in Firebase Console
+  (Auth → Sign-in method).
 - **SetupPage** (vault creation: password ≥8 chars + uppercase + digit + confirm; warns there is no password
   recovery; **no portable-vault import option**), **UnlockPage** (password + biometric unlock; in-memory 5-attempt
   lockout — attempt 3 → 60 s wait, attempt 5 → auto sign-out; **no forgot-password/resetVault anywhere**).

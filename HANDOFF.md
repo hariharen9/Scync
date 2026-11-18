@@ -11,8 +11,12 @@ Never put long explanations here — reference files and decisions only.
   the landing bundle has no Firebase or `@scync/ui` imports.
 - **Landing moved**: `src/pages/AuthPage.tsx` + CSS → `src/landing/LandingPage.tsx` + CSS. All CTAs now
   link to `/app` instead of opening `SignInOverlay`; the landing no longer initializes Firebase.
-- **App gate**: `AuthGuard` fallback is now `SignInPage` (`src/pages/SignInPage.tsx`), which renders the
-  existing `SignInOverlay`; closing it returns to `/`.
+- **App gate**: `AuthGuard` fallback is the standalone split `SignInPage`
+  (`src/pages/SignInPage.tsx` + CSS): brand/explainer/generator left, form right; no overlay/portal.
+- **Auth page redesign**: replaced the packed modal with a full-page split layout. Left side carries the
+  identity/zero-knowledge explainer, the three-step auth/master-key/recovery flow, and the CSPRNG
+  credential generator; right side carries Google + email/password, mode tabs, generated-credential
+  handoff, show/hide, copy, and errors. Removed the superseded `SignInOverlay` component and CSS.
 - **Routing**: `public/_redirects` maps `/app`, `/app/*`, and `/share/*` to `app.html`; the catch-all stays
   `index.html`. A Vite plugin mirrors the rewrites in dev/preview. `/` is noindex-free marketing; `/app`
   and `/share/*` are noindex/robots-disallowed.
