@@ -19,6 +19,73 @@ const heroSecrets = [
   { service: 'GITHUB', name: 'Deploy token', value: 'ghp_\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022', color: '#9aa19e', initial: 'G' },
 ];
 
+const cliInstall = `git clone https://github.com/hariharen9/Scync-cli.git
+cd Scync-cli && npm install && npm run build && npm link`;
+
+const cliDemos = [
+  {
+    id: 'tui',
+    label: 'TUI',
+    command: 'scync',
+    output: [
+      { tone: 'dim', text: 'SCYNC  //  TERMINAL VAULT' },
+      { tone: 'ok', text: '✓ vault sealed · agent custody 15m' },
+      { tone: 'muted', text: 'DASHBOARD   SECRETS   PROJECTS   PASSWORDS   TOTP   SSH   CERTS' },
+      { tone: 'text', text: 'Vault health      ● healthy' },
+      { tone: 'text', text: 'Projects          6' },
+      { tone: 'warn', text: 'Attention         2 rotations due · 1 certificate expiring' },
+      { tone: 'text', text: 'Recent            STRIPE_SECRET_KEY rotated 2m ago' },
+      { tone: 'dim', text: '↑↓ move · enter open · / search · u unlock · q quit' },
+    ],
+  },
+  {
+    id: 'run',
+    label: 'run',
+    command: 'scync run --project Payments -- npm run dev',
+    output: [
+      { tone: 'ok', text: '✓ agent custody active · 15m' },
+      { tone: 'ok', text: '✓ 12 secrets decrypted for development' },
+      { tone: 'ok', text: '✓ environment injected into child process' },
+      { tone: 'dim', text: '→ next dev -p 3000' },
+      { tone: 'text', text: 'ready - started server on 0.0.0.0:3000' },
+    ],
+  },
+  {
+    id: 'pull',
+    label: 'pull',
+    command: 'scync pull --project Payments --env production --output .env',
+    output: [
+      { tone: 'ok', text: '✓ unlocked vault via agent' },
+      { tone: 'ok', text: '✓ 18 active secrets matched' },
+      { tone: 'ok', text: '✓ wrote .env (0600)' },
+      { tone: 'dim', text: '· skipped 2 expired secrets' },
+      { tone: 'text', text: 'done in 0.41s' },
+    ],
+  },
+  {
+    id: 'push',
+    label: 'push',
+    command: 'scync push .env --dry-run',
+    output: [
+      { tone: 'ok', text: '✓ parsed 14 keys from .env' },
+      { tone: 'ok', text: '✓ 9 new · 3 updated · 2 unchanged' },
+      { tone: 'text', text: '· STRIPE_SECRET_KEY  create' },
+      { tone: 'text', text: '· DATABASE_URL      update' },
+      { tone: 'warn', text: '! 1 duplicate key collapsed (last wins)' },
+      { tone: 'dim', text: 'dry run — nothing written' },
+    ],
+  },
+];
+
+const cliCommandCards = [
+  { command: 'scync', label: 'Launch the TUI', desc: 'Full-screen vault, keyboard-first.' },
+  { command: 'scync run -- npm start', label: 'Inject secrets', desc: 'No temp files. Child process env only.' },
+  { command: 'scync pull --output .env', label: 'Export .env', desc: '0600 file, project and environment aware.' },
+  { command: 'scync push .env', label: 'Import .env', desc: 'Dry runs, overwrite confirmation, deduping.' },
+  { command: 'scync totp GitHub', label: 'Live TOTP', desc: 'RFC 6238 codes without a phone.' },
+  { command: 'scync projects', label: 'Organize', desc: 'Create, rename, recolor and move projects.' },
+];
+
 export const LandingPage: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
@@ -26,6 +93,8 @@ export const LandingPage: React.FC = () => {
 
   const [wordIndex, setWordIndex] = React.useState(0);
   const [place, setPlace] = React.useState({ index: 0, striking: false });
+  const [cliTab, setCliTab] = React.useState(0);
+  const [cliCopied, setCliCopied] = React.useState(false);
   
   // Live Mockup States
   const [mockSearch, setMockSearch] = React.useState('');
@@ -156,6 +225,18 @@ export const LandingPage: React.FC = () => {
 
   const handleCopyFlash = (e: React.MouseEvent<HTMLDivElement>) => { const card = e.currentTarget; card.classList.add('copying'); setTimeout(() => card.classList.remove('copying'), 600); };
 
+  const copyCliInstall = async () => {
+    try {
+      await navigator.clipboard.writeText(cliInstall);
+      setCliCopied(true);
+      window.setTimeout(() => setCliCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const activeCliDemo = cliDemos[cliTab];
+
   return (
     <div className="scync-landing" ref={wrapperRef}>
 
@@ -171,8 +252,9 @@ export const LandingPage: React.FC = () => {
         </a>
         <ul className="nav-links">
           <li><a href="#how">How it works</a></li>
-          <li><a href="#features">Features</a></li>
           <li><a href="#security">Security</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#cli">CLI &amp; TUI</a></li>
           <li><a href="https://github.com/hariharen9/Scync" target="_blank">GitHub ↗</a></li>
         </ul>
         <div className="nav-cta">
@@ -195,7 +277,7 @@ export const LandingPage: React.FC = () => {
               <span className="hero-kicker-dot" />
               <span>Zero-knowledge secrets manager</span>
               <span className="hero-kicker-sep" />
-              <span className="hero-kicker-soft">Open source</span>
+              <span className="hero-kicker-cli">CLI</span>
             </div>
 
             <h1 className="hero-title">
@@ -247,11 +329,13 @@ export const LandingPage: React.FC = () => {
                   <polyline points="13 5 20 12 13 19" />
                 </svg>
               </a>
-              <a className="hero-secondary" href="https://github.com/hariharen9/Scync" target="_blank" rel="noreferrer">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.2-3.37-1.2-.45-1.18-1.11-1.49-1.11-1.49-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.27 2.75 1.05A9.4 9.4 0 0 1 12 6.84c.85 0 1.71.12 2.51.34 1.91-1.32 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.03 10.03 0 0 0 22 12.26C22 6.58 17.52 2 12 2z" />
+              <a className="hero-secondary" href="#cli">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <rect x="2" y="4" width="20" height="16" rx="1" />
+                  <polyline points="6 9 10 12 6 15" />
+                  <line x1="12" y1="15" x2="18" y2="15" />
                 </svg>
-                View on GitHub
+                Explore the CLI
               </a>
             </div>
 
@@ -286,6 +370,15 @@ export const LandingPage: React.FC = () => {
                   <path d="M8 21h8M12 17v4" />
                 </svg>
                 Web · PWA
+              </span>
+              <span className="hero-proof-sep" />
+              <span className="hero-proof-item">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                  <rect x="2" y="4" width="20" height="16" rx="1" />
+                  <polyline points="6 9 10 12 6 15" />
+                  <line x1="12" y1="15" x2="18" y2="15" />
+                </svg>
+                CLI · TUI
               </span>
             </div>
           </div>
@@ -377,6 +470,8 @@ export const LandingPage: React.FC = () => {
           ))}
         </div>
       </div>
+
+
 
 
       <section className="section" id="problem">
@@ -551,11 +646,149 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      <section className="security-section" id="security">
+        <div className="sec-glow"></div>
+        <div className="security-split">
+          <div>
+            <div className="section-label reveal">Security model</div>
+            <h2 className="section-h2 reveal reveal-delay-1">Zero-knowledge.<br />Not "we promise."<br /><span style={{ color: "var(--green)" }}>Architecturally.</span></h2>
+            <p className="section-sub reveal reveal-delay-2" style={{ marginBottom: "0" }}>The server never receives your plaintext. Your vault password never leaves your device. A Firebase breach doesn't expose your secrets. This is enforced by math, not policy.</p>
+
+            <div className="sec-layers reveal reveal-delay-2">
+              <div className="sec-layer sec-layer-1">
+                <div className="sec-layer-label">Layer 1 — Identity</div>
+                <div className="sec-layer-title">Firebase Auth</div>
+                <div className="sec-layer-desc">Handles sign-in — Google or email &amp; password. Controls which Firestore documents you can access. <strong style={{ color: "var(--t1)" }}>Does not protect secret content.</strong></div>
+              </div>
+              <div className="sec-layer sec-layer-2">
+                <div className="sec-layer-label">Layer 2 — Hardware</div>
+                <div className="sec-layer-title">WebAuthn PRF + Web Crypto</div>
+                <div className="sec-layer-desc">Your device's <strong>Secure Enclave</strong> derives encryption keys that never leave the hardware. This "wraps" your Master Password, ensuring even we can't see your biometric link.</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="spec-table reveal reveal-delay-1">
+              <div className="section-label" style={{ marginBottom: "20px" }}>Encryption spec</div>
+              <div className="spec-row">
+                <div className="spec-key">Algorithm</div>
+                <div className="spec-val"><span>AES-256-GCM</span> — authenticated encryption with integrity verification</div>
+              </div>
+              <div className="spec-row">
+                <div className="spec-key">Key derivation</div>
+                <div className="spec-val"><span>PBKDF2-SHA256</span>, <span>310,000</span> iterations — OWASP 2023 recommendation</div>
+              </div>
+              <div className="spec-row">
+                <div className="spec-key">IV</div>
+                <div className="spec-val">Fresh <span>12-byte random IV</span> per encryption operation — never reused</div>
+              </div>
+              <div className="spec-row">
+                <div className="spec-key">Key material</div>
+                <div className="spec-val">vaultPassword + uid — prevents cross-account attacks</div>
+              </div>
+              <div className="spec-row">
+                <div className="spec-key">Implementation</div>
+                <div className="spec-val"><span>Web Crypto API only</span> — no third-party crypto libraries</div>
+              </div>
+              <div className="spec-row">
+                <div className="spec-key">Key storage</div>
+                <div className="spec-val"><span>In-memory only</span> — non-extractable CryptoKey, never persisted to disk</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "32px" }} className="reveal reveal-delay-2">
+              <div className="section-label" style={{ marginBottom: "14px" }}>What Firebase can see</div>
+              <div className="firebase-table">
+                <div className="fb-row">
+                  <div className="fb-field">Field</div>
+                  <div className="fb-access">Firebase sees</div>
+                </div>
+                <div className="fb-row">
+                  <div className="fb-field">Secret name, service, type</div>
+                  <div className="fb-access plain">Plaintext</div>
+                </div>
+                <div className="fb-row">
+                  <div className="fb-field">Timestamps</div>
+                  <div className="fb-access plain">Plaintext</div>
+                </div>
+                <div className="fb-row">
+                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Secret value</div>
+                  <div className="fb-access enc">Encrypted blob</div>
+                </div>
+                <div className="fb-row">
+                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Notes</div>
+                  <div className="fb-access enc">Encrypted blob</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="security-audit">
+          <div className="security-audit-copy">
+            <div className="section-label reveal">Open source</div>
+            <h3 className="security-audit-title reveal reveal-delay-1">Read every line.<br />Audit everything.</h3>
+            <p className="security-audit-sub reveal reveal-delay-2">
+              The crypto code uses only the Web Crypto API. Any developer should be able to read and verify it in under 15 minutes. No black boxes. No "trust us."
+            </p>
+
+            <div className="oss-stats reveal reveal-delay-2">
+              <div className="oss-stat">
+                <div className="oss-stat-val">MIT</div>
+                <div className="oss-stat-label">License</div>
+              </div>
+              <div className="oss-stat">
+                <div className="oss-stat-val">0</div>
+                <div className="oss-stat-label">Paid tiers. Ever.</div>
+              </div>
+              <div className="oss-stat">
+                <div className="oss-stat-val">Web</div>
+                <div className="oss-stat-label">Crypto API only</div>
+              </div>
+              <div className="oss-stat">
+                <div className="oss-stat-val">∞</div>
+                <div className="oss-stat-label">Secrets stored</div>
+              </div>
+            </div>
+
+            <a
+              className="security-audit-link reveal reveal-delay-3"
+              href="https://github.com/hariharen9/Scync/blob/main/packages/core/src/crypto.ts"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Read the crypto source ↗
+            </a>
+          </div>
+
+          <div className="oss-code reveal reveal-delay-2">
+            <div className="oss-code-bar">
+              <div className="t-dot" style={{ background: "#ef4444" }}></div>
+              <div className="t-dot" style={{ background: "#f59e0b" }}></div>
+              <div className="t-dot" style={{ background: "#10b981" }}></div>
+              <span style={{ marginLeft: "8px" }}>packages/core/src/crypto.ts</span>
+            </div>
+            <div className="oss-code-body">
+              <div><span className="code-keyword">export async function</span> <span className="code-fn">deriveKey</span>(</div>
+              <div>{"  "}password: <span className="code-type">string</span>, uid: <span className="code-type">string</span>, salt: <span className="code-type">Uint8Array</span></div>
+              <div>): <span className="code-type">Promise</span>&lt;<span className="code-type">CryptoKey</span>&gt; {"{"}</div>
+              <div>{"  "}<span className="code-keyword">const</span> baseKey = <span className="code-keyword">await</span> crypto.subtle.<span className="code-fn">importKey</span>(</div>
+              <div>{"    "}<span className="code-str">"raw"</span>, encode(password + uid), <span className="code-str">"PBKDF2"</span>, <span className="code-keyword">false</span>, [<span className="code-str">"deriveKey"</span>]);</div>
+              <div>{"  "}<span className="code-keyword">return</span> crypto.subtle.<span className="code-fn">deriveKey</span>(</div>
+              <div>{"    "}{"{"} name: <span className="code-str">"PBKDF2"</span>, salt, iterations: <span className="code-num">310_000</span>, hash: <span className="code-str">"SHA-256"</span> {"}"},</div>
+              <div>{"    "}baseKey, {"{"} name: <span className="code-str">"AES-GCM"</span>, length: <span className="code-num">256</span> {"}"}, <span className="code-keyword">false</span>, [<span className="code-str">"encrypt"</span>, <span className="code-str">"decrypt"</span>]);</div>
+              <div>{"}"}</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
       <section className="section" id="features">
         <div className="section-inner">
           <div className="section-label reveal">Features</div>
           <h2 className="section-h2 reveal reveal-delay-1">Built for how developers actually think about secrets.</h2>
-          <p className="section-sub reveal reveal-delay-2">Not passwords. Not team secrets. Not CI/CD pipelines. Your credentials, organized the way you work.</p>
+          <p className="section-sub reveal reveal-delay-2">API keys, tokens, SSH keys, certificates, passwords, and the .env files around them. Organized the way you work.</p>
 
           <div className="features-grid">
 
@@ -639,32 +872,16 @@ export const LandingPage: React.FC = () => {
               <div className="feat-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
               </div>
-              <div className="feat-title">Recovery code UX</div>
-              <div className="feat-desc">Codes are numbered. You mark them used. The remaining count is always visible. Know exactly which code to reach for at 2am when you're locked out.</div>
-            </div>
-
-            <div className="feat-card reveal reveal-delay-3">
-              <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              </div>
               <div className="feat-title">Biometric Passkeys</div>
               <div className="feat-desc">The first vault to use <strong>Hardware-Backed PRF</strong> in the browser. Unlock with FaceID or Fingerprint using your device's secure hardware enclave. Native speed, zero-knowledge security.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
               </div>
-              <div className="feat-title">2FA Authenticator</div>
-              <div className="feat-desc">Move your 2FA out of siloed apps. Zero-knowledge sync for your authenticator codes with QR drag-and-drop support.</div>
-            </div>
-
-            <div className="feat-card reveal reveal-delay-3">
-              <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></svg>
-              </div>
-              <div className="feat-title">SSH Key Manager</div>
-              <div className="feat-desc">Generate RSA/Ed25519 pairs locally. Map to hosts and auto-generate your <code style={{ color: 'var(--green)', fontSize: '11px' }}>~/.ssh/config</code>.</div>
+              <div className="feat-title">Zero-Knowledge Sharing</div>
+              <div className="feat-desc">Share secrets via encrypted links. Decryption key in URL fragment <strong>never reaches the server</strong>. Set expiry times and view limits.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
@@ -709,14 +926,121 @@ export const LandingPage: React.FC = () => {
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="1" /><path d="M8 21h8M12 17v4" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="1" /><polyline points="6 9 10 12 6 15" /><line x1="12" y1="15" x2="18" y2="15" /></svg>
               </div>
-              <div className="feat-title">Native feel. Zero bloat.</div>
-              <div className="feat-desc">Install Scync as a <strong>PWA</strong> on any device with quick command shortcuts (<kbd>Cmd/Ctrl+K</kbd>). Lightning fast and always in sync.</div>
+              <div className="feat-title">TUI + CLI. Terminal native.</div>
+              <div className="feat-desc">A full-screen terminal vault and a scriptable CLI, backed by the same zero-knowledge core. Same master password, same data, no browser required.</div>
+              <a className="feat-inline-link" href="#cli">Explore the CLI →</a>
             </div>
           </div>
         </div>
       </section>
+
+      <section className="cli-section" id="cli">
+        <div className="cli-section-glow" aria-hidden="true" />
+
+        <div className="cli-inner">
+          <div className="cli-copy reveal">
+            <div className="section-label">Terminal native</div>
+            <h2 className="section-h2">
+              The same vault.<br />
+              <span style={{ color: 'var(--green)' }}>In your terminal.</span>
+            </h2>
+            <p className="section-sub">
+              Scync ships with a full-screen TUI and a scriptable CLI. Same master
+              password, same zero-knowledge vault, same data as the web app — just
+              closer to the work.
+            </p>
+
+            <div className="cli-chips">
+              <span className="cli-chip"><span className="cli-chip-dot" /> Full-screen TUI</span>
+              <span className="cli-chip"><span className="cli-chip-dot" /> Scriptable CLI</span>
+              <span className="cli-chip"><span className="cli-chip-dot" /> Agent custody</span>
+              <span className="cli-chip"><span className="cli-chip-dot" /> CI-ready</span>
+            </div>
+
+            <div className="cli-install">
+              <div className="cli-install-head">
+                <span>Install from source</span>
+                <span className="cli-install-req">Node 20+</span>
+              </div>
+              <pre className="cli-install-code"><code>{cliInstall}</code></pre>
+              <button
+                type="button"
+                className={`cli-copy-btn ${cliCopied ? 'is-copied' : ''}`}
+                onClick={copyCliInstall}
+              >
+                {cliCopied ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+
+            <div className="cli-links">
+              <a href="https://github.com/hariharen9/Scync-cli#readme" target="_blank" rel="noreferrer">
+                Read the CLI guide ↗
+              </a>
+              <a href="https://github.com/hariharen9/Scync-cli" target="_blank" rel="noreferrer">
+                View CLI source ↗
+              </a>
+            </div>
+          </div>
+
+          <div className="cli-demo reveal reveal-delay-1">
+            <div className="cli-tabs" role="tablist" aria-label="CLI demo">
+              {cliDemos.map((demo, i) => (
+                <button
+                  key={demo.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={cliTab === i}
+                  className={`cli-tab ${cliTab === i ? 'is-active' : ''}`}
+                  onClick={() => setCliTab(i)}
+                >
+                  {demo.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="cli-window">
+              <div className="cli-window-bar">
+                <span className="cli-dot cli-dot-red" />
+                <span className="cli-dot cli-dot-amber" />
+                <span className="cli-dot cli-dot-green" />
+                <span className="cli-window-title">scync — terminal vault</span>
+                <span className="cli-window-status">local</span>
+              </div>
+
+              <div className="cli-window-body">
+                <div className="cli-command-line">
+                  <span className="cli-prompt">$</span>
+                  <span className="cli-command">{activeCliDemo.command}</span>
+                  <span className="cli-cursor" />
+                </div>
+                {activeCliDemo.output.map((line, i) => (
+                  <div key={i} className={`cli-line cli-line-${line.tone}`}>
+                    {line.text}
+                  </div>
+                ))}
+              </div>
+
+              <div className="cli-window-footer">
+                <span>v0.1.0</span>
+                <span>zero-knowledge · agent custody</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="cli-command-grid section-inner reveal reveal-delay-2">
+          {cliCommandCards.map(card => (
+            <div className="cli-command-card" key={card.command}>
+              <code>{card.command}</code>
+              <div className="cli-command-label">{card.label}</div>
+              <div className="cli-command-desc">{card.desc}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
 
       <section className="beyond-section" id="beyond">
         <div className="section-inner">
@@ -810,179 +1134,11 @@ export const LandingPage: React.FC = () => {
       </section>
 
 
-      <section className="security-section" id="security">
-        <div className="sec-glow"></div>
-        <div className="security-split">
-          <div>
-            <div className="section-label reveal">Security model</div>
-            <h2 className="section-h2 reveal reveal-delay-1">Zero-knowledge.<br />Not "we promise."<br /><span style={{ color: "var(--green)" }}>Architecturally.</span></h2>
-            <p className="section-sub reveal reveal-delay-2" style={{ marginBottom: "0" }}>The server never receives your plaintext. Your vault password never leaves your device. A Firebase breach doesn't expose your secrets. This is enforced by math, not policy.</p>
-
-            <div className="sec-layers reveal reveal-delay-2">
-              <div className="sec-layer sec-layer-1">
-                <div className="sec-layer-label">Layer 1 — Identity</div>
-                <div className="sec-layer-title">Firebase Auth</div>
-                <div className="sec-layer-desc">Handles sign-in — Google or email &amp; password. Controls which Firestore documents you can access. <strong style={{ color: "var(--t1)" }}>Does not protect secret content.</strong></div>
-              </div>
-              <div className="sec-layer sec-layer-2">
-                <div className="sec-layer-label">Layer 2 — Hardware</div>
-                <div className="sec-layer-title">WebAuthn PRF + Web Crypto</div>
-                <div className="sec-layer-desc">Your device's <strong>Secure Enclave</strong> derives encryption keys that never leave the hardware. This "wraps" your Master Password, ensuring even we can't see your biometric link.</div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="spec-table reveal reveal-delay-1">
-              <div className="section-label" style={{ marginBottom: "20px" }}>Encryption spec</div>
-              <div className="spec-row">
-                <div className="spec-key">Algorithm</div>
-                <div className="spec-val"><span>AES-256-GCM</span> — authenticated encryption with integrity verification</div>
-              </div>
-              <div className="spec-row">
-                <div className="spec-key">Key derivation</div>
-                <div className="spec-val"><span>PBKDF2-SHA256</span>, <span>310,000</span> iterations — OWASP 2023 recommendation</div>
-              </div>
-              <div className="spec-row">
-                <div className="spec-key">IV</div>
-                <div className="spec-val">Fresh <span>12-byte random IV</span> per encryption operation — never reused</div>
-              </div>
-              <div className="spec-row">
-                <div className="spec-key">Key material</div>
-                <div className="spec-val">vaultPassword + uid — prevents cross-account attacks</div>
-              </div>
-              <div className="spec-row">
-                <div className="spec-key">Implementation</div>
-                <div className="spec-val"><span>Web Crypto API only</span> — no third-party crypto libraries</div>
-              </div>
-              <div className="spec-row">
-                <div className="spec-key">Key storage</div>
-                <div className="spec-val"><span>In-memory only</span> — non-extractable CryptoKey, never persisted to disk</div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: "32px" }} className="reveal reveal-delay-2">
-              <div className="section-label" style={{ marginBottom: "14px" }}>What Firebase can see</div>
-              <div className="firebase-table">
-                <div className="fb-row">
-                  <div className="fb-field">Field</div>
-                  <div className="fb-access">Firebase sees</div>
-                </div>
-                <div className="fb-row">
-                  <div className="fb-field">Secret name, service, type</div>
-                  <div className="fb-access plain">Plaintext</div>
-                </div>
-                <div className="fb-row">
-                  <div className="fb-field">Timestamps</div>
-                  <div className="fb-access plain">Plaintext</div>
-                </div>
-                <div className="fb-row">
-                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Secret value</div>
-                  <div className="fb-access enc">Encrypted blob</div>
-                </div>
-                <div className="fb-row">
-                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Notes</div>
-                  <div className="fb-access enc">Encrypted blob</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      <section className="pwa-section">
-        <div className="pwa-glow-field"></div>
-        <div className="section-inner">
-          <div className="pwa-split">
-            <div className="pwa-content">
-              <div className="section-label reveal">Next-Gen Architecture</div>
-              <h2 className="section-h2 reveal reveal-delay-1">Native feel.<br />Lightweight footprint.</h2>
-              <p className="section-sub reveal reveal-delay-2">
-                Scync isn't just a website. It's a high-performance <strong>Progressive Web App</strong> engineered to bridge the gap between web freedom and native power. No App Store gatekeepers, no 200MB binaries—just pure, encrypted performance.
-              </p>
-
-              <div className="pwa-stats-grid reveal reveal-delay-2">
-                <div className="pwa-stat-box">
-                  <span className="pwa-stat-val">0<small>MB</small></span>
-                  <span className="pwa-stat-label">Install Size</span>
-                </div>
-                <div className="pwa-stat-box">
-                  <span className="pwa-stat-val">{"<"}1<small>s</small></span>
-                  <span className="pwa-stat-label">Cold Start</span>
-                </div>
-                <div className="pwa-stat-box">
-                  <span className="pwa-stat-val">100<small>%</small></span>
-                  <span className="pwa-stat-label">Offline Ready</span>
-                </div>
-              </div>
-
-              <div className="pwa-features reveal reveal-delay-3">
-                <div className="pwa-feat-item">
-                  <div className="pwa-feat-icon">🛡️</div>
-                  <div>
-                    <strong>Secure Enclave Integration</strong>
-                    <p>Directly interfaces with your device's hardware security module for FaceID/TouchID.</p>
-                  </div>
-                </div>
-                <div className="pwa-feat-item">
-                  <div className="pwa-feat-icon">🚀</div>
-                  <div>
-                    <strong>Zero-Lag Interface</strong>
-                    <p>Optimized for 120Hz displays with GPU-accelerated transitions and in-memory search.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pwa-visual reveal reveal-delay-2">
-              <div className="pwa-orb pwa-orb-1"></div>
-              <div className="pwa-orb pwa-orb-2"></div>
-              <div className="phone-mockup">
-                <div className="phone-screen">
-                  <div className="phone-status-bar">
-                    <div className="status-syncing">
-                      <div className="sync-dot"></div>
-                      <span>Syncing Vault...</span>
-                    </div>
-                  </div>
-                  <div className="phone-nav">
-                    <div className="phone-logo">
-                      <img src="/logo.png" alt="" />
-                    </div>
-                    <span>Scync Vault</span>
-                  </div>
-                  <div className="phone-body">
-                    <div className="phone-lock">
-                      <div className="lock-icon">
-                        <div className="lock-glow"></div>
-                        🔒
-                      </div>
-                      <div className="lock-text">Zero-Knowledge Vault</div>
-                      <div className="biometric-prompt">
-                        <div className="bio-floating-key">🔑</div>
-                        <div className="bio-ring">
-                          <div className="bio-fingerprint">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
-                          </div>
-                        </div>
-                        <div className="bio-text">Confirm Identity</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
       <section className="compare-section">
         <div className="compare-inner">
           <div className="section-label reveal">Why Scync</div>
           <h2 className="section-h2 reveal reveal-delay-1">Every other tool misses something.</h2>
-          <p className="section-sub reveal reveal-delay-2">Personal-first. Zero-knowledge. Cross-platform. Open source. Pleasant to use. All five. That's the gap Scync fills.</p>
+          <p className="section-sub reveal reveal-delay-2">Personal-first. Zero-knowledge. Cross-platform. Open source. Terminal-native. Pleasant to use. All six. That's the gap Scync fills.</p>
 
           <div className="compare-table-wrapper">
             <div className="compare-table reveal">
@@ -1011,18 +1167,18 @@ export const LandingPage: React.FC = () => {
                 <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
               </div>
               <div className="compare-row">
+                <div className="compare-cell">CLI + TUI</div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-part">partial</span></div>
+                <div className="compare-cell"><span className="c-no">✗</span></div>
+                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
+              </div>
+              <div className="compare-row">
                 <div className="compare-cell">Cross-platform sync</div>
                 <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-              </div>
-              <div className="compare-row">
-                <div className="compare-cell">Personal-first (not team)</div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell"><span className="c-yes">✓</span></div>
                 <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
               </div>
@@ -1042,87 +1198,15 @@ export const LandingPage: React.FC = () => {
                 <div className="compare-cell"><span className="c-part">free tier</span></div>
                 <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
               </div>
-              <div className="compare-row">
-                <div className="compare-cell">Rotation dashboard</div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-              </div>
-              <div className="compare-row">
-                <div className="compare-cell">Integrated 2FA Authenticator</div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-              </div>
-              <div className="compare-row">
-                <div className="compare-cell">SSH Key Management</div>
-                <div className="compare-cell"><span className="c-part">partial</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell"><span className="c-yes">✓</span></div>
-                <div className="compare-cell"><span className="c-no">✗</span></div>
-                <div className="compare-cell highlight"><span className="c-yes">✓</span></div>
-              </div>
             </div>
           </div>
-        </div>
-      </section>
 
-
-      <section className="oss-section">
-        <div className="oss-inner">
-          <div>
-            <div className="section-label reveal">Open source</div>
-            <h2 className="section-h2 reveal reveal-delay-1" style={{ maxWidth: "400px" }}>Read every line. Audit everything.</h2>
-            <p className="section-sub reveal reveal-delay-2">The crypto code uses only the Web Crypto API. Any developer should be able to read and verify it in under 15 minutes. No black boxes. No "trust us."</p>
-            <div className="oss-stats reveal reveal-delay-2">
-              <div className="oss-stat">
-                <div className="oss-stat-val">MIT</div>
-                <div className="oss-stat-label">License</div>
-              </div>
-              <div className="oss-stat">
-                <div className="oss-stat-val">0</div>
-                <div className="oss-stat-label">Paid tiers. Ever.</div>
-              </div>
-              <div className="oss-stat">
-                <div className="oss-stat-val">Web</div>
-                <div className="oss-stat-label">Crypto API only</div>
-              </div>
-              <div className="oss-stat">
-                <div className="oss-stat-val">∞</div>
-                <div className="oss-stat-label">Secrets stored</div>
-              </div>
+          <div className="compare-cli-note reveal reveal-delay-2">
+            <div>
+              <div className="section-label" style={{ marginBottom: '8px' }}>Terminal native</div>
+              <p>Same vault in the browser, TUI, or CLI.</p>
             </div>
-          </div>
-          <div className="oss-code reveal reveal-delay-2">
-            <div className="oss-code-bar">
-              <div className="t-dot" style={{ background: "#ef4444" }}></div>
-              <div className="t-dot" style={{ background: "#f59e0b" }}></div>
-              <div className="t-dot" style={{ background: "#10b981" }}></div>
-              <span style={{ marginLeft: "8px" }}>packages/core/src/crypto.ts</span>
-            </div>
-            <div className="oss-code-body">
-              <div><span className="code-keyword">export async function</span> <span className="code-fn">deriveKey</span>(</div>
-              <div>{"  "}password: <span className="code-type">string</span>,</div>
-              <div>{"  "}uid: <span className="code-type">string</span>,</div>
-              <div>{"  "}salt: <span className="code-type">Uint8Array</span></div>
-              <div>): <span className="code-type">Promise</span>&lt;<span className="code-type">CryptoKey</span>&gt; {"{"}</div>
-              <div>{"  "}<span className="code-keyword">const</span> baseKey = <span className="code-keyword">await</span> crypto.subtle</div>
-              <div>{"    "}.<span className="code-fn">importKey</span>(<span className="code-str">"raw"</span>, encode(password + uid),</div>
-              <div>{"      "}<span className="code-str">"PBKDF2"</span>, <span className="code-keyword">false</span>, [<span className="code-str">"deriveKey"</span>]);</div>
-              <div>{" "}</div>
-              <div>{"  "}<span className="code-keyword">return</span> crypto.subtle.<span className="code-fn">deriveKey</span>({"{"}</div>
-              <div>{"    "}name: <span className="code-str">"PBKDF2"</span>, salt,</div>
-              <div>{"    "}iterations: <span className="code-num">310_000</span>,</div>
-              <div>{"    "}hash: <span className="code-str">"SHA-256"</span>,</div>
-              <div>{"  "}{"}"}, baseKey, {"{"} name: <span className="code-str">"AES-GCM"</span>,</div>
-              <div>{"    "}length: <span className="code-num">256</span> {"}"}, <span className="code-keyword">false</span>,</div>
-              <div>{"    "}[<span className="code-str">"encrypt"</span>, <span className="code-str">"decrypt"</span>]);</div>
-              <div>{"}"}</div>
-            </div>
+            <a href="#cli">See the CLI →</a>
           </div>
         </div>
       </section>
@@ -1142,6 +1226,9 @@ export const LandingPage: React.FC = () => {
             </a>
           </div>
           <div className="cta-note reveal reveal-delay-4">No credit card · No team plan · MIT licensed · Open source forever</div>
+          <a className="cta-cli-link reveal reveal-delay-4" href="#cli">
+            Prefer the terminal? <span>Explore the CLI →</span>
+          </a>
         </div>
       </section>
 
@@ -1155,10 +1242,12 @@ export const LandingPage: React.FC = () => {
         </div>
         <div className="footer-links">
           <a href="#how">How it works</a>
-          <a href="#features">Features</a>
           <a href="#security">Security</a>
+          <a href="#features">Features</a>
+          <a href="#cli">CLI &amp; TUI</a>
           <a href="https://github.com/hariharen9/Scync/blob/main/LICENSE" target="_blank">MIT License</a>
           <a href="https://github.com/hariharen9/Scync" target="_blank">GitHub</a>
+          <a href="https://github.com/hariharen9/Scync-cli" target="_blank">CLI GitHub</a>
         </div>
         <div className="footer-copy">
           <span className="copy-text">© 2026 Scync. Free forever.</span>
