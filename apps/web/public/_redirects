@@ -27,5 +27,10 @@
 /*.txt                 /:splat.txt            200
 /*.xml                 /:splat.xml            200
 
-# SPA fallback - MUST BE LAST
+# App routes use the dedicated app entry
+/app                   /app.html              200
+/app/*                 /app.html              200
+/share/*               /app.html              200
+
+# SPA fallback (marketing) - MUST BE LAST
 /*                     /index.html            200

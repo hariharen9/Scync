@@ -4,6 +4,23 @@ Purpose: short, dated record of what changed / was decided each working session,
 `AGENTS.md` (static reference) + the latest entries here. Append new entries at the TOP under a date heading.
 Never put long explanations here — reference files and decisions only.
 
+## 2026-11-18 — Split landing page from the vault app (Option A)
+
+- **Two Vite entries**: `apps/web/index.html` → `src/landing/main.tsx` (standalone marketing),
+  `apps/web/app.html` → `src/app/main.tsx` (authenticated vault). Build outputs two independent bundles;
+  the landing bundle has no Firebase or `@scync/ui` imports.
+- **Landing moved**: `src/pages/AuthPage.tsx` + CSS → `src/landing/LandingPage.tsx` + CSS. All CTAs now
+  link to `/app` instead of opening `SignInOverlay`; the landing no longer initializes Firebase.
+- **App gate**: `AuthGuard` fallback is now `SignInPage` (`src/pages/SignInPage.tsx`), which renders the
+  existing `SignInOverlay`; closing it returns to `/`.
+- **Routing**: `public/_redirects` maps `/app`, `/app/*`, and `/share/*` to `app.html`; the catch-all stays
+  `index.html`. A Vite plugin mirrors the rewrites in dev/preview. `/` is noindex-free marketing; `/app`
+  and `/share/*` are noindex/robots-disallowed.
+- **PWA**: manifest `start_url` = `/app`, `id` = `/` (preserves existing install identity), `scope` = `/`;
+  Workbox navigation fallback `app.html` with an allowlist for `/app` and `/share`.
+- Validation: `web` build + typecheck pass; headless Chrome renders landing at `/` and the sign-in gate at
+  `/app`; dev rewrites verified for `/`, `/app`, `/share/abc`.
+
 ## 2026-10-03 — Removed Desktop completely (Pure Web / PWA only)
 
 - **Removed `apps/desktop/`**: Deleted the entire Electron 33 application (`apps/desktop`).

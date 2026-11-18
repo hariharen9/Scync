@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { SignInOverlay } from '../components/SignInOverlay';
-import './AuthPage.css';
+import './LandingPage.css';
 
 const floatData = [
   { service: 'ANTHROPIC', name: 'Claude API Key', color: '#d4a27a', x: '8%', y: '20%', delay: '0s', dur: '7s' },
@@ -23,8 +22,7 @@ const marqueeItems = [
 const words = ['API keys', 'secrets', 'Recovery Codes', '2FA codes', 'SSH keys', 'SSL certificates', 'tokens', 'credentials', 'OAuth secrets'];
 const badPlaces = ['Notion', 'Notes', 'Slack DMs', 'Screenshots', '.env files', 'Discord', 'Email', 'text files'];
 
-export const AuthPage: React.FC = () => {
-  const [authOpen, setAuthOpen] = React.useState(false);
+export const LandingPage: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
   const cursorGlowRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
@@ -195,9 +193,9 @@ export const AuthPage: React.FC = () => {
           <li><a href="https://github.com/hariharen9/Scync" target="_blank">GitHub ↗</a></li>
         </ul>
         <div className="nav-cta">
-          <button className="nav-btn-primary" onClick={() => setAuthOpen(true)}>
-            Launch Scync 🚀
-          </button>
+          <a className="nav-btn-primary" href="/app">
+            Launch Scync
+          </a>
         </div>
       </nav>
 
@@ -237,10 +235,10 @@ export const AuthPage: React.FC = () => {
         </p>
 
         <div className="hero-cta">
-          <button className="google-btn" onClick={() => setAuthOpen(true)} id="hero-google-btn">
+          <a className="google-btn" href="/app" id="hero-google-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
             Get started — it's free
-          </button>
+          </a>
           <a href="https://github.com/hariharen9/Scync" target="_blank" className="hero-cta-secondary">
             View on GitHub
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
@@ -1044,10 +1042,10 @@ export const AuthPage: React.FC = () => {
           <h2 className="cta-h2 reveal reveal-delay-1">The tool that should<br />have always existed.</h2>
           <p className="cta-sub reveal reveal-delay-2">From the moment you first pasted an API key into a Notion page, this is what should have been there instead.</p>
           <div className="reveal reveal-delay-3">
-            <button className="google-btn" onClick={() => setAuthOpen(true)} style={{ margin: "0 auto", fontSize: "15px", padding: "15px 28px" }} >
+            <a className="google-btn" href="/app" style={{ margin: "0 auto", fontSize: "15px", padding: "15px 28px" }} >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="4" y1="12" x2="20" y2="12" /><polyline points="13 5 20 12 13 19" /></svg>
               Get started — it's free
-            </button>
+            </a>
           </div>
           <div className="cta-note reveal reveal-delay-4">No credit card · No team plan · MIT licensed · Open source forever</div>
         </div>
@@ -1075,8 +1073,6 @@ export const AuthPage: React.FC = () => {
         </div>
       </footer>
 
-      {/* Sign-in overlay: Google or email/password + auth vs master-password explainer */}
-      {authOpen && <SignInOverlay onClose={() => setAuthOpen(false)} />}
     </div>
   );
 };

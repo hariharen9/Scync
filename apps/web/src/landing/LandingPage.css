@@ -132,6 +132,7 @@
   padding: 7px 16px; cursor: pointer;
   transition: all 140ms ease; letter-spacing: -.01em;
   display: flex; align-items: center; gap: 6px;
+  text-decoration: none;
 }
 .scync-landing .nav-btn-primary:hover { background: #d4d4d4; transform: translateY(-1px); }
 
@@ -300,7 +301,7 @@
 }
 
 .scync-landing .google-btn {
-  display: flex; align-items: center; gap: 10px;
+  display: inline-flex; align-items: center; gap: 10px;
   background: var(--t1); color: #080808;
   border: none; font-family: var(--font);
   font-size: 14px; font-weight: 700;
@@ -308,6 +309,7 @@
   transition: all 200ms var(--ease);
   letter-spacing: -.02em;
   position: relative; overflow: hidden;
+  text-decoration: none;
 }
 
 .scync-landing .google-btn::before {

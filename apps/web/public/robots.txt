@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /share/
 
 Sitemap: https://scync.space/sitemap.xml

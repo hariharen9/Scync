@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AuthGuard, VaultGuard, useUIStore, CommandBar, ErrorBoundary, ShareConsumePage, ConfirmModal } from '@scync/ui';
-import { AuthPage } from './pages/AuthPage';
+import { SignInPage } from './pages/SignInPage';
 import { SetupPage } from './pages/SetupPage';
 import { UnlockPage } from './pages/UnlockPage';
 import { VaultPage } from './pages/VaultPage';
@@ -125,7 +125,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ReactLenis root>
-        <AuthGuard fallback={<AuthPage />}>
+        <AuthGuard fallback={<SignInPage />}>
           <VaultGuard
             setupFallback={<SetupPage />}
             unlockFallback={<UnlockPage />}

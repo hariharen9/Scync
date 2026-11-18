@@ -1,9 +1,43 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { execSync } from 'child_process'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { VitePWA } from 'vite-plugin-pwa'
+
+const rootDir = fileURLToPath(new URL('.', import.meta.url))
+
+/**
+ * In dev/preview, map the production app routes to the app HTML entry.
+ * Netlify handles the same rewrites in public/_redirects.
+ */
+function appEntryRewrites(): Plugin {
+  const rewrite = (req: { url?: string }) => {
+    if (!req.url) return
+    const [pathname, search] = req.url.split('?')
+    if (pathname === '/app' || pathname.startsWith('/app/') || pathname.startsWith('/share/')) {
+      req.url = '/app.html' + (search ? `?${search}` : '')
+    }
+  }
+
+  return {
+    name: 'scync-app-entry',
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req)
+        next()
+      })
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        rewrite(req)
+        next()
+      })
+    },
+  }
+}
 
 const getVersion = () => {
   // 1. Check CI environment variables first (only official releases)
@@ -37,21 +71,31 @@ export default defineConfig({
   build: {
     modulePreload: {
       polyfill: false
-    }
+    },
+    rollupOptions: {
+      input: {
+        landing: path.resolve(rootDir, 'index.html'),
+        app: path.resolve(rootDir, 'app.html'),
+      },
+    },
   },
   plugins: [
     tailwindcss(),
     react(),
+    appEntryRewrites(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'logo.png'],
       manifest: {
+        id: '/',
         name: 'Scync',
         short_name: 'Scync',
         description: 'Zero-Knowledge Secrets Manager for Developers',
         theme_color: '#060606',
         background_color: '#060606',
         display: 'standalone',
+        start_url: '/app',
+        scope: '/',
         icons: [
           {
             src: 'logo.png',
@@ -64,7 +108,11 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
-      }
+      },
+      workbox: {
+        navigateFallback: '/app.html',
+        navigateFallbackAllowlist: [/^\/app(?:\/|$)/, /^\/share\//],
+      },
     })
   ],
   define: {
