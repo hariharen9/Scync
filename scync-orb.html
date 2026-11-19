@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neon Lattice Orb</title>
+<style>
+:root{--bg:#f3f2f9;--fg:#5a5283;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c0a18;--fg:#9c92d6;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c0a18;--fg:#9c92d6;color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+#orb{position:absolute;inset:0}
+canvas{display:block}
+</style>
+</head>
+<body>
+<div id="orb"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  var el = document.getElementById('orb');
+  var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  el.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var cam = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
+  cam.position.z = 5.4;
+
+  // seeded random so the shape is always the same
+  var seed = 11;
+  function rnd(){ seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+
+  // base shape: icosphere, vertices jittered for an organic faceted look
+  var base = new THREE.IcosahedronGeometry(1, 1);
+  var pa = base.attributes.position;
+  var verts = [], map = {}, tris = [];
+  for (var i = 0; i < pa.count; i++) {
+    var v = new THREE.Vector3().fromBufferAttribute(pa, i);
+    var k = [v.x, v.y, v.z].map(function(n){ return Math.round(n * 1000); }).join();
+    if (!(k in map)) { map[k] = verts.length; verts.push(v); }
+    tris.push(map[k]);
+  }
+  verts.forEach(function(v){
+    v.normalize().add(new THREE.Vector3(rnd()-.5, rnd()-.5, rnd()-.5).multiplyScalar(0.24)).normalize().multiplyScalar(1 + (rnd()-.5)*0.12);
+  });
+
+  var group = new THREE.Group();
+  scene.add(group);
+
+  // dark faceted core
+  var coreR = verts.map(function(){ return 0.85 + rnd()*0.12; });
+  var pos = [];
+  tris.forEach(function(idx){
+    var p = verts[idx].clone().multiplyScalar(coreR[idx]);
+    pos.push(p.x, p.y, p.z);
+  });
+  var cg = new THREE.BufferGeometry();
+  cg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+  cg.computeVertexNormals();
+  group.add(new THREE.Mesh(cg, new THREE.MeshStandardMaterial({
+    color: 0x2b2e4a, metalness: 0.55, roughness: 0.38, flatShading: true
+  })));
+
+  // metallic edges
+  var edges = {}, tubeMat = new THREE.MeshStandardMaterial({color: 0xcfcbe6, metalness: 0.8, roughness: 0.25});
+  var up = new THREE.Vector3(0, 1, 0);
+  for (var t = 0; t < tris.length; t += 3) {
+    for (var e = 0; e < 3; e++) {
+      var a = tris[t+e], b = tris[t+(e+1)%3];
+      var key = Math.min(a,b) + '-' + Math.max(a,b);
+      if (edges[key]) continue;
+      edges[key] = 1;
+      var A = verts[a], B = verts[b];
+      var dir = new THREE.Vector3().subVectors(B, A), len = dir.length();
+      var tube = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 1, 6), tubeMat);
+      tube.position.copy(A).add(B).multiplyScalar(0.5);
+      tube.quaternion.setFromUnitVectors(up, dir.normalize());
+      tube.scale.y = len;
+      group.add(tube);
+    }
+  }
+
+  // glowing nodes
+  var c = document.createElement('canvas'); c.width = c.height = 256;
+  var cx = c.getContext('2d'), gr = cx.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0, 'rgba(190,120,255,0.9)');
+  gr.addColorStop(0.3, 'rgba(140,60,255,0.4)');
+  gr.addColorStop(0.65, 'rgba(130,50,255,0.1)');
+  gr.addColorStop(1, 'rgba(120,40,255,0)');
+  cx.fillStyle = gr; cx.fillRect(0,0,256,256);
+  var glowTex = new THREE.CanvasTexture(c);
+  var nodeGeo = new THREE.SphereGeometry(0.048, 20, 20);
+  var nodeMat = new THREE.MeshBasicMaterial({color: 0xf6ebff});
+  glowTex.anisotropy = 4;
+  var glowMat = new THREE.SpriteMaterial({map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.9});
+  verts.forEach(function(v){
+    var n = new THREE.Mesh(nodeGeo, nodeMat); n.position.copy(v); group.add(n);
+    var s = new THREE.Sprite(glowMat); s.position.copy(v); s.scale.set(0.28, 0.28, 0.28); group.add(s);
+  });
+
+  // lights
+  scene.add(new THREE.AmbientLight(0x8a7cc8, 0.7));
+  var dl = new THREE.DirectionalLight(0xffffff, 1.3); dl.position.set(3, 4, 5); scene.add(dl);
+  var pl = new THREE.PointLight(0xa855f7, 2.2, 12); pl.position.set(-3, -2, 3); scene.add(pl);
+
+  // cursor interaction
+  var m = {x: 0, y: 0}, spin = 0;
+  function move(e){
+    var r = el.getBoundingClientRect();
+    m.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    m.y = ((e.clientY - r.top) / r.height) * 2 - 1;
+  }
+  window.addEventListener('pointermove', move);
+  document.addEventListener('pointerleave', function(){ m.x = 0; m.y = 0; });
+
+  function resize(){
+    var w = el.clientWidth || 1, h = el.clientHeight || 1;
+    renderer.setSize(w, h);
+    cam.aspect = w / h;
+    cam.position.z = 5.4 * (w / h < 1 ? 1 / (w / h) * 0.9 : 1);
+    cam.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(el);
+  resize();
+
+  function loop(){
+    requestAnimationFrame(loop);
+    spin += 0.004;
+    group.rotation.y += ((spin + m.x * Math.PI * 0.7) - group.rotation.y) * 0.06;
+    group.rotation.x += ((m.y * 0.8) - group.rotation.x) * 0.06;
+    renderer.render(scene, cam);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>

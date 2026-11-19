@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './LandingPage.css';
+import { OrbLogomark } from '@scync/ui';
 
 const marqueeItems = [
   'AES-256-GCM', 'Zero-Knowledge Architecture', 'PBKDF2-SHA256 \u00b7 310,000 iterations',
@@ -245,9 +246,7 @@ export const LandingPage: React.FC = () => {
 
       <nav id="mainNav" ref={navRef}>
         <a href="#" className="nav-logo">
-          <div className="nav-logomark">
-            <img src="/logo.png" alt="" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
-          </div>
+          <OrbLogomark size={28} imgScale={0.64} className="nav-logomark" />
           Scync
         </a>
         <ul className="nav-links">

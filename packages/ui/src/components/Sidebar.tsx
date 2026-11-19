@@ -9,6 +9,7 @@ import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
 import { ActiveSharesModal } from './ActiveSharesModal';
+import { OrbLogomark } from './OrbLogomark';
 
 const SystemClock: React.FC = () => {
   const [time, setTime] = React.useState(new Date());
@@ -158,9 +159,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
       <div style={sidebarStyle} className={className}>
         {/* Logo */}
         <div style={{ padding: '16px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid var(--color-border)' }}>
-          <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src="/logo.png" alt="Scync" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
+          <OrbLogomark size={36} imgScale={0.88} />
           <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}>Scync</span>
         </div>
 

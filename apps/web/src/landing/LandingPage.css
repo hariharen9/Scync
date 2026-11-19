@@ -98,6 +98,10 @@
   background: linear-gradient(135deg, var(--glow), transparent 60%);
 }
 
+/* Live 3D orb on hover: hide the gradient tint while it's spinning
+   (canvas cross-fade is handled by OrbLogomark's injected styles) */
+.scync-landing .nav-logomark.orb-live::after { opacity: 0; }
+
 .scync-landing .nav-links {
   display: flex; align-items: center; gap: 32px;
   list-style: none;
