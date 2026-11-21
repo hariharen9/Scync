@@ -110,10 +110,14 @@ export async function changeVaultPassword(
       for (const v of secret.versions) {
         const vPlain = await decrypt(oldKey, v.encValue);
         const vEnc = await encrypt(newKey, vPlain);
-        reEncryptedVersions.push({
-          ...v,
-          encValue: vEnc
-        });
+        const entry: SecretVersion = {
+          version: v.version,
+          encValue: vEnc,
+          createdAt: v.createdAt instanceof Date ? v.createdAt : new Date(),
+          changeType: v.changeType || 'updated',
+        };
+        if (v.note) entry.note = v.note;
+        reEncryptedVersions.push(entry);
       }
       updateData.versions = reEncryptedVersions;
     }
@@ -372,12 +376,12 @@ export async function createSecret(
     status: formData.status,
     encValue,
     encNotes,
-    lastRotated: formData.lastRotated,
-    expiresOn: formData.expiresOn,
+    lastRotated: formData.lastRotated ?? null,
+    expiresOn: formData.expiresOn ?? null,
     createdAt: new Date(), 
     updatedAt: new Date(),
     projectId: formData.projectId || null,
-    remainingCodes: formData.remainingCodes || null,
+    remainingCodes: formData.remainingCodes ?? null,
     version: 1,
     versions: [initialVersion]
   };
@@ -422,7 +426,9 @@ export async function updateSecret(
     }
   ];
 
-  const isRotation = explicitChangeType === 'rotated' || (formData.lastRotated && formData.lastRotated.getTime() !== previousSecret?.lastRotated?.getTime());
+  const prevLastRotated = previousSecret?.lastRotated instanceof Date ? previousSecret.lastRotated.getTime() : null;
+  const newLastRotated = formData.lastRotated instanceof Date ? formData.lastRotated.getTime() : null;
+  const isRotation = explicitChangeType === 'rotated' || (newLastRotated !== null && newLastRotated !== prevLastRotated);
   const isRestored = explicitChangeType === 'restored';
   
   let changeType: SecretChangeType = 'updated';
@@ -441,6 +447,18 @@ export async function updateSecret(
     versions = versions.slice(versions.length - 10);
   }
 
+  // Ensure every version object written to Firestore has NO undefined fields
+  const sanitizedVersions = versions.map(v => {
+    const entry: Record<string, any> = {
+      version: v.version,
+      encValue: v.encValue,
+      createdAt: v.createdAt instanceof Date ? v.createdAt : new Date(),
+      changeType: v.changeType || 'updated',
+    };
+    if (v.note) entry.note = v.note;
+    return entry;
+  });
+
   await updateDoc(ref, {
     name: formData.name,
     service: formData.service,
@@ -449,12 +467,12 @@ export async function updateSecret(
     status: formData.status,
     encValue,
     encNotes,
-    lastRotated: formData.lastRotated,
-    expiresOn: formData.expiresOn,
+    lastRotated: formData.lastRotated ?? null,
+    expiresOn: formData.expiresOn ?? null,
     projectId: formData.projectId || null,
-    remainingCodes: formData.remainingCodes || null,
+    remainingCodes: formData.remainingCodes ?? null,
     version: nextVersion,
-    versions,
+    versions: sanitizedVersions,
     updatedAt: serverTimestamp()
   });
 
@@ -534,13 +552,18 @@ export function subscribeToSecrets(
     const secrets = snapshot.docs.map(doc => {
       const data = doc.data();
       const rawVersions = Array.isArray(data.versions) ? data.versions : [];
-      const versions: SecretVersion[] = rawVersions.map((v: any) => ({
-        version: v.version || 1,
-        encValue: v.encValue,
-        createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : (v.createdAt ? new Date(v.createdAt) : new Date()),
-        changeType: v.changeType || 'updated',
-        note: v.note || undefined,
-      }));
+      const versions: SecretVersion[] = rawVersions.map((v: any) => {
+        const entry: SecretVersion = {
+          version: v.version || 1,
+          encValue: v.encValue,
+          createdAt: v.createdAt?.toDate ? v.createdAt.toDate() : (v.createdAt ? new Date(v.createdAt) : new Date()),
+          changeType: v.changeType || 'updated',
+        };
+        if (v.note) {
+          entry.note = v.note;
+        }
+        return entry;
+      });
 
       return {
         ...data,

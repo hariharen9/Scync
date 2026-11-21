@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SecretForm } from './SecretForm';
 import { useAuthStore } from '../stores/authStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useUIStore } from '../stores/uiStore';
 import type { SecretFormData } from '@scync/core';
-import { FiPlus, FiEdit2, FiX } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiX, FiAlertTriangle } from 'react-icons/fi';
 
 export const AddEditModal: React.FC = () => {
   const { isAddModalOpen, isEditModalOpen, closeAddModal, closeEditModal, selectedSecretId } = useUIStore();
@@ -13,22 +13,67 @@ export const AddEditModal: React.FC = () => {
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<any>(undefined);
+  const [isLoadingSecret, setIsLoadingSecret] = useState(false);
+  const [error, setError] = useState('');
+  const loadedSecretIdRef = useRef<string | null>(null);
   const isOpen = isAddModalOpen || isEditModalOpen;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isEditModalOpen && selectedSecretId) {
+      if (loadedSecretIdRef.current === selectedSecretId && initialData) {
+        return;
+      }
       const secret = storedSecrets.find(s => s.id === selectedSecretId);
-      if (secret) { decryptValue(selectedSecretId).then(dec => { setInitialData({ ...secret, value: dec?.value || '', notes: dec?.notes || '' }); }); }
-    } else { setInitialData(undefined); }
+      if (secret) {
+        setIsLoadingSecret(true);
+        setError('');
+        decryptValue(selectedSecretId)
+          .then(dec => {
+            loadedSecretIdRef.current = selectedSecretId;
+            setInitialData({ ...secret, value: dec?.value || '', notes: dec?.notes || '' });
+          })
+          .catch(err => {
+            console.error('Failed to decrypt secret for editing:', err);
+            setError('Failed to decrypt secret value');
+          })
+          .finally(() => {
+            setIsLoadingSecret(false);
+          });
+      }
+    } else {
+      loadedSecretIdRef.current = null;
+      setInitialData(undefined);
+      setIsLoadingSecret(false);
+      setError('');
+    }
   }, [isEditModalOpen, selectedSecretId, storedSecrets, decryptValue]);
 
-  const handleClose = () => { closeAddModal(); closeEditModal(); };
-  const handleSubmit = async (data: SecretFormData) => {
-    if (!user) return; setIsSubmitting(true);
-    try { if (isEditModalOpen && selectedSecretId) { await updateSecret(user.uid, selectedSecretId, data); } else { await createSecret(user.uid, data); } handleClose(); } catch (e) { console.error(e); } finally { setIsSubmitting(false); }
+  const handleClose = () => {
+    setError('');
+    closeAddModal();
+    closeEditModal();
   };
 
-  if (isEditModalOpen && !initialData) return null;
+  const handleSubmit = async (data: SecretFormData) => {
+    if (!user) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      if (isEditModalOpen && selectedSecretId) {
+        await updateSecret(user.uid, selectedSecretId, data);
+      } else {
+        await createSecret(user.uid, data);
+      }
+      handleClose();
+    } catch (e: any) {
+      console.error('Failed to save secret:', e);
+      setError(e?.message || 'Failed to save secret. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isEditModalOpen && (!initialData || isLoadingSecret)) return null;
 
   return (
     <AnimatePresence>
@@ -49,8 +94,22 @@ export const AddEditModal: React.FC = () => {
               </div>
               <button onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: 'pointer' }}><FiX size={14} /></button>
             </div>
+
+            {error && (
+              <div style={{ padding: '10px 18px', background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid var(--color-red)', color: 'var(--color-red)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-sans)' }}>
+                <FiAlertTriangle size={14} style={{ flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div data-lenis-prevent="true" style={{ padding: 18, maxHeight: '75vh', overflowY: 'auto' }}>
-              <SecretForm initialData={initialData} onSubmit={handleSubmit} onCancel={handleClose} isSubmitting={isSubmitting} />
+              <SecretForm
+                key={isEditModalOpen ? (selectedSecretId || 'edit') : 'new'}
+                initialData={initialData}
+                onSubmit={handleSubmit}
+                onCancel={handleClose}
+                isSubmitting={isSubmitting}
+              />
             </div>
           </motion.div>
         </div>
