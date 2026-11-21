@@ -48,6 +48,17 @@ export const AddEditModal: React.FC = () => {
     }
   }, [isEditModalOpen, selectedSecretId, storedSecrets, decryptValue]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isSubmitting]);
+
   const handleClose = () => {
     setError('');
     closeAddModal();
