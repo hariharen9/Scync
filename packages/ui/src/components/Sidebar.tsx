@@ -461,7 +461,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           </div>
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <a href="https://hariharen.site" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
+            <a href="https://hariharen.space" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>
               <FiGlobe size={11} /> <span style={{ fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-sans)' }}>Portfolio</span>
             </a>
             <a href="https://github.com/hariharen9/Scync" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-text-2)', textDecoration: 'none', transition: 'color 140ms' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-2)'}>

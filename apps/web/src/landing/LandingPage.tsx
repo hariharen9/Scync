@@ -1251,7 +1251,7 @@ export const LandingPage: React.FC = () => {
         <div className="footer-copy">
           <span className="copy-text">© 2026 Scync. Free forever.</span>
           <span className="footer-sep">·</span>
-          <span className="creator-text">Created by <a href="https://hariharen.site" target="_blank">Hariharen</a></span>
+          <span className="creator-text">Created by <a href="https://hariharen.space" target="_blank">Hariharen</a></span>
         </div>
       </footer>
 
