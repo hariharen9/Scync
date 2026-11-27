@@ -29,6 +29,11 @@ const getStoredSettings = (): SettingsConfig => {
   return DEFAULT_SETTINGS;
 };
 
+export interface SSHImportPrefill {
+  name?: string;
+  privateKey: string;
+}
+
 export interface UIState {
   // Navigation
   activeView: 'dashboard' | 'project' | 'all' | 'ssh' | 'totp' | 'certs' | 'passwords';
@@ -44,6 +49,7 @@ export interface UIState {
   editingProjectId: string | null;
   isAddServiceModalOpen: boolean;
   isAddSSHModalOpen: boolean;
+  sshImportPrefill: SSHImportPrefill | null;
   isAddTOTPModalOpen: boolean;
   isAddCertModalOpen: boolean;
   isAddPasswordModalOpen: boolean;
@@ -74,7 +80,7 @@ export interface UIState {
   closeEditProjectModal: () => void;
   openAddServiceModal: () => void;
   closeAddServiceModal: () => void;
-  openAddSSHModal: () => void;
+  openAddSSHModal: (prefill?: SSHImportPrefill) => void;
   closeAddSSHModal: () => void;
   openAddTOTPModal: () => void;
   closeAddTOTPModal: () => void;
@@ -131,6 +137,7 @@ export const useUIStore = create<UIState>((set) => ({
   editingProjectId: null,
   isAddServiceModalOpen: false,
   isAddSSHModalOpen: false,
+  sshImportPrefill: null,
   isAddTOTPModalOpen: false,
   isAddCertModalOpen: false,
   isAddPasswordModalOpen: false,
@@ -161,8 +168,11 @@ export const useUIStore = create<UIState>((set) => ({
   closeEditProjectModal: () => set({ isEditProjectModalOpen: false, editingProjectId: null }),
   openAddServiceModal: () => set({ isAddServiceModalOpen: true }),
   closeAddServiceModal: () => set({ isAddServiceModalOpen: false }),
-  openAddSSHModal: () => set({ isAddSSHModalOpen: true }),
-  closeAddSSHModal: () => set({ isAddSSHModalOpen: false }),
+  openAddSSHModal: (prefill) => set({
+    isAddSSHModalOpen: true,
+    sshImportPrefill: prefill && typeof prefill === 'object' && 'privateKey' in prefill ? prefill : null,
+  }),
+  closeAddSSHModal: () => set({ isAddSSHModalOpen: false, sshImportPrefill: null }),
   openAddTOTPModal: () => set({ isAddTOTPModalOpen: true }),
   closeAddTOTPModal: () => set({ isAddTOTPModalOpen: false }),
   openAddCertModal: () => set({ isAddCertModalOpen: true }),
@@ -202,6 +212,7 @@ export const useUIStore = create<UIState>((set) => ({
     editingProjectId: null,
     isAddServiceModalOpen: false,
     isAddSSHModalOpen: false,
+    sshImportPrefill: null,
     isAddTOTPModalOpen: false,
     isAddCertModalOpen: false,
     isAddPasswordModalOpen: false,

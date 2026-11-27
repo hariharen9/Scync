@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { SecretFormData, StoredSecret } from '@scync/core';
-import { SERVICES, SECRET_TYPES, ENVIRONMENTS } from '@scync/core';
+import { SERVICES, SECRET_TYPES, ENVIRONMENTS, looksLikeSSHPrivateKey } from '@scync/core';
 import { useProjectStore } from '../stores/projectStore';
 import { useServiceStore } from '../stores/serviceStore';
 import { useUIStore } from '../stores/uiStore';
@@ -9,7 +9,7 @@ import { DatePicker } from './DatePicker';
 import { ServiceIcon } from './ServiceIcon';
 import { ProjectIcon, PROJECT_COLOR_MAP } from './ProjectIcons';
 import { CustomServiceIcon } from './CustomServiceIcons';
-import { FiKey, FiFileText, FiEye, FiEyeOff, FiList, FiPlus } from 'react-icons/fi';
+import { FiKey, FiFileText, FiEye, FiEyeOff, FiList, FiPlus, FiTerminal } from 'react-icons/fi';
 import type { RecoveryCodeSet } from '@scync/core';
 
 interface SecretFormProps {
@@ -54,7 +54,7 @@ const PLACEHOLDERS: Record<string, { name: string; value: string }> = {
 export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, onCancel, isSubmitting }) => {
   const { projects } = useProjectStore();
   const { customServices } = useServiceStore();
-  const { openAddProjectModal, openAddServiceModal } = useUIStore();
+  const { openAddProjectModal, openAddServiceModal, openAddSSHModal, closeAddModal, closeEditModal } = useUIStore();
 
   const [formData, setFormData] = useState<SecretFormData>({
     name: initialData?.name || '', service: initialData?.service || 'Other',
@@ -221,6 +221,46 @@ export const SecretForm: React.FC<SecretFormProps> = ({ initialData, onSubmit, o
         {formData.type === 'Recovery Codes' && formData.value && (
           <div style={{ fontSize: 10, color: 'var(--color-green)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
             <FiList size={10} /> {formData.value.split('\n').filter(l => l.trim()).length} codes detected
+          </div>
+        )}
+        {looksLikeSSHPrivateKey(formData.value) && (
+          <div style={{
+            marginTop: 8,
+            padding: '9px 11px',
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid var(--color-green-border, rgba(16, 185, 129, 0.25))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--color-text-2)' }}>
+              <FiTerminal size={13} color="var(--color-green)" style={{ flexShrink: 0 }} />
+              <span>Looks like an SSH / <span style={{ fontFamily: 'var(--font-mono)' }}>.pem</span> private key.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const prefill = { name: formData.name.trim() || undefined, privateKey: formData.value };
+                closeAddModal();
+                closeEditModal();
+                openAddSSHModal(prefill);
+              }}
+              style={{
+                background: 'none',
+                border: '1px solid var(--color-green)',
+                color: 'var(--color-green)',
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                padding: '4px 9px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Store in SSH Manager
+            </button>
           </div>
         )}
       </div>
