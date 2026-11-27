@@ -4,14 +4,15 @@ import { OrbLogomark } from '@scync/ui';
 
 const marqueeItems = [
   'AES-256-GCM', 'Zero-Knowledge Architecture', 'PBKDF2-SHA256 \u00b7 310,000 iterations',
+  '59+ Built-In Services', '15 Typed Secret Forms', 'Security Cockpit',
   'Emergency Recovery Kit', 'Web Crypto API', 'In-Memory Decryption', 'MIT Licensed', 'Open Source',
-  'No Password Storage', 'Fresh IV Per Encrypt', 'Real-Time Sync',
+  'No Password Storage', 'Fresh IV Per Encrypt', 'Real-Time Sync', 'Recovery Phrases',
   'Password Manager & CSV Import', 'Secret Versioning & Rollback', 'Vault Activity Ledger',
   '2FA Authenticator', 'SSH Key Manager', 'SSL Certificate Manager', 'Non-Extractable Keys',
   'Firebase-Backed', 'Free Forever',
 ];
 
-const words = ['API keys', 'secrets', 'passwords', '2FA codes', 'SSH keys', 'certificates', 'tokens', 'credentials', 'OAuth tokens'];
+const words = ['API keys', 'secrets', 'passwords', '2FA codes', 'SSH keys', 'certificates', 'recovery phrases', 'tokens', 'credentials', 'OAuth tokens'];
 const badPlaces = ['Notion', 'Notes', 'Slack', 'Email', 'dotfiles', 'Docs', 'Chat', 'Sheets'];
 
 const heroSecrets = [
@@ -175,39 +176,48 @@ export const LandingPage: React.FC = () => {
     const pass = "••••••••";
     let charIdx = 0;
     let phase = 0; // 0: typing pass, 1: unlocking, 2: typing search, 3: found, 4: copied, 5: reset
-    
+    let timerId = 0;
+    let cancelled = false;
+
+    const schedule = (delay: number) => {
+      if (!cancelled) {
+        timerId = window.setTimeout(tick, delay);
+      }
+    };
+
     const tick = () => {
+      if (cancelled) return;
       if (phase === 0) {
         if (charIdx < pass.length) {
           setMockPass(pass.substring(0, charIdx + 1));
           charIdx++;
-          setTimeout(tick, 100);
+          schedule(100);
         } else {
           phase = 1;
-          setTimeout(tick, 400);
+          schedule(400);
         }
       } else if (phase === 1) {
         setMockUnlocked(true);
         charIdx = 0;
         phase = 2;
-        setTimeout(tick, 800);
+        schedule(800);
       } else if (phase === 2) {
         if (charIdx < query.length) {
           setMockSearch(query.substring(0, charIdx + 1));
           charIdx++;
-          setTimeout(tick, 150);
+          schedule(150);
         } else {
           phase = 3;
-          setTimeout(tick, 600);
+          schedule(600);
         }
       } else if (phase === 3) {
         setMockActive(true);
         phase = 4;
-        setTimeout(tick, 800);
+        schedule(800);
       } else if (phase === 4) {
         setMockCopied(true);
         phase = 5;
-        setTimeout(tick, 2000);
+        schedule(2000);
       } else if (phase === 5) {
         setMockPass('');
         setMockUnlocked(false);
@@ -216,12 +226,15 @@ export const LandingPage: React.FC = () => {
         setMockCopied(false);
         charIdx = 0;
         phase = 0;
-        setTimeout(tick, 1000);
+        schedule(1000);
       }
     };
 
-    const timeout = setTimeout(tick, 2000);
-    return () => clearTimeout(timeout);
+    schedule(2000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
   }, []);
 
   const handleCopyFlash = (e: React.MouseEvent<HTMLDivElement>) => { const card = e.currentTarget; card.classList.add('copying'); setTimeout(() => card.classList.remove('copying'), 600); };
@@ -254,7 +267,7 @@ export const LandingPage: React.FC = () => {
           <li><a href="#security">Security</a></li>
           <li><a href="#features">Features</a></li>
           <li><a href="#cli">CLI &amp; TUI</a></li>
-          <li><a href="https://github.com/hariharen9/Scync" target="_blank">GitHub ↗</a></li>
+          <li><a href="https://github.com/hariharen9/Scync" target="_blank" rel="noopener noreferrer">GitHub ↗</a></li>
         </ul>
         <div className="nav-cta">
           <a className="nav-btn-primary" href="/app">
@@ -688,7 +701,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="spec-row">
                 <div className="spec-key">Implementation</div>
-                <div className="spec-val"><span>Web Crypto API only</span> — no third-party crypto libraries</div>
+                <div className="spec-val"><span>Web Crypto API</span> for vault encryption &amp; key derivation — no third-party AES/PBKDF2 code</div>
               </div>
               <div className="spec-row">
                 <div className="spec-key">Key storage</div>
@@ -704,19 +717,19 @@ export const LandingPage: React.FC = () => {
                   <div className="fb-access">Firebase sees</div>
                 </div>
                 <div className="fb-row">
-                  <div className="fb-field">Secret name, service, type</div>
+                  <div className="fb-field">Names, services, types, host labels</div>
                   <div className="fb-access plain">Plaintext</div>
                 </div>
                 <div className="fb-row">
-                  <div className="fb-field">Timestamps</div>
+                  <div className="fb-field">Timestamps &amp; expiry dates</div>
                   <div className="fb-access plain">Plaintext</div>
                 </div>
                 <div className="fb-row">
-                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Secret value</div>
+                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Secret values, passwords, notes</div>
                   <div className="fb-access enc">Encrypted blob</div>
                 </div>
                 <div className="fb-row">
-                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>Notes</div>
+                  <div className="fb-field" style={{ color: "var(--t1)", fontWeight: "600" }}>SSH private keys, 2FA seeds, cert PEMs</div>
                   <div className="fb-access enc">Encrypted blob</div>
                 </div>
               </div>
@@ -728,7 +741,7 @@ export const LandingPage: React.FC = () => {
             <div className="section-label reveal">Open source</div>
             <h3 className="security-audit-title reveal reveal-delay-1">Read every line.<br />Audit everything.</h3>
             <p className="security-audit-sub reveal reveal-delay-2">
-              The crypto code uses only the Web Crypto API. Any developer should be able to read and verify it in under 15 minutes. No black boxes. No "trust us."
+              Core vault encryption and key derivation use only the browser&apos;s native Web Crypto API. Any developer can read and verify it in under 15 minutes. No black boxes. No &quot;trust us.&quot;
             </p>
 
             <div className="oss-stats reveal reveal-delay-2">
@@ -742,7 +755,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <div className="oss-stat">
                 <div className="oss-stat-val">Web</div>
-                <div className="oss-stat-label">Crypto API only</div>
+                <div className="oss-stat-label">Native Crypto Core</div>
               </div>
               <div className="oss-stat">
                 <div className="oss-stat-val">∞</div>
@@ -787,7 +800,7 @@ export const LandingPage: React.FC = () => {
         <div className="section-inner">
           <div className="section-label reveal">Features</div>
           <h2 className="section-h2 reveal reveal-delay-1">Built for how developers actually think about secrets.</h2>
-          <p className="section-sub reveal reveal-delay-2">API keys, tokens, SSH keys, certificates, passwords, and the .env files around them. Organized the way you work.</p>
+          <p className="section-sub reveal reveal-delay-2">59+ built-in services, 15 typed secret forms, SSH keys, certificates, passwords, and the .env files around them. Organized the way you work.</p>
 
           <div className="features-grid">
 
@@ -861,10 +874,10 @@ export const LandingPage: React.FC = () => {
 
             <div className="feat-card reveal reveal-delay-2">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
               </div>
-              <div className="feat-title">Expiry tracking</div>
-              <div className="feat-desc">See what's expiring in 30 days. See what hasn't rotated in a year. A quick dashboard scan tells you the health of your entire credential ecosystem.</div>
+              <div className="feat-title">Security Cockpit</div>
+              <div className="feat-desc">Live vault health score, 30-day expiry and rotation alerts, plus 1-click quick access to live 2FA codes and SSH keys right from your dashboard.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-2">
@@ -872,7 +885,7 @@ export const LandingPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>
               </div>
               <div className="feat-title">Biometric Passkeys</div>
-              <div className="feat-desc">The first vault to use <strong>Hardware-Backed PRF</strong> in the browser. Unlock with FaceID or Fingerprint using your device's secure hardware enclave. Native speed, zero-knowledge security.</div>
+              <div className="feat-desc">The first vault to use <strong>Hardware-Backed PRF</strong> in the browser. Unlock with FaceID or Fingerprint using your device&apos;s secure hardware enclave. Native speed, zero-knowledge security.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
@@ -885,10 +898,10 @@ export const LandingPage: React.FC = () => {
 
             <div className="feat-card reveal reveal-delay-3">
               <div className="feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
               </div>
-              <div className="feat-title">Zero-Knowledge Sharing</div>
-              <div className="feat-desc">Share secrets via encrypted links. Decryption key in URL fragment <strong>never reaches the server</strong>. Set expiry times and view limits.</div>
+              <div className="feat-title">59+ Services &amp; 15 Secret Forms</div>
+              <div className="feat-desc">Purpose-built forms for OpenAI, Anthropic, Supabase, Neon, Clerk, Stripe, 12/24-word <strong>Recovery Phrases</strong>, and a structured <strong>Database URL</strong> builder.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
@@ -896,7 +909,7 @@ export const LandingPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" /></svg>
               </div>
               <div className="feat-title">Emergency Recovery Kit</div>
-              <div className="feat-desc">Printable offline HTML kit containing an encrypted recovery phrase and QR code. Restore your vault if you ever forget your master password.</div>
+              <div className="feat-desc">Printable offline HTML kit containing an encrypted recovery key and QR code. Restore your vault if you ever forget your master password.</div>
             </div>
 
             <div className="feat-card reveal reveal-delay-3">
@@ -1053,7 +1066,7 @@ export const LandingPage: React.FC = () => {
                 <div className="ssh-mockup">
                   <div style={{ color: '#8b949e', marginBottom: '4px' }}># SCYNC SSH CONFIG</div>
                   <div><span style={{ color: '#ff7b72' }}>Host</span> prod-server</div>
-                  <div>{"  "}<span style={{ color: '#79c0ff' }}>IdentityFile</span> ~/.ssh/scync-prod</div>
+                  <div>{"  "}<span style={{ color: '#79c0ff' }}>IdentityFile</span> ~/.ssh/scync-prod.pem</div>
                   <div style={{ marginTop: '8px', color: '#8b949e' }}># Generating new key...</div>
                   <div style={{ color: '#d2a8ff' }}>$ ssh-keygen -t ed25519 -C "scync"</div>
                   <div style={{ color: 'var(--green)' }}>[✓] Keypair generated locally</div>
@@ -1115,8 +1128,8 @@ export const LandingPage: React.FC = () => {
                       <div className="cert-expiry-fill"></div>
                     </div>
                     <div style={{ fontSize: '9px', color: 'var(--t3)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>MAY 2024</span>
-                      <span>MAY 2025</span>
+                      <span>NOV 2026</span>
+                      <span>NOV 2027</span>
                     </div>
                   </div>
                 </div>
@@ -1244,14 +1257,14 @@ export const LandingPage: React.FC = () => {
           <a href="#security">Security</a>
           <a href="#features">Features</a>
           <a href="#cli">CLI &amp; TUI</a>
-          <a href="https://github.com/hariharen9/Scync/blob/main/LICENSE" target="_blank">MIT License</a>
-          <a href="https://github.com/hariharen9/Scync" target="_blank">GitHub</a>
-          <a href="https://github.com/hariharen9/Scync-cli" target="_blank">CLI GitHub</a>
+          <a href="https://github.com/hariharen9/Scync/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT License</a>
+          <a href="https://github.com/hariharen9/Scync" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://github.com/hariharen9/Scync-cli" target="_blank" rel="noopener noreferrer">CLI GitHub</a>
         </div>
         <div className="footer-copy">
           <span className="copy-text">© 2026 Scync. Free forever.</span>
           <span className="footer-sep">·</span>
-          <span className="creator-text">Created by <a href="https://hariharen.space" target="_blank">Hariharen</a></span>
+          <span className="creator-text">Created by <a href="https://hariharen.space" target="_blank" rel="noopener noreferrer">Hariharen</a></span>
         </div>
       </footer>
 
