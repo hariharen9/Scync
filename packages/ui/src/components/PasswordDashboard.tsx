@@ -19,25 +19,49 @@ export const PasswordDashboard: React.FC = () => {
   const { storedPasswords } = useVaultStore();
   const { openAddPasswordModal, openPasswordImportModal } = useUIStore();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedMobilePwd, setSelectedMobilePwd] = useState<StoredPassword | null>(null);
 
-  // Search works across all entries
+  const stats = useMemo(() => {
+    const categories = new Set(storedPasswords.map(p => (p.category || 'General').trim() || 'General'));
+    const withUrls = storedPasswords.filter(p => Boolean(p.url && p.url.trim())).length;
+    return {
+      total: storedPasswords.length,
+      categoriesCount: categories.size,
+      withUrls,
+      categoriesList: Array.from(categories).sort(),
+    };
+  }, [storedPasswords]);
+
+  // Search + category filter across all entries
   const visiblePasswords = useMemo(() => {
     const s = search.toLowerCase();
-    return storedPasswords.filter(p => 
-      p.name.toLowerCase().includes(s) || 
-      (p.username && p.username.toLowerCase().includes(s)) ||
-      (p.url && p.url.toLowerCase().includes(s))
-    );
-  }, [storedPasswords, search]);
+    return storedPasswords.filter(p => {
+      const cat = (p.category || 'General').trim() || 'General';
+      if (selectedCategory !== 'ALL' && cat !== selectedCategory) return false;
+      if (!s) return true;
+      return (
+        p.name.toLowerCase().includes(s) ||
+        (p.username && p.username.toLowerCase().includes(s)) ||
+        (p.url && p.url.toLowerCase().includes(s))
+      );
+    });
+  }, [storedPasswords, search, selectedCategory]);
 
-  // Reset page to 1 on new search query
+  // Reset page to 1 on new search or category filter
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedCategory]);
 
   const totalPages = Math.ceil(visiblePasswords.length / PAGE_SIZE) || 1;
+
+  // Clamp page if items are deleted on the last page
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Paginated items
   const paginatedPasswords = useMemo(() => {
@@ -111,27 +135,34 @@ export const PasswordDashboard: React.FC = () => {
       
       {/* Header */}
       <div className="pwd-header-container">
-        <div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FiLock size={20} style={{ color: 'var(--color-green)' }} />
-            Passwords
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
-            {visiblePasswords.length} password{visiblePasswords.length !== 1 ? 's' : ''}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', flexShrink: 0
+          }}>
+            <FiLock size={17} style={{ color: 'var(--color-green)' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', lineHeight: 1.1 }}>
+              Passwords
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--color-text-3)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+              Zero-knowledge website &amp; login credentials
+            </p>
+          </div>
         </div>
         <div className="pwd-actions-container">
           <button
             onClick={openPasswordImportModal}
             className="pwd-import-btn"
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-              background: 'none', border: '1px solid var(--color-border)',
+              display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px',
+              background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
               color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms'
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-green-border)'; e.currentTarget.style.color = 'var(--color-green)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
           >
             <FiDownload size={13} />
             Import CSV
@@ -140,22 +171,53 @@ export const PasswordDashboard: React.FC = () => {
             onClick={openAddPasswordModal}
             className="pwd-add-btn"
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+              display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px',
+              background: 'white', border: 'none',
+              color: '#080808', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'background 140ms',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#ebebeb'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
           >
-            <FiPlus size={13} />
+            <FiPlus size={14} />
             Add Password
           </button>
         </div>
       </div>
 
-      {/* Search */}
-      <div style={{ marginBottom: 24 }}>
+      {/* Telemetry Strip */}
+      {storedPasswords.length > 0 && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gap: 1,
+          background: 'var(--color-border)',
+          border: '1px solid var(--color-border)',
+          marginBottom: 18,
+        }}>
+          {[
+            { label: 'TOTAL LOGINS', value: stats.total, sub: 'AES-256-GCM', accent: 'var(--color-text)' },
+            { label: 'CATEGORIES', value: stats.categoriesCount, sub: 'Organized Groups', accent: '#60a5fa' },
+            { label: 'WITH URLS', value: stats.withUrls, sub: 'Web Origins Mapped', accent: 'var(--color-green)' },
+            { label: 'CLIPBOARD HYGIENE', value: '30s', sub: 'Auto-clear enabled', accent: 'var(--color-green)' },
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: 'var(--color-surface)', padding: '14px 16px' }}>
+              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--color-text-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+                {stat.label}
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: stat.accent, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                {stat.value}
+              </div>
+              <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
+                {stat.sub}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Search & Category Pills */}
+      <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ position: 'relative' }}>
           <FiSearch size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
           <input
@@ -186,6 +248,33 @@ export const PasswordDashboard: React.FC = () => {
             </button>
           )}
         </div>
+        {stats.categoriesList.length > 1 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {['ALL', ...stats.categoriesList].map((cat) => {
+              const active = selectedCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  style={{
+                    padding: '5px 10px',
+                    border: `1px solid ${active ? 'var(--color-green)' : 'var(--color-border)'}`,
+                    background: active ? 'rgba(16, 185, 129, 0.1)' : 'var(--color-surface)',
+                    color: active ? 'var(--color-green)' : 'var(--color-text-3)',
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {visiblePasswords.length === 0 ? (
@@ -410,13 +499,32 @@ const PasswordListItem = React.memo(({ password, onSelectMobile }: PasswordListI
   const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const menuBtnRef = React.useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (menuOpen) {
-      const handleScroll = () => setMenuOpen(false);
-      window.addEventListener('scroll', handleScroll, true);
-      return () => window.removeEventListener('scroll', handleScroll, true);
-    }
+    if (!menuOpen) return;
+    const handleScroll = () => setMenuOpen(false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        menuRef.current && !menuRef.current.contains(target) &&
+        menuBtnRef.current && !menuBtnRef.current.contains(target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [menuOpen]);
 
   useEffect(() => {
@@ -479,7 +587,7 @@ const PasswordListItem = React.memo(({ password, onSelectMobile }: PasswordListI
       <div
         className="pwd-desktop-row"
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => { setHovered(false); setMenuOpen(false); }}
+        onMouseLeave={() => setHovered(false)}
         style={{
           display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 80px', gap: 16, alignItems: 'center',
           padding: '12px 16px', background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
@@ -559,6 +667,7 @@ const PasswordListItem = React.memo(({ password, onSelectMobile }: PasswordListI
           )}
           <div style={{ position: 'relative' }}>
             <button
+              ref={menuBtnRef}
               onClick={e => { 
                 e.stopPropagation(); 
                 if (!menuOpen) {
@@ -686,7 +795,8 @@ const PasswordListItem = React.memo(({ password, onSelectMobile }: PasswordListI
 
       {/* Desktop Portal Context Menu */}
       {menuOpen && menuRect && createPortal(
-        <div 
+        <div
+          ref={menuRef}
           style={{
             position: 'fixed', right: window.innerWidth - menuRect.right, top: menuRect.bottom + 4,
             zIndex: 99999, width: 120, background: 'var(--color-surface-2)',

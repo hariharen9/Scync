@@ -444,10 +444,9 @@ export const SecretList: React.FC = () => {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 1,
-          background: 'var(--color-border)',
-          border: '1px solid var(--color-border)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 270px), 1fr))',
+          gap: 14,
+          alignItems: 'stretch',
         }}>
           {visibleSecrets.map(secret => (
             <SecretCard key={secret.id} secret={secret} project={getProject(secret.projectId)} />

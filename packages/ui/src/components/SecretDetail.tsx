@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useAuthStore } from '../stores/authStore';
 import { MaskedValue } from './MaskedValue';
 import { RecoveryCodeViewer } from './RecoveryCodeViewer';
+import { RecoveryPhraseViewer } from './RecoveryPhraseViewer';
 import { ServiceAccountInspector } from './ServiceAccountInspector';
 import { ShareModal } from './ShareModal';
 import { FiX, FiEdit2, FiCalendar, FiTag, FiFolder, FiHash, FiRefreshCw, FiArrowLeft, FiShare2, FiClock, FiRotateCcw } from 'react-icons/fi';
@@ -126,15 +127,38 @@ export const SecretDetail: React.FC = () => {
         {/* Value */}
         <div>
           <div style={{ fontSize: 9.5, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-text-3)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>
-            {secret.type === 'Recovery Codes' ? 'Recovery Codes' : 'Secret Value'}
+            {secret.type === 'Recovery Codes' ? 'Recovery Codes' : secret.type === 'Recovery Phrase' ? 'Recovery Phrase' : 'Secret Value'}
           </div>
-          <div style={{ border: secret.type !== 'Recovery Codes' ? '1px solid var(--color-border)' : 'none', background: secret.type !== 'Recovery Codes' ? 'var(--color-bg)' : 'transparent', padding: secret.type !== 'Recovery Codes' ? '10px 12px' : 0 }}>
+          <div style={{ border: secret.type !== 'Recovery Codes' && secret.type !== 'Recovery Phrase' ? '1px solid var(--color-border)' : 'none', background: secret.type !== 'Recovery Codes' && secret.type !== 'Recovery Phrase' ? 'var(--color-bg)' : 'transparent', padding: secret.type !== 'Recovery Codes' && secret.type !== 'Recovery Phrase' ? '10px 12px' : 0 }}>
             {decrypted ? (
               secret.type === 'Recovery Codes' ? (
                 <RecoveryCodeViewer secret={decrypted} />
+              ) : secret.type === 'Recovery Phrase' ? (
+                <RecoveryPhraseViewer value={decrypted.value} />
               ) : secret.type === 'Service Account JSON' ? (
                 <ServiceAccountInspector secret={secret} decryptedValue={decrypted.value} />
-              ) : (
+              ) : secret.type === 'OAuth Client Secret' && (() => {
+                try {
+                  const p = JSON.parse(decrypted.value);
+                  return p && typeof p === 'object' && ('clientId' in p || 'clientSecret' in p);
+                } catch { return false; }
+              })() ? (() => {
+                const p = JSON.parse(decrypted.value) as { clientId?: string; clientSecret?: string };
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {p.clientId && (
+                      <div>
+                        <div style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'var(--color-text-3)', marginBottom: 4 }}>CLIENT ID</div>
+                        <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-text)', wordBreak: 'break-all' }}>{p.clientId}</div>
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontSize: 9.5, fontFamily: 'var(--font-mono)', color: 'var(--color-text-3)', marginBottom: 4 }}>CLIENT SECRET</div>
+                      <MaskedValue value={p.clientSecret || ''} />
+                    </div>
+                  </div>
+                );
+              })() : (
                 <MaskedValue value={decrypted.value} />
               )
             ) : (

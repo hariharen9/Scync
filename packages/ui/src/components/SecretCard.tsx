@@ -34,6 +34,25 @@ const ENV_BADGE_COLORS: Record<string, { bg: string; color: string }> = {
 export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const menuContainerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!menuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
   const [decryptedValue, setDecryptedValue] = useState<string | null>(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const { decryptValue } = useVaultStore();
@@ -85,12 +104,13 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
     <div
       onClick={() => selectSecret(secret.id)}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setMenuOpen(false); }}
+      onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative', cursor: 'pointer',
         background: hovered ? 'var(--color-surface-2)' : 'var(--color-surface)',
+        border: `1px solid ${hovered ? 'var(--color-border-2)' : 'var(--color-border)'}`,
         padding: 18, display: 'flex', flexDirection: 'column', gap: 10,
-        transition: 'background 140ms',
+        transition: 'background 140ms, border-color 140ms',
       }}
     >
       {/* Top row */}
@@ -138,7 +158,7 @@ export const SecretCard: React.FC<SecretCardProps> = ({ secret, project }) => {
           </button>
 
           {/* 3-dot menu */}
-          <div style={{ position: 'relative' }}>
+          <div ref={menuContainerRef} style={{ position: 'relative' }}>
             <button
               onClick={e => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
               style={{

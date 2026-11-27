@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { FiShield, FiPlus, FiTrash2, FiCopy, FiCheck, FiSearch } from 'react-icons/fi';
 import { generateTOTPCode, getRemainingSeconds, type TOTPConfig, type StoredTOTP, type DecryptedTOTP } from '@scync/core';
 import { ServiceIcon } from './ServiceIcon';
+import { useClipboard } from '../hooks/useClipboard';
 
 interface LiveCode {
   id: string;
@@ -19,6 +20,7 @@ export const TOTPDashboard: React.FC = () => {
   const { storedTOTPs, decryptTOTP, deleteTOTP } = useVaultStore();
   const { openAddTOTPModal, openConfirmModal } = useUIStore();
   const { user } = useAuthStore();
+  const { copy } = useClipboard();
   const [liveCodes, setLiveCodes] = useState<LiveCode[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -87,7 +89,7 @@ export const TOTPDashboard: React.FC = () => {
   }, [tick]);
 
   const handleCopy = (code: string, id: string) => {
-    navigator.clipboard.writeText(code);
+    copy(code);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -158,33 +160,71 @@ export const TOTPDashboard: React.FC = () => {
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FiShield size={20} style={{ color: 'var(--color-green)' }} />
-            Authenticator
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
-            {storedTOTPs.length} code{storedTOTPs.length !== 1 ? 's' : ''}
-          </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', flexShrink: 0,
+          }}>
+            <FiShield size={17} style={{ color: 'var(--color-green)' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', lineHeight: 1.1 }}>
+              Authenticator
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--color-text-3)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+              Live TOTP 2FA verification codes
+            </p>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={openAddTOTPModal}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+              display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px',
+              background: 'white', border: 'none',
+              color: '#080808', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'background 140ms',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#ebebeb'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
           >
-            <FiPlus size={13} />
+            <FiPlus size={14} />
             Add Authenticator
           </button>
         </div>
       </div>
+
+      {/* Telemetry Strip */}
+      {storedTOTPs.length > 0 && (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+          gap: 1,
+          background: 'var(--color-border)',
+          border: '1px solid var(--color-border)',
+          marginBottom: 18,
+        }}>
+          {[
+            { label: 'ACTIVE TOKENS', value: storedTOTPs.length, sub: 'Synced 2FA Seeds', accent: 'var(--color-text)' },
+            { label: 'ROTATING ≤5S', value: liveCodes.filter(c => c.remaining <= 5).length, sub: 'Urgent Refresh Window', accent: liveCodes.some(c => c.remaining <= 5) ? '#ef4444' : 'var(--color-green)' },
+            { label: 'ALGORITHMS', value: Array.from(new Set(storedTOTPs.map(t => t.algorithm))).join(' / '), sub: 'HMAC-OTP Standard', accent: '#60a5fa' },
+            { label: 'CLIPBOARD HYGIENE', value: '30s', sub: 'Auto-clear enabled', accent: 'var(--color-green)' },
+          ].map((stat) => (
+            <div key={stat.label} style={{ background: 'var(--color-surface)', padding: '14px 16px' }}>
+              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--color-text-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+                {stat.label}
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: stat.accent, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                {stat.value}
+              </div>
+              <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
+                {stat.sub}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Search */}
       <div style={{ marginBottom: 24 }}>
@@ -256,10 +296,9 @@ export const TOTPDashboard: React.FC = () => {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: 1,
-          background: 'var(--color-border)',
-          border: '1px solid var(--color-border)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 290px), 1fr))',
+          gap: 14,
+          alignItems: 'start',
         }}>
           {filtered.map(item => {
             const urgencyColor = getUrgencyColor(item.remaining, item.config.period);
@@ -269,10 +308,12 @@ export const TOTPDashboard: React.FC = () => {
                 key={item.id}
                 style={{
                   background: 'var(--color-surface)', display: 'flex', flexDirection: 'column',
-                  transition: 'background 140ms', position: 'relative'
+                  border: '1px solid var(--color-border)',
+                  borderTop: `2px solid ${urgencyColor}`,
+                  transition: 'background 140ms, border-color 140ms', position: 'relative'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-2)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-surface)'; }}
               >
                 <div style={{
                   padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',

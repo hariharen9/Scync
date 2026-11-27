@@ -1,6 +1,6 @@
 @theme {
   /* ─── Typography ─── */
-  --font-sans: 'Syne', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   --font-mono: 'DM Mono', 'Cascadia Code', 'Fira Code', monospace;
 
   /* ─── Layout ─── */
@@ -84,19 +84,19 @@
   --color-surface:        #0f0f0f;
   --color-surface-2:      #141414;
   --color-surface-3:      #1c1c1c;
-  --color-border:         #1e1e1e;
-  --color-border-2:       #282828;
-  --color-border-focus:   #3a3a3a;
+  --color-border:         #232323;
+  --color-border-2:       #323232;
+  --color-border-focus:   #4a4a4a;
 
-  --color-text:           #ececec;
-  --color-text-2:         #888888;
-  --color-text-3:         #444444;
-  --color-text-primary:   #ececec;
-  --color-text-secondary: #888888;
-  --color-text-muted:     #444444;
+  --color-text:           #f0f0f0;
+  --color-text-2:         #a1a1aa;
+  --color-text-3:         #71717a;
+  --color-text-primary:   #f0f0f0;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted:     #71717a;
 
-  --color-border-subtle:  #1e1e1e;
-  --color-border-default: #282828;
+  --color-border-subtle:  #232323;
+  --color-border-default: #323232;
 
   --color-green:          #10b981;
   --color-green-bg:       rgba(16, 185, 129, 0.08);
@@ -113,8 +113,8 @@
   --color-info:           #60a5fa;
   --color-accent:         #10b981;
 
-  --color-value-masked:   #444444;
-  --color-value-revealed: #888888;
+  --color-value-masked:   #666666;
+  --color-value-revealed: #a1a1aa;
 }
 
 /* Brutalist Scrollbar Utility */

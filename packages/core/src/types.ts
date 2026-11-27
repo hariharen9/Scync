@@ -89,6 +89,7 @@ export type SecretType =
   | 'OAuth Token'
   | 'OAuth Client Secret'
   | 'Recovery Codes'
+  | 'Recovery Phrase'
   | 'Secret Key'
   | 'Webhook Secret'
   | 'Service Account JSON'

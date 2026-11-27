@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useAuthStore } from '../stores/authStore';
 import { FiAward, FiCopy, FiEye, FiEyeOff, FiTrash2, FiDownload, FiCheck, FiPlus, FiAlertTriangle, FiShield } from 'react-icons/fi';
 import type { StoredCertificate } from '@scync/core';
+import { useClipboard } from '../hooks/useClipboard';
 
 const getExpiryStatus = (validTo: Date): { label: string; color: string; bg: string } => {
   const now = new Date();
@@ -19,12 +20,13 @@ export const CertificateDashboard: React.FC = () => {
   const { storedCertificates, decryptCertificate, deleteCertificate } = useVaultStore();
   const { openAddCertModal, openConfirmModal } = useUIStore();
   const { user } = useAuthStore();
+  const { copy } = useClipboard();
 
   const [revealedCerts, setRevealedCerts] = useState<Record<string, { certPem: string; keyPem: string | null }>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
+    copy(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -68,33 +70,80 @@ export const CertificateDashboard: React.FC = () => {
   return (
     <div style={{ width: '100%', maxWidth: 1400, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <FiAward size={20} style={{ color: 'var(--color-green)' }} />
-            Certificates
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--color-text-2)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
-            {storedCertificates.length} certificate{storedCertificates.length !== 1 ? 's' : ''}
-          </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 34, height: 34, background: 'var(--color-surface-2)',
+            border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center', flexShrink: 0,
+          }}>
+            <FiAward size={17} style={{ color: 'var(--color-green)' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)', lineHeight: 1.1 }}>
+              Certificates
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--color-text-3)', margin: '4px 0 0 0', fontFamily: 'var(--font-mono)', fontWeight: 400 }}>
+              X.509 SSL/TLS &amp; PEM certificate vault
+            </p>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             onClick={openAddCertModal}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
-              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-              color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms',
+              display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px',
+              background: 'white', border: 'none',
+              color: '#080808', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'background 140ms',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#ebebeb'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
           >
-            <FiPlus size={13} />
+            <FiPlus size={14} />
             Add Certificate
           </button>
         </div>
       </div>
+
+      {/* Telemetry Strip */}
+      {storedCertificates.length > 0 && (() => {
+        const now = Date.now();
+        const expiredCount = storedCertificates.filter(c => c.validTo.getTime() < now).length;
+        const expiringCount = storedCertificates.filter(c => {
+          const days = (c.validTo.getTime() - now) / (1000 * 60 * 60 * 24);
+          return days >= 0 && days <= 30;
+        }).length;
+        const healthyCount = storedCertificates.length - expiredCount - expiringCount;
+        return (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: 1,
+            background: 'var(--color-border)',
+            border: '1px solid var(--color-border)',
+            marginBottom: 20,
+          }}>
+            {[
+              { label: 'TOTAL CERTS', value: storedCertificates.length, sub: 'X.509 Vaulted', accent: 'var(--color-text)' },
+              { label: 'HEALTHY', value: healthyCount, sub: '>30d Remaining', accent: 'var(--color-green)' },
+              { label: 'EXPIRING ≤30D', value: expiringCount, sub: 'Renewal Attention', accent: expiringCount > 0 ? '#f59e0b' : 'var(--color-text-2)' },
+              { label: 'EXPIRED', value: expiredCount, sub: 'Action Required', accent: expiredCount > 0 ? 'var(--color-red)' : 'var(--color-text-2)' },
+            ].map((stat) => (
+              <div key={stat.label} style={{ background: 'var(--color-surface)', padding: '14px 16px' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--color-text-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>
+                  {stat.label}
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: stat.accent, fontFamily: 'var(--font-mono)', letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                  {stat.value}
+                </div>
+                <div style={{ fontSize: 10.5, color: 'var(--color-text-3)', marginTop: 4, fontFamily: 'var(--font-sans)' }}>
+                  {stat.sub}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {storedCertificates.length === 0 ? (
         <div style={{
@@ -127,10 +176,9 @@ export const CertificateDashboard: React.FC = () => {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
-          gap: 1,
-          background: 'var(--color-border)',
-          border: '1px solid var(--color-border)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
+          gap: 16,
+          alignItems: 'start',
         }}>
           {storedCertificates.map(cert => {
             const expiry = getExpiryStatus(cert.validTo);
@@ -138,8 +186,10 @@ export const CertificateDashboard: React.FC = () => {
             return (
               <div key={cert.id} style={{
                 background: 'var(--color-surface)', display: 'flex', flexDirection: 'column',
-                transition: 'background 140ms', position: 'relative'
-              }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface)'}>
+                border: '1px solid var(--color-border)',
+                borderTop: `2px solid ${expiry.color}`,
+                transition: 'background 140ms, border-color 140ms', position: 'relative'
+              }} onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-surface-2)'; }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-surface)'; }}>
                 
                 {/* Header */}
                 <div style={{ padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--color-border)' }}>

@@ -10,7 +10,7 @@ export const generatePortableVault = (data: any, uid: string) => {
     <title>Scync - Portable Vault</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=DM+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=DM+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #060606;
@@ -43,7 +43,7 @@ export const generatePortableVault = (data: any, uid: string) => {
             box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
         h1 {
-            font-family: 'Syne', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 24px;
             margin: 0 0 8px 0;
             letter-spacing: -0.02em;
@@ -81,7 +81,7 @@ export const generatePortableVault = (data: any, uid: string) => {
         .header-box button { width: auto; padding: 6px 12px; font-size: 11px; }
         .search { margin-bottom: 20px; }
         .section-title {
-            font-family: 'Syne', sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.12em;
@@ -94,7 +94,7 @@ export const generatePortableVault = (data: any, uid: string) => {
             padding: 14px 16px;
             margin-bottom: 10px;
         }
-        .item h3 { margin: 0 0 4px 0; font-size: 14px; font-family: 'Syne', sans-serif; word-break: break-word; }
+        .item h3 { margin: 0 0 4px 0; font-size: 14px; font-family: 'Space Grotesk', sans-serif; word-break: break-word; }
         .item .meta { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; word-break: break-word; }
         .actions { display: flex; flex-wrap: wrap; gap: 6px; }
         .copy-btn {

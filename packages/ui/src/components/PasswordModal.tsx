@@ -1,16 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { FiX, FiLock, FiRefreshCw, FiCopy } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiLock, FiRefreshCw, FiCopy, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useUIStore } from '../stores/uiStore';
 import { useVaultStore } from '../stores/vaultStore';
 import { useAuthStore } from '../stores/authStore';
 import { useClipboard } from '../hooks/useClipboard';
+import {
+  ModalShell,
+  modalInputStyle,
+  modalMonoInputStyle,
+  modalLabelStyle,
+  modalBtnPrimary,
+  modalBtnSecondary,
+} from './ModalShell';
+
+function getPasswordStrength(pwd: string): { label: string; color: string; pct: number } {
+  if (!pwd) return { label: 'Empty', color: 'var(--color-border-2)', pct: 0 };
+  let score = 0;
+  if (pwd.length >= 8) score += 1;
+  if (pwd.length >= 14) score += 1;
+  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score += 1;
+  if (/\d/.test(pwd)) score += 1;
+  if (/[^a-zA-Z0-9]/.test(pwd)) score += 1;
+
+  if (score <= 2) return { label: 'Weak', color: '#ef4444', pct: 30 };
+  if (score === 3) return { label: 'Fair', color: '#f59e0b', pct: 55 };
+  if (score === 4) return { label: 'Strong', color: '#60a5fa', pct: 80 };
+  return { label: 'Very Strong', color: 'var(--color-green)', pct: 100 };
+}
 
 export const PasswordModal: React.FC = () => {
   const { isAddPasswordModalOpen, closeAddPasswordModal } = useUIStore();
   const { user } = useAuthStore();
   const { createPassword, updatePassword, storedPasswords, decryptPassword } = useVaultStore();
-  const { copy } = useClipboard();
+  const { copy, hasCopied } = useClipboard();
 
   const [isOpen, setIsOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -18,10 +40,13 @@ export const PasswordModal: React.FC = () => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [category, setCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   useEffect(() => {
     if (isAddPasswordModalOpen) {
@@ -36,14 +61,14 @@ export const PasswordModal: React.FC = () => {
       const id = (e as CustomEvent).detail;
       setEditId(id);
       setIsOpen(true);
-      
+
       const pwd = storedPasswords.find(p => p.id === id);
       if (pwd) {
         setName(pwd.name);
         setUsername(pwd.username);
         setUrl(pwd.url || '');
         setCategory(pwd.category || '');
-        
+
         setIsLoading(true);
         const dec = await decryptPassword(id);
         if (dec) {
@@ -62,6 +87,7 @@ export const PasswordModal: React.FC = () => {
     setName('');
     setUsername('');
     setPassword('');
+    setShowPassword(false);
     setUrl('');
     setNotes('');
     setCategory('');
@@ -69,6 +95,7 @@ export const PasswordModal: React.FC = () => {
   };
 
   const handleClose = () => {
+    if (isLoading) return;
     setIsOpen(false);
     closeAddPasswordModal();
     setTimeout(resetForm, 200);
@@ -82,23 +109,21 @@ export const PasswordModal: React.FC = () => {
       '!@#$%^&*()_+~`|}{[]:;?><,./-=',
     ];
     const all = groups.join('');
-    // CSPRNG index in [0, max)
     const randomIndex = (max: number) => {
       const buf = new Uint32Array(1);
       crypto.getRandomValues(buf);
       return buf[0] % max;
     };
 
-    // Guarantee at least one character from every class, then fill to 20.
     const picks = groups.map(g => g[randomIndex(g.length)]);
     while (picks.length < 20) picks.push(all[randomIndex(all.length)]);
 
-    // Fisher–Yates shuffle using the same CSPRNG so class positions aren't predictable.
     for (let i = picks.length - 1; i > 0; i--) {
       const j = randomIndex(i + 1);
       [picks[i], picks[j]] = [picks[j], picks[i]];
     }
     setPassword(picks.join(''));
+    setShowPassword(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,101 +138,165 @@ export const PasswordModal: React.FC = () => {
       } else {
         await createPassword(user.uid, data);
       }
-      handleClose();
+      setIsLoading(false);
+      setIsOpen(false);
+      closeAddPasswordModal();
+      setTimeout(resetForm, 200);
     } catch (err) {
       console.error('Failed to save password', err);
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
-            onClick={handleClose}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(4px)' }}
+    <ModalShell
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={editId ? 'Edit Password' : 'Add Password'}
+      subtitle="Zero-knowledge login credential"
+      icon={<FiLock size={15} />}
+      maxWidth={540}
+      busy={isLoading}
+      zIndex={250}
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={modalLabelStyle}>Site / Service Name *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              required
+              style={modalInputStyle}
+              placeholder="e.g. GitHub, Stripe"
+              autoFocus
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+            />
+          </div>
+          <div>
+            <label style={modalLabelStyle}>Username / Email</label>
+            <input
+              type="text"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              style={modalInputStyle}
+              placeholder="e.g. dev@scync.space"
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+            />
+          </div>
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <label style={{ ...modalLabelStyle, marginBottom: 0 }}>Password *</label>
+            {password && (
+              <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700, color: strength.color }}>
+                {strength.label.toUpperCase()}
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{ ...modalMonoInputStyle, paddingRight: 36 }}
+                placeholder="••••••••••••"
+                onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+                onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--color-text-2)', cursor: 'pointer', padding: 0, display: 'flex' }}
+              >
+                {showPassword ? <FiEyeOff size={14} /> : <FiEye size={14} />}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={generatePassword}
+              title="Generate 20-char random password"
+              style={{ ...modalBtnSecondary, padding: '0 12px', color: 'var(--color-green)', borderColor: 'var(--color-green-border)' }}
+            >
+              <FiRefreshCw size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => password && copy(password)}
+              title="Copy password"
+              style={{ ...modalBtnSecondary, padding: '0 12px', color: hasCopied ? 'var(--color-green)' : 'var(--color-text-2)' }}
+            >
+              {hasCopied ? <FiCheck size={14} /> : <FiCopy size={14} />}
+            </button>
+          </div>
+          {/* Strength Meter Bar */}
+          <div style={{ height: 3, background: 'var(--color-surface-3)', marginTop: 6, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${strength.pct}%`, background: strength.color, transition: 'width 180ms, background 180ms' }} />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={modalLabelStyle}>Website URL</label>
+            <input
+              type="url"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              style={modalInputStyle}
+              placeholder="https://..."
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+            />
+          </div>
+          <div>
+            <label style={modalLabelStyle}>Category</label>
+            <input
+              type="text"
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              style={modalInputStyle}
+              placeholder="e.g. Work, Finance, Dev"
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={modalLabelStyle}>Notes <span style={{ opacity: 0.55, textTransform: 'none' }}>(Optional)</span></label>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            rows={2}
+            style={{ ...modalInputStyle, resize: 'vertical' }}
+            placeholder="Security questions, recovery hints..."
+            onFocus={e => e.currentTarget.style.borderColor = 'var(--color-green)'}
+            onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
           />
-          <motion.div
-            data-lenis-prevent="true"
-            initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }} transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            style={{ 
-              position: 'relative', width: '100%', maxWidth: 460,
-              background: 'var(--color-surface)', border: '1px solid var(--color-border-2)',
-              boxShadow: '0 24px 64px rgba(0,0,0,.7)', overflow: 'hidden',
-              display: 'flex', flexDirection: 'column', maxHeight: '90vh'
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8, borderTop: '1px solid var(--color-border)' }}>
+          <button type="button" onClick={handleClose} style={modalBtnSecondary}>Cancel</button>
+          <button
+            type="submit"
+            disabled={isLoading || !name || !password}
+            style={{
+              ...modalBtnPrimary,
+              opacity: (isLoading || !name || !password) ? 0.5 : 1,
+              cursor: (isLoading || !name || !password) ? 'not-allowed' : 'pointer',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 30, height: 30, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', display: 'grid', placeItems: 'center' }}>
-                  <FiLock size={14} color="var(--color-green)" />
-                </div>
-                <div>
-                  <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-sans)' }}>
-                    {editId ? 'Edit Password' : 'Add Password'}
-                  </h2>
-                  <p style={{ fontSize: 11, color: 'var(--color-text-2)', margin: '2px 0 0 0', fontFamily: 'var(--font-sans)' }}>
-                    Store a secure credential in your vault
-                  </p>
-                </div>
-              </div>
-              <button onClick={handleClose} style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', border: '1px solid var(--color-border)', background: 'none', color: 'var(--color-text-2)', cursor: 'pointer', transition: 'all 140ms' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-2)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}><FiX size={14} /></button>
-            </div>
-
-            <form onSubmit={handleSubmit} data-lenis-prevent="true" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', overscrollBehavior: 'contain' }} className="hide-scrollbar">
-              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name *</label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="e.g. Google, GitHub" autoFocus />
-                </div>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Username / Email</label>
-                  <input type="text" value={username} onChange={e => setUsername(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="e.g. user@example.com" />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Password *</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input type="text" value={password} onChange={e => setPassword(e.target.value)} required style={{ flex: 1, padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-mono)', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="••••••••••••" />
-                    <button type="button" onClick={generatePassword} title="Generate random password" style={{ width: 38, display: 'grid', placeItems: 'center', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-2)', cursor: 'pointer', transition: 'all 140ms' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}>
-                      <FiRefreshCw size={14} />
-                    </button>
-                    <button type="button" onClick={() => copy(password)} title="Copy password" style={{ width: 38, display: 'grid', placeItems: 'center', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-2)', cursor: 'pointer', transition: 'all 140ms' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}>
-                      <FiCopy size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Website URL</label>
-                  <input type="url" value={url} onChange={e => setUrl(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="https://..." />
-                </div>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</label>
-                  <input type="text" value={category} onChange={e => setCategory(e.target.value)} style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="e.g. Work, Personal" />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', marginBottom: 6, fontSize: 11, fontWeight: 600, color: 'var(--color-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Notes</label>
-                  <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--color-border)', background: 'var(--color-surface-2)', color: 'var(--color-text)', fontSize: 13, outline: 'none', fontFamily: 'var(--font-sans)', resize: 'vertical', boxSizing: 'border-box', transition: 'border-color 140ms' }} onFocus={e => e.currentTarget.style.borderColor = 'var(--color-border-focus)'} onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border)'} placeholder="Optional notes..." />
-                </div>
-              </div>
-
-              <div style={{ padding: '14px 18px', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)', display: 'flex', justifyContent: 'flex-end', gap: 10, flexShrink: 0 }}>
-                <button type="button" onClick={handleClose} style={{ padding: '7px 14px', border: '1px solid var(--color-border)', background: 'var(--color-surface)', color: 'var(--color-text-2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-sans)', transition: 'all 140ms' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-2)'; e.currentTarget.style.color = 'var(--color-text)'; }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-2)'; }}>Cancel</button>
-                <button type="submit" disabled={isLoading || !name || !password} style={{ padding: '7px 18px', background: 'var(--color-green)', border: '1px solid var(--color-green-border)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: (isLoading || !name || !password) ? 'not-allowed' : 'pointer', opacity: (isLoading || !name || !password) ? 0.5 : 1, fontFamily: 'var(--font-sans)', transition: 'all 140ms' }}>
-                  {isLoading ? 'Saving...' : 'Save Password'}
-                </button>
-              </div>
-            </form>
-          </motion.div>
+            {isLoading ? 'Saving...' : editId ? 'Update Password' : 'Save Password'}
+          </button>
         </div>
-      )}
-    </AnimatePresence>
+      </form>
+    </ModalShell>
   );
 };

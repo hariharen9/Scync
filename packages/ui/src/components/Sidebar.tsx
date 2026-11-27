@@ -184,7 +184,7 @@ export const Sidebar: React.FC<{ className?: string }> = ({ className = '' }) =>
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 6px' }}>
+        <div data-lenis-prevent="true" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '6px 6px' }}>
           {/* Navigation */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 1, marginBottom: 16 }}>
             {navItems.map(item => {
